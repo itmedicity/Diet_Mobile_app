@@ -1,0 +1,195 @@
+import { useQuery } from "@tanstack/react-query";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployyeName, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+
+
+export const UseFoodDetail = () => {
+    return useQuery({
+        queryKey: ['getFood'],
+        queryFn: () => DietFoodFetching(),
+        staleTime: Infinity,
+    });
+};
+
+
+
+export const UseFoodTypeDetail = () => {
+    return useQuery({
+        queryKey: ['itemtype'],
+        queryFn: () => DietItemType(),
+        staleTime: Infinity,
+    });
+};
+
+
+
+export const UseRoomTypeDetail = () => {
+    return useQuery({
+        queryKey: ['dietroomtype'],
+        queryFn: () => GetAllRoomTypeDetail(),
+        staleTime: Infinity,
+    });
+};
+
+
+
+export const UseRoomCategoryDetail = () => {
+    return useQuery({
+        queryKey: ['dietroomcat'],
+        queryFn: () => GetAllDietRoomCategoryDetail(),
+        staleTime: Infinity,
+    });
+};
+
+
+export const useDietTimes = () => {
+    return useQuery({
+        queryKey: ['diettime'],
+        queryFn: () => getAllDietTime(),
+        staleTime: Infinity,
+    });
+};
+
+export const useDietNames = () => {
+    return useQuery({
+        queryKey: ['dietname'],
+        queryFn: () => getDietName(),
+        staleTime: Infinity,
+    });
+};
+
+
+export const useDietDeliveryTime = () => {
+    return useQuery({
+        queryKey: ['dietdeltime'],
+        queryFn: () => getDietDeliveryTime(),
+        staleTime: Infinity,
+    });
+};
+
+export const useNursingStationMaster = () => {
+    return useQuery({
+        queryKey: ['getallnsmaster'],
+        queryFn: getallNurseStationMaster,
+        staleTime: Infinity
+    });
+};
+
+export const useNursingStationBedDetail = (code) => {
+    return useQuery({
+        queryKey: ['getallnsbedmast', code],
+        queryFn: () => getallNurseStationBedDetail(code),
+        staleTime: Infinity,
+        enabled: !!code
+    });
+};
+
+export const useAllEmployeeFetch = () => {
+    return useQuery({
+        queryKey: ['allemp'],
+        queryFn: getAllEmployyeName,
+        staleTime: Infinity
+    });
+};
+
+
+
+export const useAllPatientDietPlan = (nscode) => {
+    return useQuery({
+        queryKey: ['patientdietplan', nscode],
+        queryFn: () => getAllPatientDietPlan(nscode),
+        staleTime: Infinity,
+        enabled: !!nscode
+    });
+};
+
+export const useAllPateinetFoodDetail = (template_id, typeIds) => {
+    return useQuery({
+        queryKey: ['templatefood', template_id, typeIds],
+        queryFn: () => getAllTemplateFoodDetail(template_id, typeIds),
+        staleTime: Infinity,
+        enabled: !!template_id && typeIds?.length > 0,
+    });
+};
+
+
+
+
+
+export const useAllPatientPreviousOrders = (patient_id) => {
+    return useQuery({
+        queryKey: ['patientOrder', patient_id],
+        queryFn: () => getAllPatientOrderDetail(patient_id),
+        staleTime: Infinity,
+        enabled: !!patient_id
+    });
+};
+
+
+
+export const useCustomerPreviousCanteenOrder = (admission_id, personType) => {
+    return useQuery({
+        queryKey: ['customerorder', admission_id, personType],
+        queryFn: () => getCustomerPreviousOrder(admission_id, personType),
+        staleTime: Infinity,
+        enabled: !!admission_id && !!personType
+    });
+};
+
+
+export const usePatientPlanFoodDetails = (plan_id) => {
+    return useQuery({
+        queryKey: ['patientOrder', plan_id],
+        queryFn: () => getPatienPlanFoodDetail(plan_id),
+        staleTime: Infinity,
+        enabled: !!plan_id
+    });
+};
+
+
+export const useAllDietDeliveryDetails = (emid) => {
+    return useQuery({
+        queryKey: ['dietdeliery', emid],
+        queryFn: () => getAllDietDeliveryDetail(emid),
+        staleTime: Infinity,
+        enabled: !!emid
+    });
+};
+
+
+export const useItemFullDetials = (enabled) => {
+    return useQuery({
+        queryKey: ['itemfulldetail'],
+        queryFn: getFullDetailofItem,
+        enabled, // only fetch when needed
+        staleTime: Infinity
+    });
+};
+
+
+export const useAllOrderPartyType = () => {
+    return useQuery({
+        queryKey: ['orderparty'],
+        queryFn: getAllOrderPartyType,
+        staleTime: Infinity
+    });
+};
+
+
+export const useFetchItemFiles = (item_id) => {
+    return useQuery({
+        queryKey: ['itemfiles', item_id],
+        queryFn: () => getItemFileDetails(item_id),
+        staleTime: Infinity,
+        enabled: !!item_id
+    });
+};
+
+
+export const usePatientExtraOrders = (ptId, Status) => {
+    return useQuery({
+        queryKey: ['ptextraorder', ptId, Status],
+        queryFn: () => getAllPatientExtraOrdres(ptId, Status),
+        staleTime: Infinity,
+        enabled: !!ptId && !!Status
+    });
+};
