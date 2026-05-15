@@ -374,6 +374,77 @@ export const getAllDietDeliveryDetail = async (emid) => {
 };
 
 
+
+export const getAllEmployeeDeliveryDetail = async (emid) => {
+    if (!emid) return warningNofity("Employee Id Missing");
+    try {
+        const res = await axioslogin.post('/dietdelivery/fetchbyassigny', {
+            assign_to: emid
+        });
+        const { success, data, message } = res.data;
+        if (success === 0) {
+            console.error("Error in Fetching Api", message)
+            return []
+        }
+        if (success === 1) return data || [];
+
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error In getting All Patient Diet Delivery Detail:", error?.message || error);
+        return [];
+    }
+};
+
+
+export const getAssingItemStatusDetail = async (emid, assign_id) => {
+    if (!emid) return warningNofity("Employee Id Missing");
+    if (!assign_id) return warningNofity("Assign Id Missing");
+    try {
+        const res = await axioslogin.post('/dietdelivery/fetchassigny-item-status', {
+            assign_to: emid,
+            assignment_id: assign_id
+        });
+        const { success, data, message } = res.data;
+        if (success === 0) {
+            console.error("Error in Fetching Api", message)
+            return []
+        }
+        if (success === 1) return data || [];
+
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error In getting All Patient Diet Delivery Detail:", error?.message || error);
+        return [];
+    }
+};
+
+
+export const getAllItemDeliveryStatus = async (canteen_order_id, type_slno) => {
+    if (!canteen_order_id) return warningNofity("Employee Id Missing");
+    if (!type_slno) return warningNofity("Assign Id Missing");
+    try {
+        const res = await axioslogin.post('/dietdelivery/fetch-delivery-log', {
+            canteen_order_id: canteen_order_id,
+            type_slno: type_slno
+        });
+        const { success, data, message } = res.data;
+        if (success === 0) {
+            console.error("Error in Fetching Api", message)
+            return []
+        }
+        if (success === 1) return data || [];
+
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error In Delivery Item Status:", error?.message || error);
+        return [];
+    }
+};
+
+
 export const getFullDetailofItem = async () => {
     try {
         const result = await axioslogin.get('/fooditemmast/item-full-detail')
@@ -470,3 +541,26 @@ export const getAllPatientExtraOrdres = async (admissionId, Status) => {
         return [];
     }
 };
+
+
+
+export const getAllOrderItemDetails = async (memoOrder) => {
+
+    if (!memoOrder) return warningNofity("Order Id is Missings");
+    try {
+        const res = await axioslogin.post('/canteenorder/get', {
+            canteen_order_id: memoOrder
+        });
+        const { success, data } = res.data;
+
+        if (success === 1) {
+            return data ?? [];
+        }
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error In Fetching Canteen Foods", error?.message || error);
+        return [];
+    }
+};
+

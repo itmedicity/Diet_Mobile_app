@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployyeName, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -155,6 +155,36 @@ export const useAllDietDeliveryDetails = (emid) => {
     });
 };
 
+export const useAllAssingedDeliveryItem = (emid) => {
+    return useQuery({
+        queryKey: ['assigneditem', emid],
+        queryFn: () => getAllEmployeeDeliveryDetail(emid),
+        staleTime: Infinity,
+        enabled: !!emid
+    });
+};
+
+
+export const useAllAssignedItemStatus = (emid, assign_id) => {
+    return useQuery({
+        queryKey: ['assigneditemstatus', emid, assign_id],
+        queryFn: () => getAssingItemStatusDetail(emid, assign_id),
+        staleTime: Infinity,
+        enabled: !!emid && !!assign_id
+    });
+};
+
+
+
+export const useAllItemDeliveryStatus = (canteen_order_id, type_slno) => {
+    return useQuery({
+        queryKey: ['delivery-status', canteen_order_id, type_slno],
+        queryFn: () => getAllItemDeliveryStatus(canteen_order_id, type_slno),
+        staleTime: Infinity,
+        enabled: !!canteen_order_id && !!type_slno
+    });
+};
+
 
 export const useItemFullDetials = (enabled) => {
     return useQuery({
@@ -193,3 +223,18 @@ export const usePatientExtraOrders = (ptId, Status) => {
         enabled: !!ptId && !!Status
     });
 };
+
+
+
+export const useOrderItemDetail = (memoOrder) => {
+    return useQuery({
+        queryKey: ['canteenorders', memoOrder],
+        queryFn: () => getAllOrderItemDetails(memoOrder),
+        staleTime: Infinity,
+        enabled: !!memoOrder
+    });
+};
+
+
+
+

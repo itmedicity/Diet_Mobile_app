@@ -5,27 +5,34 @@ import SearchComponent from "../../components/SearchComponent";
 import DeliveryPatientCardList from "../PatientDeliveryMarking/DeliveryPatientCardList";
 import { groupByPatient } from "../../CommonData/Common";
 import { EmpauthId } from "../Constant/Constant";
-import { useAllDietDeliveryDetails } from "../../CommonData/UseQuery";
+import { useAllAssingedDeliveryItem, useAllDietDeliveryDetails } from "../../CommonData/UseQuery";
+import DeliveryStatusFilter from "./DeliveryStatusFilter";
 
 const Delivery = () => {
 
     const id = EmpauthId();
-    const { data: DeliverData = [] } = useAllDietDeliveryDetails(id);
-
-
-    const FinalDeliveryData = useMemo(() => {
-        return groupByPatient(DeliverData);
-    }, [DeliverData]);
-
+    const {
+        data: DeliveryDetail = [],
+    } = useAllAssingedDeliveryItem(id);
 
     const [seachVal, setSearchVal] = useState("");
 
+    const [deliveryStatus, setDeliveryStatus] = useState("");
 
+
+    const filteredData = DeliveryDetail?.filter(item =>
+        !deliveryStatus ||
+        item.ItemStatus === deliveryStatus
+    );
 
     return (
         <Box sx={{ width: "100%" }}>
             <LoginEmployeeHeader />
             <SearchComponent value={seachVal} onChange={setSearchVal} />
+            <DeliveryStatusFilter
+                value={deliveryStatus}
+                onChange={setDeliveryStatus}
+            />
             <Box
                 sx={{
                     width: "100%",
@@ -37,7 +44,10 @@ const Delivery = () => {
                     pb: 1,
                 }}
             >
-                <DeliveryPatientCardList filterdData={FinalDeliveryData} />
+                <DeliveryPatientCardList
+                    filterdData={filteredData}
+
+                />
             </Box>
 
         </Box>

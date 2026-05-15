@@ -1,61 +1,211 @@
 import { Box } from "@mui/joy";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import NursingStaionHeader from "../NursingStation/NursingStaionHeader";
 import DeliveryFoodItemCard from "./DeliveryFoodItemCard";
 import TextComponent from "../../components/TextComponent";
+import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useOrderItemDetail, usePatientExtraOrders } from "../../CommonData/UseQuery";
+import PickupConfirmationModal from "./PickupConfirmationModal";
+import { EmpauthId, succesNofity, warningNofity } from "../Constant/Constant";
+import { axioslogin } from "../../Axios/axios";
+import FloatingPickupButton from "./FloatingPickupButton";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DeliveryMarkingContainer = () => {
+
     const location = useLocation();
+
     const { patientData } = location.state || {};
 
+    const id = EmpauthId();
+
+
     const {
-        // diet_name,
-        // ip_no,
-        // mrd_no,
+        fb_ns_name,
         nurse_station_name,
         orders,
-        // patient_id,
-        // patient_name,
-        room_no, } = patientData ?? {};
+        canteen_order_id,
+        fb_ipad_slno,
+        type_slno,
+        type_desc,
+        fb_bdc_no,
+        assignment_id
+    } = patientData ?? {};
+
+    const {
+        data: ItemDetailStatus = [],
+    } = useAllAssignedItemStatus(id, assignment_id);
+
+    const {
+        data: ItemDeliveryStatus = [],
+    } = useAllItemDeliveryStatus(canteen_order_id, type_slno);
+
+
+
+    const queryClient = useQueryClient();
+
+    const [openPickupModal, setOpenPickupModal] = useState(false);
+    const [deliveryStatus, setDeliveryStatus] = useState(null);
+
+
+    const {
+        data: OrderFoodDetails = [],
+        refetch: FetchPatientFoodOrderDetails
+    } = useOrderItemDetail(canteen_order_id);
+
+    const {
+        data: PatientExtraOrders = [],
+        refetch: FetcthPatienExtraOrders
+    } = usePatientExtraOrders(fb_ipad_slno, 'COMPLETED');
+
+    const formattedExtraOrders = useMemo(() => {
+        return (PatientExtraOrders || []).map(item => ({
+            item_id: item.item_id,
+            item_name: item.item_name,
+            qty: Number(item.quantity ?? 0),
+            price: Number(item.price ?? 0),
+            description: item.description ?? "",
+            gst: Number(item.gst ?? 0),
+            gst_amount: Number(item.gst_amount ?? 0),
+
+            isExtra: true,          // IDENTIFIER
+            order_status: item.order_status,
+            extra_order_id: item.extra_order_id
+        }));
+    }, [PatientExtraOrders]);
+
+
+    const items = useMemo(() => {
+        if (!canteen_order_id) return [];
+        const canteenItems = (OrderFoodDetails || []).map(item => ({
+            ...item,
+            isExtra: false
+        }));
+        return canteenItems.map(canteenItem => {
+            // EXTRA ORDER MATCH
+            const matchedExtra = formattedExtraOrders.find(extra =>
+                Number(extra.item_id) === Number(canteenItem.item_id) &&
+                Number(extra.qty) === Number(canteenItem.quantity)
+            );
+
+            // DELIVERY STATUS MATCH
+            const matchedDelivery = (ItemDeliveryStatus || []).find(delivery =>
+                Number(delivery.item_id) === Number(canteenItem.item_id)
+            );
+
+            return {
+                ...canteenItem,
+                // EXTRA ORDER DATA
+                isExtra: !!matchedExtra,
+                extra_order_id:
+                    matchedExtra?.extra_order_id || null,
+                extra_order_status:
+                    matchedExtra?.order_status || null,
+                // DELIVERY DATA
+                delivery_id:
+                    matchedDelivery?.delivery_id || null,
+                delivery_status:
+                    matchedDelivery?.delivery_status || "PENDING",
+                delivered_qty:
+                    matchedDelivery?.delivered_qty || 0,
+                delivered_time:
+                    matchedDelivery?.delivered_time || null,
+                delivery_remarks:
+                    matchedDelivery?.delivery_remarks || null,
+                updated_by:
+                    matchedDelivery?.updated_by || null,
+                updated_at:
+                    matchedDelivery?.updated_at || null,
+                updated_remarks:
+                    matchedDelivery?.updated_remarks || null,
+                develivered_by:
+                    matchedDelivery?.develivered_by || null,
+                UpdatedByEmployee:
+                    matchedDelivery?.UpdatedByEmployee || null
+            };
+        });
+
+    }, [
+        canteen_order_id,
+        OrderFoodDetails,
+        formattedExtraOrders,
+        ItemDeliveryStatus
+    ]);
+
+    useEffect(() => {
+        if (ItemDetailStatus?.length > 0) {
+            setDeliveryStatus(
+                ItemDetailStatus?.[0]?.ItemStatus
+            );
+        }
+    }, [ItemDetailStatus]);
+
+
+    useEffect(() => {
+        if (deliveryStatus === "PENDING") {
+            setOpenPickupModal(true);
+        } else {
+            setOpenPickupModal(false);
+        }
+    }, [deliveryStatus]);
+
+
+    const FinalFilteredData = items &&
+        type_slno ? (items || [])?.filter(val => Number(val.type_slno) === Number(type_slno))
+        : items;
+
 
     console.log({
-        patientData
+        FinalFilteredData
     });
 
 
-    /* STEP 1: Flatten Data Only Once (Optimized)*/
-    const finalMealData = useMemo(() => {
-        if (!orders?.length) return [];
-
-        return orders?.flatMap(order =>
-            order.foods.flatMap(diet =>
-                diet.items.map(item => ({
-                    ...item,
-                    mealTime: diet.diet_type_name
-                }))
-            )
-        );
-    }, [patientData]);
-
-    /* 
-       STEP 2: Group Data Smartly
-       - Patient → group by mealTime
-       - Bystander → flat array
-  */
-    const groupedData = useMemo(() => {
-        const patientMeals = {};
-
-        finalMealData.forEach(food => {
-            if (!patientMeals[food.mealTime]) {
-                patientMeals[food.mealTime] = [];
-            }
-            patientMeals[food.mealTime].push(food);
+    const playPickupSound = () => {
+        const audio = new Audio("/pickupnofication.mp3");
+        audio.volume = 1;
+        audio.play().catch((err) => {
+            console.log("Audio play blocked:", err);
         });
+    };
 
-        return { patientMeals, bystanderFoods: [] };
-    }, [finalMealData]);
 
+    const handleConfirmPickup = async () => {
+        const payload = {
+            assignment_id: patientData?.assignment_id,
+            canteen_order_id: patientData?.canteen_order_id,
+            delivery_status: "PICKEDUP",
+            remarks: "Order picked up from kitchen",
+            updated_by: Number(id),
+            item: FinalFilteredData
+        };
+        try {
+            const result = await axioslogin.post(
+                "/dietdelivery/update-delivery-status",
+                payload
+            );
+            const { success, message } = result.data || {};
+            if (success === 0) {
+                return warningNofity(message);
+            }
+            succesNofity(message);
+            FetchPatientFoodOrderDetails()
+            FetcthPatienExtraOrders()
+            playPickupSound();
+            await queryClient.invalidateQueries([
+                "assigneditem",
+                id
+            ]);
+            setOpenPickupModal(false);
+            setDeliveryStatus("PICKEDUP");
+        } catch (error) {
+            console.log(error);
+            warningNofity("Something went wrong");
+        }
+    };
+
+    const handleCloseModal = () => {
+        setOpenPickupModal(false);
+    };
 
     return (
         <Box
@@ -67,56 +217,44 @@ const DeliveryMarkingContainer = () => {
             }}
         >
             <NursingStaionHeader
-                stationname={nurse_station_name}
-                bed={room_no}
+                stationname={fb_ns_name}
+                bed={fb_bdc_no}
             />
 
+            {
+                deliveryStatus === "PENDING" && (
+                    <FloatingPickupButton
+                        count={FinalFilteredData?.length || 0}
+                        onClick={() => setOpenPickupModal(true)}
+                    />
+                )
+            }
+
+            <PickupConfirmationModal
+                open={openPickupModal}
+                onClose={handleCloseModal}
+                onConfirm={handleConfirmPickup}
+                patientData={patientData}
+            />
             <Box
                 sx={{
                     flex: 1,
                     px: 2,
                     overflowY: "auto",
                     pb: "120px",
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'column'
                 }}
             >
-                {/* ================== PATIENT SECTION ================== */}
-                {Object.entries(groupedData.patientMeals)?.map(
-                    ([mealTime, foods]) => (
-                        <Box key={mealTime} sx={{ mt: 2 }}>
-                            <TextComponent
-                                value={mealTime?.toUpperCase()}
-                                size={15}
-                                weight={700}
-                            />
-
-                            {foods.map((food) => (
-                                <DeliveryFoodItemCard
-                                    key={`patient-${food.id}`}
-                                    item={food}
-                                    patientData={patientData}
-                                />
-                            ))}
-                        </Box>
-                    )
-                )}
-
-                {/* ================== BYSTANDER SECTION ================== */}
-                {groupedData.bystanderFoods.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                        <TextComponent
-                            value="BYSTANDER"
-                            size={16}
-                            weight={800}
-                        />
-
-                        {groupedData.bystanderFoods.map((food) => (
-                            <DeliveryFoodItemCard
-                                key={`bystander-${food.id}`}
-                                item={food}
-                            />
-                        ))}
-                    </Box>
-                )}
+                {FinalFilteredData?.map((food) => (
+                    <DeliveryFoodItemCard
+                        key={`${food.item_id}-${food.type_slno}-${food.quantity}`}
+                        item={food}
+                        patientData={patientData}
+                        deliveryStatus={deliveryStatus}
+                    />
+                ))}
             </Box>
         </Box>
     );
