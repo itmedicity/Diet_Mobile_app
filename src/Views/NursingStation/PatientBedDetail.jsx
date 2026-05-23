@@ -11,17 +11,20 @@ import { buildBystanderCategories, filterFoodsByType, infoNofity, warningNofity 
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
-import { useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
+import { useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, useItemFullDetials, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
 import { groupMeals } from "../../CommonData/Common";
 import FloatingOrderTaking from "../../components/FloatingOrderTaking";
 import OrderTakingPanel from "./Component/OrderTakingPanel";
+import EmptyDietState from "./Component/EmptyDietState";
+import { IconMap } from "./Component/TrendingIcons";
+import CategoryIcon from '@mui/icons-material/Category';
 
 const PatientBedDetail = () => {
 
   const location = useLocation();
   const { BedName, stationname, template_id, fullDetail } = location.state || {};
   const [selected, setSelected] = useState(null);
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedFilter, setSelectedFilter] = useState(0);
   const [activeTab, setActiveTab] = useState(null);
   const [openOrderPanel, setOpenOrderPanel] = useState(false);
 
@@ -39,6 +42,9 @@ const PatientBedDetail = () => {
 
   const { data: FetchPlanFoodDetail = [] } = usePatientPlanFoodDetails(fullDetail?.plan_id);
 
+  const { data: ExistFoodDetail = [] } = useItemFullDetials(true);
+
+
   const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
     useCustomerPreviousCanteenOrder(fullDetail?.ip_no, selected?.party_type_id);
 
@@ -54,6 +60,11 @@ const PatientBedDetail = () => {
     return groupMeals(FetchAllTemplateId);
   }, [FetchAllTemplateId]);
 
+  console.log({
+    FinalMappingTemplateFood
+  });
+
+
   const handleOpen = (value) => {
     setActiveTab(value);
   };
@@ -67,40 +78,56 @@ const PatientBedDetail = () => {
 
     const IsItemInPendingList = PreviousOrders?.some(
       (item) =>
-        item.item_id === food.food_id &&
+        item.item_id === food.item_id &&
         item?.order_status === 'PENDING'
     );
 
-    if (IsItemInPendingList) return infoNofity("Item Already In the Pending Order!")
+    if (IsItemInPendingList) {
+      return infoNofity("Item Already In the Pending Order!");
+    }
 
-    const timeKey = food.time_id;
+    // skip time check for bystander
+    const isBystander = selected?.party_name === "BYSTANDER";
 
-    if (!timeKey) return warningNofity("Missing time_id in food", food);
+    const timeKey = isBystander ? "BYSTANDER" : food.time_id;
+
+    if (!isBystander && !timeKey) {
+      return warningNofity("Missing time_id in food");
+    }
 
     setAssignedFoods((prev) => {
+
       const existingTime = prev[timeKey];
 
       if (!existingTime) {
         return {
           ...prev,
           [timeKey]: {
-            time_name: food.time_name,
+            time_name: isBystander
+              ? "BYSTANDER"
+              : food.time_name,
             foods: [{ ...food, qty: 1 }],
           },
         };
       }
 
       const isAlreadyAssigned = existingTime?.foods.find(
-        (f) => f.food_id === food.food_id
+        (f) => f.item_id === food.item_id
       );
 
       if (isAlreadyAssigned) {
+
         const updatedFoods = existingTime.foods.filter(
-          (f) => f.food_id !== food.food_id
+          (f) => f.item_id !== food.item_id
         );
 
         if (updatedFoods.length === 0) {
-          const { [timeKey]: removedTime, ...remaining } = prev;
+
+          const {
+            [timeKey]: removedTime,
+            ...remaining
+          } = prev;
+
           return remaining;
         }
 
@@ -117,11 +144,15 @@ const PatientBedDetail = () => {
         ...prev,
         [timeKey]: {
           ...existingTime,
-          foods: [...existingTime.foods, { ...food, qty: 1 }],
+          foods: [
+            ...existingTime.foods,
+            { ...food, qty: 1 }
+          ],
         },
       };
     });
   };
+
 
   const handleIncrement = (timeId, foodId) => {
     setAssignedFoods((prev) => ({
@@ -129,7 +160,7 @@ const PatientBedDetail = () => {
       [timeId]: {
         ...prev[timeId],
         foods: prev[timeId].foods.map((f) =>
-          f.food_id === foodId ? { ...f, qty: f.qty + 1 } : f
+          f.item_id === foodId ? { ...f, qty: f.qty + 1 } : f
         ),
       },
     }));
@@ -141,7 +172,7 @@ const PatientBedDetail = () => {
       [timeId]: {
         ...prev[timeId],
         foods: prev[timeId].foods.map((f) =>
-          f.food_id === foodId && f.qty > 1
+          f.item_id === foodId && f.qty > 1
             ? { ...f, qty: f.qty - 1 }
             : f
         ),
@@ -149,28 +180,19 @@ const PatientBedDetail = () => {
     }));
   };
 
-  const allFoods = useMemo(() => {
-    if (!FinalMappingTemplateFood?.length) return [];
 
-    return FinalMappingTemplateFood?.flatMap((time) =>
-      time.foods.map((food) => ({
-        ...food,
-        time_id: food?.time_id,       // already exists
-        time_name: food?.time_name,   // already exists
-      }))
-    );
-  }, [FinalMappingTemplateFood]);
 
 
   const filteredFoods = useMemo(() => {
-    return filterFoodsByType(allFoods, selectedFilter);
-  }, [allFoods, selectedFilter]);
+    return filterFoodsByType(ExistFoodDetail, selectedFilter);
+  }, [ExistFoodDetail, selectedFilter]);
 
 
   const categorizedFoods = useMemo(() => {
     if (selected?.party_name !== "BYSTANDER") return null;
     return buildBystanderCategories(filteredFoods);
   }, [selected, filteredFoods]);
+
 
 
 
@@ -202,33 +224,51 @@ const PatientBedDetail = () => {
 
         <Box sx={{ mt: 2 }}>
 
-          {selected?.party_name === "PATIENT" &&
-            FinalMappingTemplateFood?.map((time) => (
-              <Box key={time.type} sx={{ mb: 3 }}>
-                <TextComponent color="#0b0b0b" value={time?.type} size={16} weight={800} />
-                <Divider sx={{ my: 1 }} />
-
-                {time.foods.map((food) => {
-                  const assignedTime = assignedFoods[food.time_id];
-                  const assignedFood = assignedTime?.foods?.find(
-                    (f) => f.food_id === food.food_id
-                  );
-
-                  return (
-                    <FoodItemAddCard
-                      key={food.food_id}
-                      foodDetail={food}
-                      assignedFood={assignedFood}
-                      onClick={() => handleToggleFood(food)}
-                      onIncrement={() => handleIncrement(food.time_id, food.food_id)}
-                      onDecrement={() => handleDecrement(food.time_id, food.food_id)}
+          {
+            selected?.party_name === "PATIENT" && (
+              FinalMappingTemplateFood?.length > 0 ? (
+                FinalMappingTemplateFood?.map((time) => (
+                  <Box key={time.type} sx={{ mb: 3 }}>
+                    <TextComponent
+                      color="#0b0b0b"
+                      value={time?.type}
+                      size={16}
+                      weight={800}
                     />
-                  );
-                })}
-              </Box>
-            ))}
 
-          {selected?.party_name === "BYSTANDER" &&
+                    <Divider sx={{ my: 1 }} />
+
+                    {time.foods.map((food) => {
+                      const assignedTime = assignedFoods[food?.time_id];
+
+                      const assignedFood = assignedTime?.foods?.find(
+                        (f) => f?.item_id === food?.item_id
+                      );
+
+                      return (
+                        <FoodItemAddCard
+                          key={food?.item_id}
+                          foodDetail={food}
+                          assignedFood={assignedFood}
+                          onClick={() => handleToggleFood(food)}
+                          onIncrement={() =>
+                            handleIncrement(food?.time_id, food?.item_id)
+                          }
+                          onDecrement={() =>
+                            handleDecrement(food?.time_id, food?.item_id)
+                          }
+                        />
+                      );
+                    })}
+                  </Box>
+                ))
+              ) : (
+                <EmptyDietState />
+              )
+            )
+          }
+
+          {/* {selected?.party_name === "BYSTANDER" &&
             categorizedFoods &&
             Object.entries(categorizedFoods)?.map(([category, foods]) => {
               if (!foods.length) return null;
@@ -239,24 +279,112 @@ const PatientBedDetail = () => {
                   <Divider sx={{ my: 1 }} />
 
                   {foods?.map((food) => {
+                    const timeKey =
+                      selected?.party_name === "BYSTANDER"
+                        ? "BYSTANDER"
+                        : food.time_id;
 
-                    const assignedTime = assignedFoods[food.time_id];
-                    const assignedFood = assignedTime?.foods?.find((f) => f.food_id === food.food_id);
+                    const assignedTime = assignedFoods[timeKey];
+                    const assignedFood = assignedTime?.foods?.find((f) => f.item_id === food.item_id);
 
                     return (
                       <FoodItemAddCard
-                        key={food.food_id}
+                        key={food.item_id}
                         foodDetail={food}
                         assignedFood={assignedFood}
                         onClick={() => handleToggleFood(food)}
-                        onIncrement={() => handleIncrement(food.time_id, food.food_id)}
-                        onDecrement={() => handleDecrement(food.time_id, food.food_id)}
+                        onIncrement={() => handleIncrement(timeKey, food.item_id)}
+                        onDecrement={() => handleDecrement(timeKey, food.item_id)}
+                      />
+                    );
+                  })}
+                </Box>
+              );
+            })} */}
+
+
+          {selected?.party_name === "BYSTANDER" &&
+            categorizedFoods &&
+            Object.entries(categorizedFoods)?.map(([category, value]) => {
+              const foods = value;
+              const firstFood = foods?.[0];
+              const title =
+                firstFood?.highlight_title || category;
+              const color =
+                firstFood?.color_code;
+
+              const icon =
+                firstFood?.highlight_icon;
+              if (!foods?.length) return null;
+              const DynamicIcon =
+                IconMap[icon] || CategoryIcon;
+
+              return (
+                <Box key={category} sx={{ mb: 3 }}>
+
+                  {/* HEADER */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1
+                    }}
+                  >
+
+                    {/* ICON */}
+                    {DynamicIcon && (
+                      <DynamicIcon
+                        sx={{
+                          color: color,
+                          fontSize: 20
+                        }}
+                      />
+                    )}
+
+                    <TextComponent
+                      value={title}
+                      size={15}
+                      weight={800}
+                      color={color}
+                    />
+                  </Box>
+
+                  <Divider sx={{ my: 1 }} />
+
+                  {/* FOODS */}
+                  {foods?.map((food) => {
+                    const timeKey =
+                      selected?.party_name === "BYSTANDER"
+                        ? "BYSTANDER"
+                        : food.time_id;
+
+                    const assignedTime = assignedFoods[timeKey];
+
+                    const assignedFood =
+                      assignedTime?.foods?.find(
+                        (f) => f.item_id === food.item_id
+                      );
+
+                    return (
+                      <FoodItemAddCard
+                        key={food.item_id}
+                        foodDetail={food}
+                        assignedFood={assignedFood}
+                        onClick={() => handleToggleFood(food)}
+                        onIncrement={() =>
+                          handleIncrement(timeKey, food.item_id)
+                        }
+                        onDecrement={() =>
+                          handleDecrement(timeKey, food.item_id)
+                        }
                       />
                     );
                   })}
                 </Box>
               );
             })}
+
+
         </Box>
 
       </Box>

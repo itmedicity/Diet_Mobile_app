@@ -89,11 +89,14 @@ const MobileFoodOrder = ({
     /* ADD FUNCTION (SEPARATE) */
     const handleAddToCart = useCallback(() => {
 
+        if (!type_slno) {
+            setSelectedFood({})
+            return warningNofity("Please Select Meal !");
+
+        }
         if (!selectedFood?.item_id) return;
-        if (!type_slno) return warningNofity("Please Select Meal !")
 
         const IsAlreadyItemInPending = PendingOrderItems?.some(item => item.item_id === selectedFood.item_id);
-
 
         if (IsAlreadyItemInPending) {
             infoNofity("Item Already in Pending List!")

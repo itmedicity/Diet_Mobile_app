@@ -3,7 +3,7 @@ import { Box, Button } from "@mui/joy";
 import TextComponent from "./TextComponent";
 import OrderSummaryContent from "./OrderSummaryContent";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-import { EmpauthId, errorNofity, warningNofity } from "../Views/Constant/Constant";
+import { EmpauthId, errorNofity, infoNofity, warningNofity } from "../Views/Constant/Constant";
 import OrderStatsCard from "./OrderStatsCard";
 import OrderConfirmationPage from "./OrderConfirmationPage";
 import { format } from "date-fns";
@@ -15,6 +15,7 @@ import {
     useCustomerPreviousCanteenOrder
 } from "../CommonData/UseQuery";
 import PizzaLoader from "./PizzaLoader";
+import ChooseDietType from "../SelectComponents/ChooseDietType";
 
 
 const HEADER_HEIGHT = 60;
@@ -36,6 +37,8 @@ const BottomFloatingPanel = ({
 
     const [showConfetti, setShowConfetti] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [type_slno, setDietType] = useState(0);
+    const [typename, setTypeName] = useState("")
     const queryClient = useQueryClient()
     const id = EmpauthId()
 
@@ -101,7 +104,21 @@ const BottomFloatingPanel = ({
             (time?.foods || []).forEach(food => {
                 if (!food || !food.qty || food.qty <= 0) return;
 
-                if (!food.food_id || !food.time_id || !food.unit_id) {
+                const isBystander =
+                    selected?.party_name === "BYSTANDER";
+
+                // use stored state key for bystander
+                const finalTimeId = isBystander
+                    ? type_slno
+                    : food.time_id;
+
+
+                console.log({
+                    finalTimeId
+                });
+
+
+                if (!food.item_id || !finalTimeId) {
                     hasInvalidItem = true;
                     return;
                 }
@@ -111,19 +128,19 @@ const BottomFloatingPanel = ({
                 );
 
                 orderDetails.push({
-                    diet_type_id: food.time_id,
-                    item_id: food.food_id,
+                    diet_type_id: finalTimeId,
+                    item_id: food.item_id,
                     quantity: Number(food.qty),
                     unit_id: food.unit_id,
                     is_substitute: false
                 });
 
                 canteenDetails.push({
-                    item_id: food.food_id,
+                    item_id: food.item_id,
                     qty: Number(food.qty),
                     price: priceObj?.price,
                     gst: priceObj?.gst_rate,
-                    type_slno: food.time_id,
+                    type_slno: finalTimeId,
                     gst_amount:
                         (Number(priceObj?.price) *
                             Number(food.qty) *
@@ -169,7 +186,7 @@ const BottomFloatingPanel = ({
 
 
     const handleConfirmOrder = async () => {
-        setLoading(true)
+
         const error = validateOrder();
         if (error) return warningNofity(error);
 
@@ -187,13 +204,18 @@ const BottomFloatingPanel = ({
 
         const { orderDetails, canteenDetails, hasInvalidItem } = buildOrderData();
 
+        const isPatient = selected?.party_name === 'PATIENT';
+
+        if (!isPatient && type_slno === 0) return infoNofity("Please Select Expected Delivery Time!");
+
         if (hasInvalidItem)
             return warningNofity("Some items are invalid");
 
         if (!orderDetails.length)
             return warningNofity("No valid food items");
 
-        const isPatient = selected?.party_name === 'PATIENT';
+
+
 
         const canteenPayload = {
             admission_id: ip_no,
@@ -217,7 +239,7 @@ const BottomFloatingPanel = ({
         try {
 
 
-
+            setLoading(true)
             //  NON-PATIENT FLOW
             if (!isPatient) {
                 if (existingCanteenOrderId) {
@@ -361,6 +383,7 @@ const BottomFloatingPanel = ({
                     Close
                 </Button>
             </Box>
+
             {loading && <PizzaLoader />}
             {
                 showConfirmation ? (
@@ -372,10 +395,16 @@ const BottomFloatingPanel = ({
                         }}
                     />
                 ) : activeTab === "list" ? (
-                    <OrderSummaryContent
-                        assignedFoods={assignedFoods}
-                        selected={selected?.party_name}
-                    />
+                    <>
+                        {
+                            selected?.party_name !== 'PATIENT' &&
+                            <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+                        }
+                        <OrderSummaryContent
+                            assignedFoods={assignedFoods}
+                            selected={selected?.party_name}
+                        />
+                    </>
                 ) : (
                     <OrderStatsCard
                         PreviousOrders={PatientDietOrderDetails}
@@ -388,7 +417,6 @@ const BottomFloatingPanel = ({
 
             {
                 (activeTab === "list" && !showConfirmation) &&
-
                 <Box
                     sx={{
                         px: 2,

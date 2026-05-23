@@ -1,22 +1,28 @@
-import React from "react";
+import React, { memo } from "react";
 import { Box } from "@mui/joy";
-
-const options = [
-  { id: 0, label: "All" },
-  { id: 1, label: "Special Meal" },
-  { id: 2, label: "Most Ordered" },
-  { id: 3, label: "Meals" },
-  { id: 4, label: "Beverage" },
-  { id: 5, label: "Veg" },
-  { id: 6, label: "Non-Veg" },
-];
+import { useAllHighlightMaster } from "../CommonData/UseQuery";
 
 const SpecialMealSelectScollBox = ({
-  selectedFilter,
+  selectedFilter = 0,
   setSelectedFilter,
 }) => {
+
+  const {
+    data: allHighlights = [],
+  } = useAllHighlightMaster();
+
+  // ADD DEFAULT ALL OPTION
+
+  const filterData = [
+    {
+      highlight_type_id: 0,
+      highlight_name: "ALL",
+    },
+    ...allHighlights,
+  ];
+
   const handleSelect = (item) => {
-    setSelectedFilter(item.label); //  send label to parent
+    setSelectedFilter(item.highlight_type_id);
   };
 
   return (
@@ -32,12 +38,15 @@ const SpecialMealSelectScollBox = ({
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      {options.map((item) => {
-        const isSelected = selectedFilter === item.label;
+
+      {filterData?.map((item) => {
+
+        const isSelected =
+          Number(selectedFilter) === Number(item.highlight_type_id);
 
         return (
           <Box
-            key={item.id}
+            key={item.highlight_type_id}
             onClick={() => handleSelect(item)}
             sx={{
               fontSize: 11,
@@ -52,7 +61,9 @@ const SpecialMealSelectScollBox = ({
                 ? "#9d25b8"
                 : "transparent",
 
-              color: isSelected ? "#fff" : "#555",
+              color: isSelected
+                ? "#fff"
+                : "#555",
 
               border: isSelected
                 ? "1px solid #9d25b8"
@@ -65,7 +76,7 @@ const SpecialMealSelectScollBox = ({
               },
             }}
           >
-            {item.label}
+            {item.highlight_name}
           </Box>
         );
       })}
@@ -73,4 +84,4 @@ const SpecialMealSelectScollBox = ({
   );
 };
 
-export default SpecialMealSelectScollBox;
+export default memo(SpecialMealSelectScollBox);

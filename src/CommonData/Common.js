@@ -232,6 +232,7 @@ export const DeliveryData = Array.from({ length: 20 }).map((_, index) => {
 
 
 export const groupMeals = (data) => {
+
     if (!data || data.length === 0) return [];
 
     const grouped = data.reduce((acc, item) => {
@@ -243,11 +244,11 @@ export const groupMeals = (data) => {
         }
 
         // check if food already exists (to avoid duplicates)
-        let existingFood = acc[key].find(f => f.food_id === foodId);
+        let existingFood = acc[key].find(f => f.item_id === foodId);
 
         if (!existingFood) {
             existingFood = {
-                food_id: item.item_id,
+                item_id: item.item_id,
                 item_name: item.item_name,
                 category: item.category_name,
                 description: item.description,

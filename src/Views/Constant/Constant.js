@@ -155,118 +155,146 @@ export const CleanHtmlString = (htmlString) => {
 
 
 
+// export const filterFoodsByType = (
+//     foods = [],
+//     selectedFilter = 0
+// ) => {
 
-export const getAgeFromDOB = (dobString) => {
-    if (!dobString) return "";
+//     // ALL
 
-    // Convert "YYYY-MM-DD HH:mm:ss" → ISO
-    const dob = parseISO(dobString.replace(" ", "T"));
-    const today = new Date();
+//     if (
+//         selectedFilter === 0 ||
+//         selectedFilter === "All" ||
+//         selectedFilter === null ||
+//         selectedFilter === undefined
+//     ) {
+//         return foods;
+//     }
 
-    const years = differenceInYears(today, dob);
+//     // FILTER USING HIGHLIGHT TYPE ID
+//     return foods?.filter((food) => {
+//         // SINGLE OBJECT
+//         if (
+//             Number(food.highlight_type_id) ===
+//             Number(selectedFilter)
+//         ) {
+//             return true;
+//         }
 
-    // Date after removing full years
-    const afterYears = new Date(
-        today.getFullYear() - years,
-        today.getMonth(),
-        today.getDate()
-    );
-
-    const months = differenceInMonths(afterYears, dob);
-
-    // Date after removing full months
-    const afterMonths = new Date(
-        afterYears.getFullYear(),
-        afterYears.getMonth() - months,
-        afterYears.getDate()
-    );
-
-    const days = differenceInDays(afterMonths, dob);
-
-    return `${years}Y ${months}M ${days}D`;
-};
-
-
-export const getAgeInYears = (dobString) => {
-    if (!dobString) return 0;
-
-    // Convert "YYYY-MM-DD HH:mm:ss" → ISO
-    const dob = parseISO(dobString.replace(" ", "T"));
-    const today = new Date();
-
-    return differenceInYears(today, dob);
-};
+//         // ARRAY SUPPORT
+//         if (Array.isArray(food.highlights)) {
+//             return food.highlights.some(
+//                 (val) =>
+//                     Number(val.highlight_type_id) ===
+//                     Number(selectedFilter)
+//             );
+//         }
+//         return false;
+//     });
+// };
 
 
-// dietFilter.js
+export const filterFoodsByType = (
+    foods = [],
+    selectedFilter = 0
+) => {
 
-export const filterFoodsByType = (foods, selectedFilter) => {
-    switch (selectedFilter) {
-        case "Special Meal":
-            return foods.filter((f) => f.is_special === 1);
+    const normalizedFoods = foods?.map((food) => ({
+        ...food,
 
-        case "Most Ordered":
-            return foods.filter((f) => f.is_most_ordered === 1);
+        // normalize highlight meta
+        highlight: {
+            id: food?.highlight_type_id,
+            name: food?.highlight_name,
+            icon: food?.highlight_icon,
+            color: food?.color_code,
+            title: food?.highlight_title,
+            description: food?.highlight_description,
+            code: food?.highlight_code
+        }
+    }));
 
-        case "Beverage":
-            return foods.filter((f) => f.is_beverage === 1);
-
-        case "Veg":
-            return foods.filter((f) => f.category === "Veg");
-
-        case "Non-Veg":
-            return foods.filter((f) => f.category === "Non-Veg");
-
-        case "Meals":
-            return foods.filter(
-                (f) => f.time_name === "Lunch" || f.time_name === "Dinner"
-            );
-
-        case "All":
-        default:
-            return foods;
+    // ALL
+    if (
+        selectedFilter === 0 ||
+        selectedFilter === "All" ||
+        selectedFilter === null ||
+        selectedFilter === undefined
+    ) {
+        return normalizedFoods;
     }
+
+    // FILTER USING HIGHLIGHT TYPE ID
+    return normalizedFoods?.filter((food) => {
+
+        // SINGLE OBJECT
+        if (
+            Number(food?.highlight?.id) ===
+            Number(selectedFilter)
+        ) {
+            return true;
+        }
+
+        // ARRAY SUPPORT
+        if (Array.isArray(food.highlights)) {
+            return food.highlights.some(
+                (val) =>
+                    Number(val.highlight_type_id) ===
+                    Number(selectedFilter)
+            );
+        }
+
+        return false;
+    });
 };
-
-
-export const generateOrderId = () => {
-    const random = Math.floor(100000 + Math.random() * 900000);
-    return `ORD-${random}`;
-};
-
-
-const statuses = ["Preparing", "Packed", "Out for Delivery"];
-
-export const randomStatus =
-    statuses[Math.floor(Math.random() * statuses.length)];
-
 
 
 export const buildBystanderCategories = (foods = []) => {
-  const popularNames = ["Biriyani", "Mandi"];
 
-  const grouped = {
-    "Most Popular": [],
-    "Recommended For You": [],
-    "Chef Special": [],
-    "More Items": [],
-  };
+    if (!foods || foods.length === 0) return {};
 
-  foods.forEach((food) => {
-    if (popularNames.includes(food.item_name)) {
-      grouped["Most Popular"].push(food);
-    } else if (food.is_special === 1) {
-      grouped["Chef Special"].push(food);
-    } else {
-      // random distribution between 2 groups
-      const randomGroup =
-        Math.random() > 0.5
-          ? "Recommended For You"
-          : "More Items";
+    // remove duplicate items
+    const uniqueFoods = Object.values(
+        foods.reduce((acc, item) => {
 
-      grouped[randomGroup].push(food);
-    }
-  });
+            if (!acc[item.item_id]) {
 
-  return grouped;
+                // parse price details
+                const parsedPrices = item?.price_details
+                    ? JSON.parse(item.price_details)
+                    : [];
+
+                // find bystander price
+                const bystanderPrice = parsedPrices.find(
+                    (price) => price.party_name === "BYSTANDER"
+                );
+
+                acc[item.item_id] = {
+                    ...item,
+                    // add formatted price object
+                    prices: bystanderPrice
+                        ? [bystanderPrice]
+                        : []
+                };
+            }
+            return acc;
+
+        }, {})
+    );
+
+    const grouped = {};
+
+    uniqueFoods.forEach((food) => {
+
+        const categoryName =
+            food?.highlight_name || "RECOMMENDED FOOD";
+
+        if (!grouped[categoryName]) {
+            grouped[categoryName] = [];
+        }
+
+        grouped[categoryName].push(food);
+    });
+
+    return grouped;
 };

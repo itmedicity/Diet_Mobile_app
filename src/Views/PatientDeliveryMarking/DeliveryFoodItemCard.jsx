@@ -34,10 +34,8 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
 
     const { item_name, description, quantity, unit_code, item_id } = item ?? {};
 
-    console.log({
-        item
-    });
-    
+
+
 
     const queryClient = useQueryClient()
 
@@ -68,22 +66,20 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
         if (!selectedStatus)
             return warningNofity("Select Status Before Updating");
 
-        if (!remarks)
-            return warningNofity("Please Enter Remark");
 
         const payload = {
             // ASSIGNMENT
             assignment_id: patientData?.assignment_id,
             canteen_order_id: patientData?.canteen_order_id,
             item_id: item?.item_id,
-            item_name:item.item_name,
-            meal:item?.type_desc,
+            item_name: item.item_name,
+            meal: item?.type_desc,
             delivered_qty: item?.quantity,
             type_slno: item?.type_slno,
             // STATUS
             delivery_status: selectedStatus,
             // REMARKS
-            remarks: remarks,
+            remarks: remarks || null,
             // UPDATED BY
             updated_by: Number(id),
             // ONLY WHEN DELIVERED

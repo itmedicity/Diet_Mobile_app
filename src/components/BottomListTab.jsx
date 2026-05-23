@@ -3,6 +3,7 @@ import React, { memo, useMemo } from 'react'
 import TextComponent from './TextComponent'
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import FormatListBulletedRoundedIcon from "@mui/icons-material/FormatListBulletedRounded";
+import SwipeUpOrderBar from './SwipeUpOrderBar';
 
 const BottomListTab = ({
     assignedFoods,
@@ -72,7 +73,8 @@ const BottomListTab = ({
                         onOpen("view")
                     }}
                     sx={{
-                        flex: 1,
+                        // flex: 1,
+                        width: hasOrders ? '40%' : '0%',
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
@@ -93,40 +95,14 @@ const BottomListTab = ({
             )}
 
             {/* LIST BUTTON */}
-            <Box
-                onClick={() => onOpen("list")}
-                sx={{
-                    flex: 1,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    px: 2,
-                    cursor: hasItems ? "pointer" : "default",
-                    bgcolor: hasItems ? "#9d25b8" : "#f3f3f3",
-                    color: hasItems ? "#fff" : "#666",
-                    transition: "0.3s",
-                    "&:active": hasItems ? { transform: "scale(0.97)" } : {}
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <FormatListBulletedRoundedIcon sx={{ fontSize: 20, mr: 0.5 }} />
-                    <TextComponent
-                        value={hasItems ? `${totalItems} Items` : "No items"}
-                        size={13}
-                        weight={700}
-                        color={hasItems ? "#fff" : "#666"}
-                    />
-                </Box>
 
-                {hasItems && (
-                    <TextComponent
-                        value={`₹ ${totalAmount}`}
-                        size={14}
-                        weight={800}
-                        color="#fff"
-                    />
-                )}
-            </Box>
+            <SwipeUpOrderBar
+                hasItems={hasItems}
+                totalItems={totalItems}
+                totalAmount={totalAmount}
+                onOpen={onOpen}
+                hasOrders={hasOrders}
+            />
 
         </Box>
     )

@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
 import { Box } from "@mui/joy";
 import SearchComponent from "../../components/SearchComponent";
@@ -17,8 +17,18 @@ const Delivery = () => {
 
     const [seachVal, setSearchVal] = useState("");
 
-    const [deliveryStatus, setDeliveryStatus] = useState("");
+    // LOAD INITIAL VALUE FROM LOCAL STORAGE
+    const [deliveryStatus, setDeliveryStatus] = useState(() => {
+        return localStorage.getItem("delivery_filter") || "";
+    });
 
+    // SAVE WHEN STATUS CHANGES
+    useEffect(() => {
+        localStorage.setItem(
+            "delivery_filter",
+            deliveryStatus
+        );
+    }, [deliveryStatus]);
 
     const filteredData = DeliveryDetail?.filter(item =>
         !deliveryStatus ||
@@ -29,6 +39,7 @@ const Delivery = () => {
         <Box sx={{ width: "100%" }}>
             <LoginEmployeeHeader />
             <SearchComponent value={seachVal} onChange={setSearchVal} />
+
             <DeliveryStatusFilter
                 value={deliveryStatus}
                 onChange={setDeliveryStatus}

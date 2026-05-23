@@ -10,6 +10,8 @@ import { EmpauthId, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
 import FloatingPickupButton from "./FloatingPickupButton";
 import { useQueryClient } from "@tanstack/react-query";
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import MissingOrderItemCard from "./MissingOrderItemCard";
 
 const DeliveryMarkingContainer = () => {
 
@@ -18,7 +20,6 @@ const DeliveryMarkingContainer = () => {
     const { patientData } = location.state || {};
 
     const id = EmpauthId();
-
 
     const {
         fb_ns_name,
@@ -29,8 +30,13 @@ const DeliveryMarkingContainer = () => {
         type_slno,
         type_desc,
         fb_bdc_no,
-        assignment_id
+        assignment_id,
+        ItemStatus
     } = patientData ?? {};
+
+
+
+    const [openPickupModal, setOpenPickupModal] = useState(false);
 
     const {
         data: ItemDetailStatus = [],
@@ -40,23 +46,28 @@ const DeliveryMarkingContainer = () => {
         data: ItemDeliveryStatus = [],
     } = useAllItemDeliveryStatus(canteen_order_id, type_slno);
 
+    const CurrentOrderStatus = ItemDetailStatus?.find(i => i.type_slno === type_slno)
 
+    const deliveryStatus =
+        CurrentOrderStatus?.ItemStatus || "PENDING";
 
     const queryClient = useQueryClient();
 
-    const [openPickupModal, setOpenPickupModal] = useState(false);
-    const [deliveryStatus, setDeliveryStatus] = useState(null);
-
-
     const {
         data: OrderFoodDetails = [],
-        refetch: FetchPatientFoodOrderDetails
+        refetch: FetchPatientFoodOrderDetails,
+        isLoading: isOrderLoading
     } = useOrderItemDetail(canteen_order_id);
 
     const {
         data: PatientExtraOrders = [],
-        refetch: FetcthPatienExtraOrders
+        refetch: FetcthPatienExtraOrders,
+        isLoading: isExtraLoading
     } = usePatientExtraOrders(fb_ipad_slno, 'COMPLETED');
+
+    const isPageLoading =
+        isOrderLoading ||
+        isExtraLoading;
 
     const formattedExtraOrders = useMemo(() => {
         return (PatientExtraOrders || []).map(item => ({
@@ -132,33 +143,21 @@ const DeliveryMarkingContainer = () => {
         ItemDeliveryStatus
     ]);
 
-    useEffect(() => {
-        if (ItemDetailStatus?.length > 0) {
-            setDeliveryStatus(
-                ItemDetailStatus?.[0]?.ItemStatus
-            );
-        }
-    }, [ItemDetailStatus]);
-
-
-    useEffect(() => {
-        if (deliveryStatus === "PENDING") {
-            setOpenPickupModal(true);
-        } else {
-            setOpenPickupModal(false);
-        }
-    }, [deliveryStatus]);
-
-
     const FinalFilteredData = items &&
         type_slno ? (items || [])?.filter(val => Number(val.type_slno) === Number(type_slno))
         : items;
 
 
-    console.log({
-        FinalFilteredData
-    });
-
+    useEffect(() => {
+        const hasItems =
+            FinalFilteredData?.length > 0;
+        if (
+            deliveryStatus === "PENDING" &&
+            hasItems
+        ) {
+            setOpenPickupModal(true);
+        }
+    }, []);
 
     const playPickupSound = () => {
         const audio = new Audio("/pickupnofication.mp3");
@@ -173,10 +172,13 @@ const DeliveryMarkingContainer = () => {
         const payload = {
             assignment_id: patientData?.assignment_id,
             canteen_order_id: patientData?.canteen_order_id,
+            type_slno: type_slno,
             delivery_status: "PICKEDUP",
             remarks: "Order picked up from kitchen",
             updated_by: Number(id),
-            item: FinalFilteredData
+            item: FinalFilteredData,
+            item_name: canteen_order_id,
+            meal: type_desc,
         };
         try {
             const result = await axioslogin.post(
@@ -196,7 +198,7 @@ const DeliveryMarkingContainer = () => {
                 id
             ]);
             setOpenPickupModal(false);
-            setDeliveryStatus("PICKEDUP");
+            // setDeliveryStatus("PICKEDUP");
         } catch (error) {
             console.log(error);
             warningNofity("Something went wrong");
@@ -222,7 +224,7 @@ const DeliveryMarkingContainer = () => {
             />
 
             {
-                deliveryStatus === "PENDING" && (
+                deliveryStatus === "PENDING" && FinalFilteredData?.length > 0 && (
                     <FloatingPickupButton
                         count={FinalFilteredData?.length || 0}
                         onClick={() => setOpenPickupModal(true)}
@@ -247,14 +249,44 @@ const DeliveryMarkingContainer = () => {
                     flexDirection: 'column'
                 }}
             >
-                {FinalFilteredData?.map((food) => (
-                    <DeliveryFoodItemCard
-                        key={`${food.item_id}-${food.type_slno}-${food.quantity}`}
-                        item={food}
-                        patientData={patientData}
-                        deliveryStatus={deliveryStatus}
-                    />
-                ))}
+
+                {
+                    isPageLoading ? (
+
+                        <Box
+                            sx={{
+                                flex: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: "100%"
+                            }}
+                        >
+                            <TextComponent
+                                value="Loading items..."
+                                size={18}
+                                weight={600}
+                                color="#666"
+                            />
+                        </Box>
+
+                    ) : FinalFilteredData?.length > 0 ? (
+
+                        FinalFilteredData.map((food) => (
+                            <DeliveryFoodItemCard
+                                key={`${food.item_id}-${food.type_slno}-${food.quantity}`}
+                                item={food}
+                                patientData={patientData}
+                                deliveryStatus={deliveryStatus}
+                            />
+                        ))
+
+                    ) : (
+
+                        <MissingOrderItemCard />
+
+                    )
+                }
             </Box>
         </Box>
     );

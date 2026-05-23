@@ -452,6 +452,8 @@ export const getFullDetailofItem = async () => {
         if (success === 2 && Array.isArray(data) && data.length > 0) {
             return data;
         }
+
+
         return [];
     } catch (error) {
         console.error("Error In Fetching Detail:", error?.message || error);
@@ -564,3 +566,22 @@ export const getAllOrderItemDetails = async (memoOrder) => {
     }
 };
 
+
+
+export const getAllHighlightTypes = async () => {
+    try {
+        const result = await axioslogin.get(
+            '/highlight/highlight-type'
+        );
+        const { success, data } = result?.data;
+        if (success === 1) {
+            return data || [];
+        } else {
+            return [];
+        }
+    } catch (error) {
+        console.error("Error Fetching Highlight Types:", error);
+        warningNofity("Error Fetching Highlight Types");
+        return [];
+    }
+};
