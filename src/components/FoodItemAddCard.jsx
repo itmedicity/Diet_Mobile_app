@@ -21,6 +21,11 @@ const FoodItemAddCard = ({
     const status = assignedFood ? 1 : 2;
     const description = foodDetail?.description;
 
+    console.log({
+        assignedFood
+    });
+    
+
     return (
         <Box
 

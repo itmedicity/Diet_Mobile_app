@@ -461,7 +461,21 @@ export const getFullDetailofItem = async () => {
     }
 };
 
+export const getFoodandBeverage = async () => {
+    try {
+        const result = await axioslogin.get('/fooditemmast/get-food-bev')
+        const { success, data } = result.data
+        if (success === 2 && Array.isArray(data) && data.length > 0) {
+            return data;
+        }
 
+
+        return [];
+    } catch (error) {
+        console.error("Error In Fetching Detail:", error?.message || error);
+        return [];
+    }
+};
 
 export const getItemFileDetails = async (item_id) => {
 

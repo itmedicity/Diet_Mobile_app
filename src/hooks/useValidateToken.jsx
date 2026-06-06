@@ -15,9 +15,7 @@ const useValidateToken = () => {
                 const res = await axioslogin.get("/validateAccessToken", {
                     signal: controler.signal
                 });
-                console.log({res});
-                
-
+      
                 if (res.status === 200) {
                     const { isValidToken } = res.data;
                     setIsValid(isValidToken);
@@ -25,7 +23,6 @@ const useValidateToken = () => {
                     setIsValid(false);
                 }
             } catch (e) {
-                // console.log("Error validating token:", e);
                 warningNofity("Please Login to Continue..!")
                 localStorage.removeItem("app_auth"); // REMOVE THE AUTH VALUES
                 controler.abort()

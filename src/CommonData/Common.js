@@ -370,7 +370,8 @@ export const groupPreviousOrder = (
             price,
             gst,
             gst_amount,
-            canteen_order_item_id
+            canteen_order_item_id,
+            type_slno
         } = row;
 
         if (!canteen_order_id) return;
@@ -394,6 +395,7 @@ export const groupPreviousOrder = (
             gst,
             gst_amount,
             canteen_order_item_id: canteen_order_item_id || null,
+            type_slno,
 
             // unified structure
             order_id: null,

@@ -30,10 +30,25 @@ const Delivery = () => {
         );
     }, [deliveryStatus]);
 
-    const filteredData = DeliveryDetail?.filter(item =>
-        !deliveryStatus ||
-        item.ItemStatus === deliveryStatus
-    );
+
+
+    const filteredData = DeliveryDetail?.filter(item => {
+        const matchesStatus =
+            !deliveryStatus ||
+            item.ItemStatus === deliveryStatus;
+
+        const search = seachVal.toLowerCase();
+
+        const matchesSearch =
+            !search ||
+            item?.fb_ptc_name?.toLowerCase().includes(search) ||
+            item?.fb_pt_no?.toString().toLowerCase().includes(search) ||
+            item?.fb_bdc_no?.toString().toLowerCase().includes(search);
+
+        return matchesStatus && matchesSearch;
+    });
+
+
 
     return (
         <Box sx={{ width: "100%" }}>

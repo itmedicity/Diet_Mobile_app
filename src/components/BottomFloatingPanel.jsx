@@ -113,11 +113,6 @@ const BottomFloatingPanel = ({
                     : food.time_id;
 
 
-                console.log({
-                    finalTimeId
-                });
-
-
                 if (!food.item_id || !finalTimeId) {
                     hasInvalidItem = true;
                     return;
@@ -270,9 +265,6 @@ const BottomFloatingPanel = ({
 
             //  PATIENT FLOW
             if (existingDietOrderId) {
-
-                console.log("order id working");
-
 
                 await safeApiCall(addDietItems, {
                     order_id: existingDietOrderId,

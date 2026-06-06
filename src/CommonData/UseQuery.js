@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -194,12 +194,29 @@ export const useItemFullDetials = (enabled) => {
         staleTime: Infinity,
         select: (data) => {
             return data?.filter((val) =>
-                Number(val?.item_type_id) === 1 &&
+                (Number(val?.item_type_id) === 1 || Number(val?.item_type_id) === 3) &&
                 Number(val?.is_active) === 1
             )
         }
     })
 }
+
+
+export const useAllFoodAndBeverage = (enabled) => {
+    return useQuery({
+        queryKey: ['food-bev'],
+        queryFn: getFoodandBeverage,
+        enabled: enabled,
+        staleTime: Infinity,
+        select: (data) => {
+            return data?.filter((val) =>
+                (Number(val?.item_type_id) === 1 || Number(val?.item_type_id) === 3) &&
+                Number(val?.is_active) === 1
+            )
+        }
+    })
+}
+
 
 
 export const useAllOrderPartyType = () => {

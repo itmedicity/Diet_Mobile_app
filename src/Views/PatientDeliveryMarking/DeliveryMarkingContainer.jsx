@@ -37,19 +37,23 @@ const DeliveryMarkingContainer = () => {
 
 
     const [openPickupModal, setOpenPickupModal] = useState(false);
-
+    const hasShownModal = useRef(false);
     const {
         data: ItemDetailStatus = [],
+        isLoading: isDetailLoading
     } = useAllAssignedItemStatus(id, assignment_id);
 
     const {
         data: ItemDeliveryStatus = [],
+        isLoading: isStatusLoading
     } = useAllItemDeliveryStatus(canteen_order_id, type_slno);
 
     const CurrentOrderStatus = ItemDetailStatus?.find(i => i.type_slno === type_slno)
 
     const deliveryStatus =
         CurrentOrderStatus?.ItemStatus || "PENDING";
+
+
 
     const queryClient = useQueryClient();
 
@@ -67,7 +71,7 @@ const DeliveryMarkingContainer = () => {
 
     const isPageLoading =
         isOrderLoading ||
-        isExtraLoading;
+        isExtraLoading || isStatusLoading || isDetailLoading;
 
     const formattedExtraOrders = useMemo(() => {
         return (PatientExtraOrders || []).map(item => ({
@@ -149,15 +153,15 @@ const DeliveryMarkingContainer = () => {
 
 
     useEffect(() => {
-        const hasItems =
-            FinalFilteredData?.length > 0;
-        if (
-            deliveryStatus === "PENDING" &&
-            hasItems
-        ) {
+        const hasItems = FinalFilteredData?.length > 0;
+
+        if (isPageLoading) return;  // ← wait for data to fully load
+
+        if (deliveryStatus === "PENDING" && hasItems && !hasShownModal.current) {
+            hasShownModal.current = true;
             setOpenPickupModal(true);
         }
-    }, []);
+    }, [deliveryStatus, FinalFilteredData, isPageLoading]);
 
     const playPickupSound = () => {
         const audio = new Audio("/pickupnofication.mp3");

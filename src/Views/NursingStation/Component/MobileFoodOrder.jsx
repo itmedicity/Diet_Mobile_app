@@ -1,7 +1,11 @@
 import React, { useMemo, useState, useCallback } from "react";
 import { Box, Input, Button } from "@mui/joy";
 import TextComponent from "../../../components/TextComponent";
-import { useAllPatientPreviousOrders, useItemFullDetials, usePatientExtraOrders } from "../../../CommonData/UseQuery";
+import {
+    useAllFoodAndBeverage,
+    useAllPatientPreviousOrders,
+    usePatientExtraOrders
+} from "../../../CommonData/UseQuery";
 import FoodSuggestionItem from "./FoodSuggestionItem";
 import { getFoodPrice } from "../../Constant/Common";
 import { infoNofity, warningNofity } from "../../Constant/Constant";
@@ -26,7 +30,7 @@ const MobileFoodOrder = ({
     const [type_slno, setDietType] = useState(0);
     const [typename, setTypeName] = useState("")
 
-    const { data: ExistFoodDetail = [] } = useItemFullDetials(query.length > 0);
+    const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(query.length > 0);
 
 
     const { data: DietOrders = [],
@@ -50,10 +54,8 @@ const MobileFoodOrder = ({
         );
     }, [PreviousOrders, DietOrders, PatientExtraOrders]);
 
+
     const PendingOrderItems = orders?.find((item) => item?.order_status === "PENDING")?.items;
-
-
-
 
     /* FILTER */
     const filteredSuggestions = useMemo(() => {
@@ -86,6 +88,7 @@ const MobileFoodOrder = ({
 
     }, [personType, setSelectedFood]);
 
+
     /* ADD FUNCTION (SEPARATE) */
     const handleAddToCart = useCallback(() => {
 
@@ -96,7 +99,10 @@ const MobileFoodOrder = ({
         }
         if (!selectedFood?.item_id) return;
 
-        const IsAlreadyItemInPending = PendingOrderItems?.some(item => item.item_id === selectedFood.item_id);
+        const IsAlreadyItemInPending = PendingOrderItems?.some(
+            item => item.item_id === selectedFood.item_id &&
+                Number(item?.type_slno) === Number(type_slno)
+        );
 
         if (IsAlreadyItemInPending) {
             infoNofity("Item Already in Pending List!")

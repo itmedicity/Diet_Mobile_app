@@ -9,10 +9,6 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
 
     const id = EmpauthId()
 
-
-    console.log({ selectedFood,items });
-
-
     /* TOTAL CALCULATION */
     const totalAmount = useMemo(() => {
         return items.reduce((sum, item) => {

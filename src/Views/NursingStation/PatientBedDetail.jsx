@@ -11,7 +11,7 @@ import { buildBystanderCategories, filterFoodsByType, infoNofity, warningNofity 
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
-import { useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, useItemFullDetials, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
+import { useAllFoodAndBeverage, useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
 import { groupMeals } from "../../CommonData/Common";
 import FloatingOrderTaking from "../../components/FloatingOrderTaking";
 import OrderTakingPanel from "./Component/OrderTakingPanel";
@@ -42,7 +42,7 @@ const PatientBedDetail = () => {
 
   const { data: FetchPlanFoodDetail = [] } = usePatientPlanFoodDetails(fullDetail?.plan_id);
 
-  const { data: ExistFoodDetail = [] } = useItemFullDetials(true);
+  const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
 
 
   const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
@@ -106,7 +106,7 @@ const PatientBedDetail = () => {
             time_name: isBystander
               ? "BYSTANDER"
               : food.time_name,
-            foods: [{ ...food, qty: 1 }],
+            foods: [{ ...food, qty: food.qty ?? 1 }],
           },
         };
       }
@@ -146,7 +146,7 @@ const PatientBedDetail = () => {
           ...existingTime,
           foods: [
             ...existingTime.foods,
-            { ...food, qty: 1 }
+            { ...food, qty: food.qty ?? 1 }
           ],
         },
       };
