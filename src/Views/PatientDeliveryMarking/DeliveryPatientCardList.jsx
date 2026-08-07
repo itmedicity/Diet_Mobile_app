@@ -3,7 +3,7 @@ import { Box } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
 import TextComponent from "../../components/TextComponent";
 import DeliveryStatusModal from "./DeliveryStatusModal";
-
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import DoneAllRoundedIcon from "@mui/icons-material/DoneAllRounded";
 import PendingRoundedIcon from "@mui/icons-material/PendingRounded";
@@ -13,6 +13,9 @@ import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
 import { useQueryClient } from "@tanstack/react-query";
+import { Checkbox } from "@mui/material";
+import KingBedIcon from '@mui/icons-material/KingBed';
+import GroupIcon from "@mui/icons-material/Group";
 
 const statusStyles = {
     PENDING: {
@@ -59,7 +62,11 @@ const statusStyles = {
     }
 };
 
-const DeliveryPatientCardList = ({ filterdData = [] }) => {
+const DeliveryPatientCardList = ({ filterdData = [],
+    selectionMode,
+    selectedItems,
+    onToggleSelect,
+}) => {
 
     const navigate = useNavigate();
     const id = EmpauthId();
@@ -68,14 +75,35 @@ const DeliveryPatientCardList = ({ filterdData = [] }) => {
     const [selectedItem, setSelectedItem] = useState(null);
 
     const handleCardClick = (item) => {
+        if (selectionMode) {
+            onToggleSelect(item);
+            return;
+        }
+
         navigate("/deliverydetail", {
             state: { patientData: item }
+        });
+    };
+
+
+    const handleViewClick = (e, item) => {
+        e.stopPropagation();
+        console.log("clicingin s");
+
+        navigate("/deliverydetail", {
+            state: {
+                patientData: item
+            }
         });
     };
 
     const handleStatusClick = (e, item) => {
         e.stopPropagation();
         const status = statusStyles[item?.ItemStatus];
+        console.log({
+            status
+        });
+
         if (status?.label === "Pending") return;
 
         setSelectedItem(item);
@@ -109,11 +137,9 @@ const DeliveryPatientCardList = ({ filterdData = [] }) => {
             console.log(error);
             errorNofity("Something went wrong");
         }
-
-
-
-
     };
+
+
 
     return (
         <>
@@ -123,97 +149,163 @@ const DeliveryPatientCardList = ({ filterdData = [] }) => {
                         statusStyles[item?.ItemStatus] ||
                         statusStyles.PENDING;
 
+                    const isSelected = selectedItems?.some(
+                        x =>
+                            x.canteen_order_id === item.canteen_order_id &&
+                            x.type_slno === item.type_slno
+                    );
+                    const isPatient = item?.party_name?.toLowerCase() === "patient";
                     return (
                         <Box
                             key={index}
-                            onClick={() => handleCardClick(item)}
+
                             sx={{
+                                position: "relative",
                                 width: "100%",
                                 mb: 1.5,
                                 cursor: "pointer",
                                 borderRadius: "18px",
                                 overflow: "hidden",
-                                bgcolor: "#fff",
-                                border: `1px solid ${status.border}`,
-                                boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+                                bgcolor: isSelected ? "#f3ecfe" : "#fff",
+                                border: isSelected
+                                    ? "1px solid #7933ea"
+                                    : `1px solid ${status.border}`,
+                                boxShadow: isSelected
+                                    ? "0 0 0 3px rgba(25,118,210,.12)"
+                                    : "0 6px 20px rgba(0,0,0,.06)",
                                 transition: "all .25s ease",
                                 "&:hover": {
                                     transform: "translateY(-3px)"
                                 }
                             }}
                         >
+                            {selectionMode && item.ItemStatus === "PENDING" && (
+                                <Box
+                                    onClick={() => handleCardClick(item)}
+                                    sx={{
+                                        position: "absolute",
+                                        top: 12,
+                                        left: 12,
+                                        width: 16,
+                                        height: 16,
+                                        borderRadius: "50%",
+                                        bgcolor: isSelected ? "#7933ead4" : "#fff",
+                                        border: "2px solid #7933ea",
+                                        display:"flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: "#fff",
+                                        fontSize: 13,
+                                        fontWeight: 800,
+                                        zIndex: 20
+                                    }}
+                                >
+                                    {isSelected && "✓" }
+                                </Box>
+                            )}
 
                             <Box
                                 sx={{
                                     display: "flex",
                                     justifyContent: "space-between",
                                     p: 1.5,
+                                    pl: selectionMode ? 5 : 0,
                                     borderBottom: "1px solid #f3f3f3"
                                 }}
                             >
                                 <Box sx={{ display: "flex", gap: 1 }}>
+                                    <Box>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            gap: 1
+                                        }}>
+                                            {
+                                                !isPatient &&
+
+                                                <GroupIcon sx={{
+                                                    fontSize: 16,
+                                                    color: '#300d7c'
+                                                }} />
+                                            }
+                                            <TextComponent
+                                                value={item?.fb_ptc_name}
+                                                size={14}
+                                                weight={800}
+                                            />
+
+
+                                        </Box>
+                                        <TextComponent
+                                            value={item?.fb_ns_name}
+                                            size={8}
+                                            weight={700}
+                                            color="#444"
+                                        />
+                                    </Box>
+                                </Box>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
+                                }}>
+
                                     <Box
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStatusClick(e, item);
+                                        }}
                                         sx={{
-                                            width: 42,
-                                            height: 42,
-                                            borderRadius: "50%",
                                             display: "flex",
                                             alignItems: "center",
-                                            justifyContent: "center",
+                                            height: 30,
+                                            gap: 0.5,
+                                            px: 1.2,
+                                            borderRadius: "20px",
                                             bgcolor: status.bg,
-                                            border: `1px solid ${status.border}`
+                                            border: `1px solid ${status.border}`,
+                                            color: status.color,
+                                            cursor: "pointer",
                                         }}
                                     >
+                                        {status.icon}
                                         <TextComponent
-                                            value={item?.fb_bdc_no}
-                                            size={10}
+                                            value={status.label}
+                                            size={8}
                                             weight={800}
                                             color={status.color}
                                         />
                                     </Box>
-
-                                    <Box>
-                                        <TextComponent
-                                            value={item?.fb_ptc_name}
-                                            size={13}
-                                            weight={800}
-                                        />
-                                        <TextComponent
-                                            value={item?.fb_pt_no}
-                                            size={9}
-                                            color="#888"
-                                        />
-                                    </Box>
-                                </Box>
-
-                                <Box
-                                    onClick={(e) =>
-                                        handleStatusClick(e, item)
+                                    {
+                                        selectionMode &&
+                                        <Box
+                                            onClick={(e) => handleViewClick(e, item)}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                height: 30,
+                                                gap: 0.5,
+                                                px: 1.2,
+                                                borderRadius: "20px",
+                                                bgcolor: status.bg,
+                                                border: `1px solid ${status.border}`,
+                                                color: status.color,
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <VisibilityIcon sx={{
+                                                fontSize: 14
+                                            }} />
+                                            <TextComponent
+                                                value={"View"}
+                                                size={8}
+                                                weight={800}
+                                                color={status.color}
+                                            />
+                                        </Box>
                                     }
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        height: 30,
-                                        gap: 0.5,
-                                        px: 1.2,
-                                        borderRadius: "20px",
-                                        bgcolor: status.bg,
-                                        border: `1px solid ${status.border}`,
-                                        color: status.color,
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    {status.icon}
-                                    <TextComponent
-                                        value={status.label}
-                                        size={8}
-                                        weight={800}
-                                        color={status.color}
-                                    />
                                 </Box>
                             </Box>
 
-                            {/* BOTTOM */}
                             <Box
                                 sx={{
                                     p: 1.5,
@@ -221,15 +313,22 @@ const DeliveryPatientCardList = ({ filterdData = [] }) => {
                                     justifyContent: "space-between"
                                 }}
                             >
-                                <Box>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5
+                                }}>
+                                    <KingBedIcon sx={{
+                                        color: status.color,
+                                        fontSize: 19
+                                    }} />
                                     <TextComponent
-                                        value={item?.fb_ns_name}
-                                        size={10}
-                                        weight={700}
-                                        color="#444"
+                                        value={item?.fb_bdc_no}
+                                        size={14}
+                                        weight={900}
+                                        color={status.color}
                                     />
                                 </Box>
-
                                 <Box
                                     sx={{
                                         px: 1.5,

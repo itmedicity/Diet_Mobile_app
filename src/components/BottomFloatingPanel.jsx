@@ -50,6 +50,19 @@ const BottomFloatingPanel = ({
         useCustomerPreviousCanteenOrder(PatientDetail?.ip_no, selected?.party_type_id);
 
 
+    const getPatientDietId = () => {
+
+        if (selected?.party_name !== "PATIENT")
+            return null;
+
+        const food = Object.values(assignedFoods || {})
+            .flatMap(time => time.foods || [])
+            .find(food => food?.patient_schedule?.patient_diet_id);
+
+        return food?.patient_schedule?.patient_diet_id || null;
+    };
+
+
     // TotalAmount for the List of Detail
 
     const totalAmount = useMemo(() => {
@@ -127,6 +140,7 @@ const BottomFloatingPanel = ({
                     item_id: food.item_id,
                     quantity: Number(food.qty),
                     unit_id: food.unit_id,
+                    patient_diet_id: food?.patient_schedule?.patient_diet_id || null,
                     is_substitute: false
                 });
 
@@ -136,6 +150,9 @@ const BottomFloatingPanel = ({
                     price: priceObj?.price,
                     gst: priceObj?.gst_rate,
                     type_slno: finalTimeId,
+                    // diet reference
+                    patient_diet_id:
+                        food?.patient_schedule?.patient_diet_id || null,
                     gst_amount:
                         (Number(priceObj?.price) *
                             Number(food.qty) *
@@ -218,7 +235,8 @@ const BottomFloatingPanel = ({
             nursing_station_id: fb_nurse_stn_slno,
             room_id: fb_bed_slno,
             order_status: "PENDING",
-            created_by: id
+            created_by: id,
+            patient_diet_id: getPatientDietId()
         };
 
         const dietPayload = {
@@ -243,6 +261,7 @@ const BottomFloatingPanel = ({
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
                         patient_id: dietpt_slno,
+                        patient_diet_id: getPatientDietId(),
                         created_by: id,
                         order_status: 'PENDING'
                     });
@@ -278,6 +297,7 @@ const BottomFloatingPanel = ({
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
                         patient_id: dietpt_slno,
+                        patient_diet_id: getPatientDietId(),
                         created_by: id,
                         order_status: 'PENDING'
                     });

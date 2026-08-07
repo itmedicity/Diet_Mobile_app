@@ -26,20 +26,26 @@ const statusConfig = {
     UNDELIVERED: { label: "Undelivered", color: "#adb5bd", bg: "#f8f9fa", icon: CancelIcon },
 };
 
-const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
+const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId }) => {
 
     const id = EmpauthId();
 
+
+    console.log({
+        item
+    });
+
+
     const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
 
-    const { item_name, description, quantity, unit_code, item_id } = item ?? {};
+    const { item_name, description, quantity, unit_code, item_id, patient_diet_id } = item ?? {};
 
 
 
 
     const queryClient = useQueryClient()
 
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("");
     const [remarks, setRemarks] = useState("");
     const [loading, setLoading] = useState(false);
@@ -50,7 +56,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
     };
 
     const allowedStatusFlow = {
-        PENDING: ["PICKEDUP", "CANCELLED"],
+        PENDING: ["DELIVERED", "RETURNED", "UNDELIVERED", "CANCELLED"],
         PICKEDUP: ["DELIVERED", "RETURNED", "UNDELIVERED"],
         DELIVERED: [],
         CANCELLED: [],
@@ -72,10 +78,13 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
             assignment_id: patientData?.assignment_id,
             canteen_order_id: patientData?.canteen_order_id,
             item_id: item?.item_id,
+            patient_diet_id: patient_diet_id,
             item_name: item.item_name,
             meal: item?.type_desc,
             delivered_qty: item?.quantity,
             type_slno: item?.type_slno,
+            source_type: item?.source_type,
+            source_id: item?.source_id,
             // STATUS
             delivery_status: selectedStatus,
             // REMARKS
@@ -122,7 +131,8 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
         remarks,
         item,
         patientData,
-        id
+        id,
+        dietPlanId
     ]);
 
     useEffect(() => {

@@ -13,6 +13,8 @@ import PatientBedDetail from "./Views/NursingStation/PatientBedDetail";
 import DeliveryMarkingContainer from "./Views/PatientDeliveryMarking/DeliveryMarkingContainer";
 import ParentComponent from "./Views/Home/ParentComponent";
 import Delivery from "./Views/PatientDeliveryMarking/Delivery";
+import PaymentMethod from "./Views/PatientOrderDetail/DietPayments/PaymentMethod";
+import PaymentSuccessPage from "./Views/PatientOrderDetail/DietPayments/PaymentSuccessPage";
 
 const Home = lazy(() => import("./Views/Home/Home"))
 
@@ -50,6 +52,16 @@ const routes = createBrowserRouter([
         path: "/deliverydetail",
         element: <DeliveryMarkingContainer />,
       },
+   {
+        path: "/diet/payment",
+        element: <PaymentMethod />,
+      },
+   {
+        path: "/diet/payment/success",
+        element: <PaymentSuccessPage />,
+      },
+      
+      
     ],
     errorElement: <ErrorElement />,
   },

@@ -231,58 +231,129 @@ export const DeliveryData = Array.from({ length: 20 }).map((_, index) => {
 
 
 
-export const groupMeals = (data) => {
+export const groupMeals = (data, schedule = []) => {
 
     if (!data || data.length === 0) return [];
 
+
     const grouped = data.reduce((acc, item) => {
+
         const key = item?.type_desc;
         const foodId = item.item_id;
+
 
         if (!acc[key]) {
             acc[key] = [];
         }
 
-        // check if food already exists (to avoid duplicates)
-        let existingFood = acc[key].find(f => f.item_id === foodId);
+
+        let existingFood = acc[key].find(
+            f => f.item_id === foodId
+        );
+
 
         if (!existingFood) {
+
+
+            // find matching schedule
+            const scheduleDetail = schedule.find(
+                s => s.type_id === item.type_id
+            );
+
+
             existingFood = {
+
                 item_id: item.item_id,
                 item_name: item.item_name,
                 category: item.category_name,
                 description: item.description,
+
                 qty: item.quantity,
+
                 unit_code: item.unit_code,
                 unit_id: item.unit_id,
+
+
                 time_id: item.type_id,
                 time_name: item.type_desc,
-                prices: []   // add prices array
+
+
+                // ADD SCHEDULE DATA HERE
+                patient_schedule: scheduleDetail
+                    ? {
+                        patient_diet_id:
+                            scheduleDetail.patient_diet_id,
+
+                        plan_id:
+                            scheduleDetail.plan_id,
+
+                        process_date:
+                            scheduleDetail.process_date,
+
+                        schedule_status:
+                            scheduleDetail.schedule_status,
+
+                        diet_id:
+                            scheduleDetail.diet_id
+                    }
+                    : null,
+
+
+                prices: []
             };
+
 
             acc[key].push(existingFood);
         }
 
-        // push price (avoid null)
+
+
         if (item?.price !== null) {
-            existingFood?.prices.push({
-                party_type_id: item.party_type_id,
-                party_name: item.party_name,
-                price: item.price,
-                gst_rate: item.gst_rate,
-                discount: item.discount,
-                discount_rate: item.discount_rate
+
+            existingFood.prices.push({
+
+                party_type_id:
+                    item.party_type_id,
+
+                party_name:
+                    item.party_name,
+
+                price:
+                    item.price,
+
+                gst_rate:
+                    item.gst_rate,
+
+                discount:
+                    item.discount,
+
+                discount_rate:
+                    item.discount_rate
             });
+
         }
+
+
         return acc;
+
+
     }, {});
 
-    return Object.keys(grouped)?.map((key) => ({
-        type: key,
-        foods: grouped[key],
-    }));
-};
 
+
+    return Object.keys(grouped).map(key => ({
+
+        type: key,
+
+        foods: grouped[key],
+
+        // meal level schedule
+        schedule:
+            grouped[key]?.[0]?.patient_schedule || null
+
+    }));
+
+};
 
 
 // hanlde session error here
@@ -561,4 +632,62 @@ export const getItemType = (item) => {
     if (item?.extra_order_id !== null) return "EXTRA";
     if (item?.order_detail_id !== null) return "DIET";
     return item?.type;
+};
+
+export const prepareBillingPayload = ({
+    patient,
+    items,
+    createdBy,
+}) => {
+
+    const total_amount = items.reduce(
+        (sum, item) => sum + Number(item.net_amount || 0),
+        0
+    );
+
+    return {
+        patient_id: patient.patient_id,
+        admission_id: patient.admission_id,
+        created_by: createdBy,
+        total_amount,
+
+        items: items.map(item => ({
+
+            // Source Reference
+            reference_id: item.bill_id,
+            reference_table:
+                item.billing_type === "DIET_ORDER"
+                    ? "diet_meal_charge"
+                    : "canteen_order_ledger",
+
+            billing_type: item.billing_type,
+
+            category_id:
+                item.billing_type === "DIET_ORDER"
+                    ? 1
+                    : 2,
+
+            description:
+                item.billing_type === "DIET_ORDER"
+                    ? `Diet Package - ${item.meal_name}`
+                    : item.item_name,
+
+            item_id: item.item_id ?? null,
+
+            quantity: Number(item.quantity),
+
+            rate: Number(item.unit_rate),
+
+            gst: Number(item.gst_rate),
+
+            gst_amount: Number(item.gst_amount),
+
+            discount: Number(item.discount ?? 0),
+
+            amount: Number(item.net_amount),
+
+            service_date: item.created_at,
+        })),
+    };
+
 };

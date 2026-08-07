@@ -547,7 +547,7 @@ export const getAllPatientExtraOrdres = async (admissionId, Status) => {
         });
         const { success, data } = res.data;
 
-        if (success === 1) {
+        if (success === 1) {    
             return data ?? [];
         }
         // fallback for any other success code

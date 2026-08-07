@@ -34,9 +34,17 @@ const PatientBedDetail = () => {
   const [patientFoods, setPatientFoods] = useState({});
   const [bystanderFoods, setBystanderFoods] = useState({});
 
+
+
+
   //  FIXED: dynamic state selection
   const assignedFoods = selected?.party_name === "PATIENT" ? patientFoods : bystanderFoods;
   const setAssignedFoods = selected?.party_name === "PATIENT" ? setPatientFoods : setBystanderFoods;
+
+    console.log({
+    assignedFoods
+  });
+  
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -56,9 +64,19 @@ const PatientBedDetail = () => {
 
   const { data: FetchAllTemplateId = [] } = useAllPateinetFoodDetail(template_id, typeIds);
 
+  // const FinalMappingTemplateFood = useMemo(() => {
+  //   return groupMeals(FetchAllTemplateId);
+  // }, [FetchAllTemplateId]);
+
   const FinalMappingTemplateFood = useMemo(() => {
-    return groupMeals(FetchAllTemplateId);
-  }, [FetchAllTemplateId]);
+    return groupMeals(
+      FetchAllTemplateId,
+      FetchPlanFoodDetail
+    );
+  }, [
+    FetchAllTemplateId,
+    FetchPlanFoodDetail
+  ]);
 
   console.log({
     FinalMappingTemplateFood
