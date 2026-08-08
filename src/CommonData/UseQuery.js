@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -269,5 +269,31 @@ export const useAllHighlightMaster = () => {
 };
 
 
+export const useBystanderBillingDetails = (assignment_detail_id) => {
+    return useQuery({
+        queryKey: ["bystanderbilling", assignment_detail_id],
+        queryFn: () => getBystanderBillingDetails(assignment_detail_id),
+        staleTime: Infinity,
+        enabled: !!assignment_detail_id
+    });
+
+};
 
 
+export const useDeliveryBillDetails = (DeliveredItemDetail = []) => {
+    return useQuery({
+        queryKey: [
+            "deliveryBillDetails",
+            DeliveredItemDetail
+        ],
+        queryFn: () =>
+            getDeliveryBillDetails(
+                DeliveredItemDetail
+            ),
+        staleTime: Infinity,
+        enabled:
+            Array.isArray(DeliveredItemDetail) &&
+            DeliveredItemDetail.length > 0
+    });
+
+};

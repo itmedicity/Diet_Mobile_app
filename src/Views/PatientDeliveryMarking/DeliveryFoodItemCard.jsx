@@ -29,26 +29,20 @@ const statusConfig = {
 const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId }) => {
 
     const id = EmpauthId();
-
-
-    console.log({
-        item
-    });
-
-
-    const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
-
-    const { item_name, description, quantity, unit_code, item_id, patient_diet_id } = item ?? {};
-
-
-
-
-    const queryClient = useQueryClient()
-
     const [expanded, setExpanded] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("");
     const [remarks, setRemarks] = useState("");
     const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient()
+
+    const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
+
+    console.log({
+        item
+    });
+    
+
+    const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled } = item ?? {};
 
     /* TOGGLE SELECT */
     const handleToggle = (st) => {
@@ -141,8 +135,10 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
 
     const visibleStatuses =
         allowedStatusFlow[item?.delivery_status || "PENDING"];
+
     const currentStatus =
         statusConfig[item?.delivery_status || "PENDING"];
+
     return (
         <Box
             sx={{
@@ -170,7 +166,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
                     <TextComponent noWrap value={description} size={9} color="#666" />
                 </Box>
 
-                <Box sx={{ textAlign: "right", display: 'flex', gap: 1 }}>
+                {/* <Box sx={{ textAlign: "right", display: 'flex', gap: 1 }}>
                     <Box>
                         <TextComponent
                             value={`Qty: ${quantity}`}
@@ -195,6 +191,39 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
                     <ExpandMoreRoundedIcon
                         sx={{
                             transform: expanded ? "rotate(180deg)" : "rotate(0deg)"
+                        }}
+                    />
+                </Box> */}
+
+                <Box sx={{ textAlign: "right", display: "flex", gap: 1 }}>
+                    <Box>
+                        <TextComponent
+                            value={`Qty: ${quantity}`}
+                            size={11}
+                            weight={700}
+                        />
+
+                        <Box
+                            sx={{
+                                mt: 0.5,
+                                px: 1.2,
+                                py: 0.3,
+                                borderRadius: 20,
+                                bgcolor: isBilled ? "#E8F5E9" : "#fff",
+                                color: isBilled ? "#2E7D32" : currentStatus.color,
+                                fontSize: 10,
+                                fontWeight: 700
+                            }}
+                        >
+                            {isBilled ? "Billed" : currentStatus.label}
+                        </Box>
+                    </Box>
+
+                    <ExpandMoreRoundedIcon
+                        sx={{
+                            transform: expanded
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)"
                         }}
                     />
                 </Box>

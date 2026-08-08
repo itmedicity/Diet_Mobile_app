@@ -547,7 +547,7 @@ export const getAllPatientExtraOrdres = async (admissionId, Status) => {
         });
         const { success, data } = res.data;
 
-        if (success === 1) {    
+        if (success === 1) {
             return data ?? [];
         }
         // fallback for any other success code
@@ -596,6 +596,107 @@ export const getAllHighlightTypes = async () => {
     } catch (error) {
         console.error("Error Fetching Highlight Types:", error);
         warningNofity("Error Fetching Highlight Types");
+        return [];
+    }
+};
+
+
+export const getBystanderBillingDetails = async (assignment_detail_id) => {
+
+    if (!assignment_detail_id) {
+        warningNofity("Assignment Detail ID is Missing");
+        return {
+            bills: [],
+            bill_items: []
+        };
+    }
+
+    try {
+
+        const res = await axioslogin.post(
+            "/dietdelivery/get-bystander-billing-details",
+            {
+                assignment_detail_id
+            }
+        );
+
+        const {
+            success,
+            data,
+            message
+        } = res?.data || {};
+
+        if (success === 1) {
+            return data ?? {
+                bills: [],
+                bill_items: []
+            };
+        }
+
+        if (success === 2) {
+            return {
+                bills: [],
+                bill_items: []
+            };
+        }
+
+        warningNofity(
+            message || "Failed to fetch bystander billing details"
+        );
+
+        return {
+            bills: [],
+            bill_items: []
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Error In Fetching Bystander Billing Details:",
+            error?.message || error
+        );
+
+        return {
+            bills: [],
+            bill_items: []
+        };
+
+    }
+};
+
+
+export const getDeliveryBillDetails = async (DeliveredItemDetail = []) => {
+
+    if (!Array.isArray(DeliveredItemDetail) || DeliveredItemDetail.length === 0) {
+        return [];
+    }
+
+    const payload = DeliveredItemDetail.map(item => ({
+        delivery_id: item.delivery_id,
+        patient_diet_id: item.patient_diet_id,
+        type_slno: item.type_slno,
+        source_type: item.source_type
+    }));
+
+    try {
+
+        const response = await axioslogin.post(
+            "/dietdelivery/get-bill-details",
+            payload
+        );
+        const {
+            data,
+            success,
+            message
+        } = response?.data || {};
+        if (success === 1) {
+            return Array.isArray(data) ? data : [];
+        }
+        if (success === 2) return [];
+        console.error("Get Delivery Bill Details:", message);
+        return [];
+    } catch (error) {
+        console.error("Error fetching delivery bill details:", error?.message || error);
         return [];
     }
 };

@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import NursingStaionHeader from "../NursingStation/NursingStaionHeader";
 import DeliveryFoodItemCard from "./DeliveryFoodItemCard";
 import TextComponent from "../../components/TextComponent";
-import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useOrderItemDetail, usePatientExtraOrders } from "../../CommonData/UseQuery";
+import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useBystanderBillingDetails, useDeliveryBillDetails, useOrderItemDetail, usePatientExtraOrders } from "../../CommonData/UseQuery";
 import PickupConfirmationModal from "./PickupConfirmationModal";
 import { EmpauthId, infoNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
@@ -14,6 +14,7 @@ import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import MissingOrderItemCard from "./MissingOrderItemCard";
 import ActionCardButton from "./DeliveryMarkingComponent/ActionCardButton";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import { format } from "date-fns";
 
 
 const DeliveryMarkingContainer = () => {
@@ -23,8 +24,6 @@ const DeliveryMarkingContainer = () => {
     const { patientData } = location.state || {};
 
     const id = EmpauthId();
-
-
 
     const {
         fb_ns_name,
@@ -37,21 +36,19 @@ const DeliveryMarkingContainer = () => {
         type_desc,
         fb_bdc_no,
         assignment_id,
-        ItemStatus
+        ItemStatus,
+        assignment_detail_id
     } = patientData ?? {};
+
 
 
 
     const queryClient = useQueryClient();
     const [openPickupModal, setOpenPickupModal] = useState(false);
     const [loading, setLoading] = useState(false)
-    const [billingdetail, setBillDetails] = useState([]);
     const [openbillingdialog, setOpenBillDialog] = useState(false);
 
     const hasShownModal = useRef(false);
-
-
-
 
     const {
         data: ItemDetailStatus = [],
@@ -91,10 +88,43 @@ const DeliveryMarkingContainer = () => {
     } = usePatientExtraOrders(fb_ipad_slno, 'CONFIRMED');
 
 
+    // Getting Orginal Bystander Billing Details
+    const {
+        data: BystanderBillingDetails = {
+            bills: [],
+            bill_items: []
+        },
+        // isLoading: isBillingLoading,
+        refetch: refetchBystanderBilling
+    } = useBystanderBillingDetails(
+        assignment_detail_id
+    );
+
+    //Bill and it Item Details
+    const bills = BystanderBillingDetails?.bills || [];
+    const billItems = BystanderBillingDetails?.bill_items || [];
+
+    console.log({
+        bills,
+        billItems
+    });
+
+
+    // getting only the ledger id for hte billed item using the set for fast look up 
+    const billedLedgerIds = useMemo(() => {
+        return new Set((billItems || [])
+            .map(item => Number(item?.delivery_id))
+            .filter(Boolean));
+    }, [billItems]);
+
+
+    // complete page loading 
     const isPageLoading =
         isOrderLoading ||
         isExtraLoading || isStatusLoading || isDetailLoading;
 
+
+    // correctly formating the extra order for the patient along with the diet and others
     const formattedExtraOrders = useMemo(() => {
         return (PatientExtraOrders || []).map(item => ({
             item_id: item.item_id,
@@ -111,7 +141,7 @@ const DeliveryMarkingContainer = () => {
         }));
     }, [PatientExtraOrders]);
 
-
+    // final ready to go Item Details
     const items = useMemo(() => {
         if (!canteen_order_id) return [];
         const canteenItems = (OrderFoodDetails || []).map(item => ({
@@ -169,9 +199,8 @@ const DeliveryMarkingContainer = () => {
         ItemDeliveryStatus
     ]);
 
-
+    //Filtering Based on the Meal type for only corresponding food items
     const FinalFilteredData = useMemo(() => {
-
         const data = (items || []).map(item => {
 
             let source_type = "CANTEEN_ORDER";
@@ -189,10 +218,24 @@ const DeliveryMarkingContainer = () => {
                 }
             }
 
+
+            /*
+        ============================================
+        CHECK WHETHER THIS ITEM IS ALREADY BILLED
+        ============================================
+        */
+
+            const isBilled = billedLedgerIds?.has(
+                Number(item?.delivery_id)
+            );
+
+
             return {
                 ...item,
                 source_type,
-                source_id
+                source_id,
+                // BILLING STATUS
+                isBilled
             };
         });
 
@@ -204,24 +247,35 @@ const DeliveryMarkingContainer = () => {
         items,
         type_slno,
         dietPlanId,
-        patientData?.party_type_id
+        patientData?.party_type_id,
+        billedLedgerIds
     ]);
 
+    //Getting only the Dlevierd Items
+    const DeliveredItemDetail = useMemo(() => {
+        return FinalFilteredData?.filter((item) => item?.delivery_status === "DELIVERED")
+    }, [FinalFilteredData]);
 
+    //Query to fetch the billing detail items fromt he ledger 
+    const {
+        data: FetchedBillDetail = [],
+        isLoading: isBillingDetailLoading,
+        refetch: refetchBillingDetails
+    } = useDeliveryBillDetails(
+        DeliveredItemDetail
+    );
 
-    // useEffect(() => {
-    //     const hasItems = FinalFilteredData?.length > 0;
+    //Pending not Billed item for generating New Bill if Needed
+    const PendingBillDetails = useMemo(
+        () =>
+            Array.isArray(FetchedBillDetail)
+                ? FetchedBillDetail?.filter(
+                    item => item?.ledger_status === "PENDING"
+                )
+                : [],
+        [FetchedBillDetail]);
 
-    //     if (isPageLoading) return;  // ← wait for data to fully load
-
-    //     if (deliveryStatus === "PENDING" && hasItems && !hasShownModal.current) {
-    //         hasShownModal.current = true;
-    //         setOpenPickupModal(true);
-    //     }
-    // }, [deliveryStatus, FinalFilteredData, isPageLoading]);
-
-
-
+    // Funciton genering the Pick Up sound
     const playPickupSound = () => {
         const audio = new Audio("/pickupnofication.mp3");
         audio.volume = 1;
@@ -231,6 +285,7 @@ const DeliveryMarkingContainer = () => {
     };
 
 
+    // Picking up Function for the Manuial Inside Pickup modal
     const handleConfirmPickup = async () => {
         const payload = {
             assignment_id: patientData?.assignment_id,
@@ -273,43 +328,103 @@ const DeliveryMarkingContainer = () => {
         setOpenPickupModal(false);
     };
 
-
+    // checking the Delivered Item Details
     const hasDeliveredItems = FinalFilteredData?.some(
         (food) => food?.delivery_status === "DELIVERED"
     );
 
 
-    const DeliveredItemDetail = useMemo(() => {
-        return FinalFilteredData?.filter((item) => item?.delivery_status === "DELIVERED")
-    }, [FinalFilteredData]);
+    // Generating the Bill Details for the Order
+    const HandleGenerateBill = useCallback(async () => {
+        // If details could not be fetched, stop
+        if (!Array.isArray(FetchedBillDetail)) {
+            return;
+        }
+        if (FetchedBillDetail.length === 0) {
+            return;
+        }
+        if (!FetchedBillDetail?.length) {
+            return warningNofity(
+                "Billing details are not available"
+            );
+        }
+        /*
+       ==================================================
+       3. ONLY TAKE PENDING ITEMS
+       ==================================================
+       BILLED items belong to previous bills.
+       They must NOT be included again.
+       */
+        if (PendingBillDetails?.length === 0) {
+            infoNofity("All delivered items are already billed");
+            return;
+        }
 
-    const handleViewBill = useCallback(async () => {
-        const payload = DeliveredItemDetail.map(item => ({
-            delivery_id: item.delivery_id,
-            patient_diet_id: item.patient_diet_id, // plan_id
-            type_slno: item.type_slno,
-            source_type: item.source_type
-        }));
+        const totalAmount = FetchedBillDetail?.reduce(
+            (sum, item) =>
+                sum + Number(item?.net_amount || 0),
+            0
+        );
+        const payload = {
+            billing: {
+                patient_id: patientData?.fb_pt_no,
+                admission_id: patientData?.fb_ip_no,
+                assignment_detail_id: assignment_detail_id,
+                billing_party_type: 2, // BYSTANDER
+                billing_date: format(new Date(), "yyyy-MM-dd"),
+                bill_type: "DELIVERY_GENERATED",
+                bill_generated_by: Number(id),
+                bill_generated_location: "DELIVERY",
+                total_amount: totalAmount,
+                paid_amount: 0,
+                balance_amount: totalAmount,
+                billing_status: "OPEN",
+                created_by: Number(id),
+                updated_by: null
+            },
+
+            items: PendingBillDetails?.map(item => ({
+                category_id: 3,
+                description: item.item_name,
+                item_id: item.item_id || null,
+                quantity: Number(item.quantity || 0),
+                rate: Number(item.unit_rate || 0),
+                gst: Number(item.gst_rate || 0),
+                gst_amount: Number(item.gst_amount || 0),
+                discount: Number(item.discount || 0),
+                amount: Number(item.net_amount || 0),
+                reference_table: "diet_service_ledger",
+                reference_id: item.ledger_id,
+                service_date: format(new Date(), "yyyy-MM-dd") || null,
+                bill_item_status: "OPEN"
+            }))
+        };
 
         try {
-            setLoading(true)
-            const response = await axioslogin.post(
-                "/dietdelivery/get-bill-details",
-                payload
-            );
-            const { data, success, message } = response?.data ?? {}
-            if (success === 2) return infoNofity("No Billing Detail Fond");
-            if (success !== 1) return warningNofity("Error in Getting Bill Details");
-            setBillDetails(data);
+            setLoading(true);
+            const response = await axioslogin.post("/dietdelivery/create-bystander-billing", payload);
+            const { success, message, data } = response?.data || {};
+            if (success !== 1) return warningNofity(message || "Failed to generate bill");
+            succesNofity(message || "Bill generated successfully");
+            refetchBystanderBilling()
             setOpenBillDialog(true);
-
         } catch (error) {
-            console.error(error);
-            warningNofity("Unable to fetch bill details");
+            console.error("Generate Bill Error:", error);
+            warningNofity(error?.response?.data?.message || "Unable to generate bill")
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }, [DeliveredItemDetail]);
+
+    }, [
+        assignment_detail_id,
+        patientData,
+        id,
+        FetchedBillDetail,
+        PendingBillDetails,
+        refetchBystanderBilling
+        // handleViewServiceLedger
+    ]);
+
 
     return (
         <Box
@@ -317,9 +432,7 @@ const DeliveryMarkingContainer = () => {
                 height: "100vh",
                 display: "flex",
                 flexDirection: "column",
-                // bgcolor: "#fff",
-            }}
-        >
+            }}>
             <NursingStaionHeader
                 stationname={fb_ns_name}
                 bed={fb_bdc_no}
@@ -395,15 +508,17 @@ const DeliveryMarkingContainer = () => {
                 <ActionCardButton
                     loading={loading}
                     expand={openbillingdialog}
-                    billdetail={billingdetail}
+                    billdetail={billItems}
                     patientData={patientData}
                     floating
                     title="Bill Details"
-                    subtitle="View charges for delivered items"
+                    subtitle="View  delivered items"
                     buttonText="View"
                     icon={ReceiptLongRoundedIcon}
-                    onClick={handleViewBill}
+                    // onClick={handleViewServiceLedger}
+                    isPending={PendingBillDetails?.length}
                     setOpenBillDialog={setOpenBillDialog}
+                    OnGenerateBill={HandleGenerateBill}
                 />
             )}
         </Box>

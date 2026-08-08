@@ -22,11 +22,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import TextComponent from "../../../components/TextComponent";
 import PaymentBillDetailList from "./PaymentBillDetailList";
-import { warningNofity } from "../../Constant/Constant";
+import { EmpauthId, succesNofity, warningNofity } from "../../Constant/Constant";
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import UploadQrcode from "./UploadQrcode";
+import { axioslogin } from "../../../Axios/axios";
 
 
 const PaymentMethod = () => {
@@ -34,6 +35,7 @@ const PaymentMethod = () => {
     const [openQrModal, setOpenQrModal] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const id = EmpauthId();
 
     const paymentData = location.state ?? {};
 
@@ -47,57 +49,202 @@ const PaymentMethod = () => {
 
     const [paymentMethod, setPaymentMethod] = useState("UPI");
     const [upiId, setUpiId] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const totalItems = useMemo(
-        () => items.length,
-        [items]
+    const totalItems = useMemo(() => items.length, [items]);
+
+
+
+    const groupedBills = items?.reduce((acc, item) => {
+        const billingId = Number(item.billing_id);
+        if (!acc[billingId]) {
+            acc[billingId] = [];
+        }
+        acc[billingId].push(item);
+        return acc;
+    }, {});
+
+
+    console.log(
+        groupedBills
     );
 
 
-    console.log({
-        customer
-    });
-    
-    const handleContinue = useCallback(() => {
+    const handleContinue = useCallback(async () => {
+        if (!items?.length) {
+            return warningNofity("No billing items selected");
+        }
+
+        if (!amount || Number(amount) <= 0) {
+            return warningNofity("Invalid payment amount");
+        }
+
+        if (!paymentMethod) {
+            return warningNofity("Please select payment method");
+        }
 
         if (paymentMethod === "UPI") {
-
             if (!upiId.trim()) {
-                warningNofity("Please enter the UPI Transaction ID");
-                return;
+                return warningNofity(
+                    "Please enter the UPI Transaction ID"
+                );
             }
-
-            const upiRegex =
-                /^[A-Za-z0-9]{12,35}$/;
-
+            const upiRegex = /^[A-Za-z0-9]{12,35}$/;
             if (!upiRegex.test(upiId.trim())) {
-                warningNofity("Please enter a valid Transaction  ID");
-                return;
+                return warningNofity(
+                    "Please enter a valid Transaction ID"
+                );
             }
         }
 
-        navigate("/diet/payment/success", {
-            state: {
-                amount,
-                transactionId: upiId,
-                paymentMethod: paymentMethod,
-                paymentDate: new Date().toLocaleString("en-IN"),
-                payerName: customer?.fb_ptc_name,
-                payermobile:customer?.fb_ptc_mobile,
-                referenceNo: upiId,
-                title: "Payment Successful!",
-                message: "Your payment has been received successfully.",
-                buttonText: "Back to Billing",
-            },
+
+        /* PREPARE BILL PAYMENTS  ONE PAYMENT PER BILL   */
+
+        const payments = Object.entries(groupedBills)?.map(([billingId, billItems]) => {
+
+            const billAmount = billItems.reduce((sum, item) => sum + Number(item?.total || 0), 0);
+
+            return {
+                billing_id: Number(billingId),
+                amount: Number(billAmount.toFixed(2)),
+                payment_mode: paymentMethod,
+                collected_by: Number(customer?.collected_by) || null,
+                collected_location: "DELIVERY",
+                remarks: null,
+                /* UPI reference */
+                transaction_id:
+                    paymentMethod === "UPI"
+                        ? upiId.trim()
+                        : null,
+                items: billItems.map(item => ({
+                    billing_detail_id:
+                        Number(item?.billing_detail_id),
+                    paid_amount:
+                        Number(item?.total || 0)
+                }))
+            };
         });
 
+
+        /* VALIDATE BILL DATA */
+
+        if (!payments.length) {
+            return warningNofity(
+                "No bills available for payment"
+            );
+        }
+
+        const invalidBill = payments.find(
+            bill =>
+                !bill.billing_id ||
+                !bill.items?.length
+        );
+
+        if (invalidBill) {
+            return warningNofity("Invalid billing information");
+        }
+        /*  VALIDATE TOTAL*/
+        const calculatedAmount = payments?.reduce((sum, bill) =>
+            sum + Number(bill.amount || 0), 0);
+
+        if (Number(calculatedAmount.toFixed(2)) !== Number(Number(amount).toFixed(2))) {
+            return warningNofity("Payment amount does not match selected items");
+        };
+        /* FINAL PAYLOAD*/
+        const payload = {
+            amount: Number(calculatedAmount.toFixed(2)),
+            payment_mode: paymentMethod,
+            collected_by: Number(id) || null,
+            collected_location: "DELIVERY",
+            remarks: null,
+            transaction_id:
+                paymentMethod === "UPI"
+                    ? upiId.trim()
+                    : null,
+            payments
+        };
+        /*  CALL PAYMENT API */
+        try {
+            try {
+                setLoading(true);
+                const response = await axioslogin.post("/dietdelivery/billing/payment", payload);
+                const { success, message, data } = response?.data || {};
+                if (success !== 1) return warningNofity(message || "Failed to generate bill");
+                succesNofity(message || "Bill generated successfully");
+                navigate(
+                    "/diet/payment/success",
+                    {
+                        state: {
+                            amount:
+                                calculatedAmount,
+
+                            transactionId:
+                                paymentMethod === "UPI"
+                                    ? upiId.trim()
+                                    : null,
+
+                            paymentMethod,
+
+                            paymentDate:
+                                new Date().toLocaleString(
+                                    "en-IN"
+                                ),
+
+                            payerName:
+                                customer?.fb_ptc_name,
+
+                            payermobile:
+                                customer?.fb_ptc_mobile,
+
+                            referenceNo:
+                                paymentMethod === "UPI"
+                                    ? upiId.trim()
+                                    : null,
+
+                            title:
+                                "Payment Successful!",
+
+                            message:
+                                "Your payment has been received successfully.",
+
+                            buttonText:
+                                "Back to Billing",
+
+                            payments,
+
+                            customer
+                        }
+                    }
+                );
+            } catch (error) {
+                console.error("Generate Bill Error:", error);
+                warningNofity(error?.response?.data?.message || "Unable to generate bill")
+            } finally {
+                setLoading(false);
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Payment Error:",
+                error
+            );
+
+            warningNofity(
+                error?.response?.data?.message ||
+                "Unable to process payment"
+            );
+        }
+
     }, [
-        navigate,
         items,
         amount,
-        deliveredAmount,
         paymentMethod,
         upiId,
+        groupedBills,
+        customer,
+        navigate
     ]);
 
     if (!location.state) {
