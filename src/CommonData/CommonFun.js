@@ -700,3 +700,21 @@ export const getDeliveryBillDetails = async (DeliveredItemDetail = []) => {
         return [];
     }
 };
+
+export const getPatientDietRemarkDetails = async (plan_id) => {
+    if (!plan_id) return warningNofity("Plan Id is Missing!");
+    try {
+        const res = await axioslogin.get(`/patientdietplan/plan-remarks/${plan_id}`, {
+            plan_id: plan_id
+        });
+        const { success, data } = res.data;
+        if (success === 2) {
+            return data ? data?.[0] : [];
+        }
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error Fetching Diet Plan Remark Details:", error?.message || error);
+        return [];
+    }
+};

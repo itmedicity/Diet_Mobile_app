@@ -40,9 +40,9 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
     console.log({
         item
     });
-    
 
-    const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled } = item ?? {};
+
+    const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
 
     /* TOGGLE SELECT */
     const handleToggle = (st) => {
@@ -215,7 +215,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
                                 fontWeight: 700
                             }}
                         >
-                            {isBilled ? "Billed" : currentStatus.label}
+                            {ItemBillStatus ? ItemBillStatus : currentStatus.label}
                         </Box>
                     </Box>
 

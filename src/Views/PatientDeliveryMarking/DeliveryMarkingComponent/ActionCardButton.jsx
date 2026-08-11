@@ -69,7 +69,6 @@ const ActionCardButton = ({
 
     const [selectedItems, setSelectedItems] = useState([]);
 
-
     /*
     ============================================================
     CHECK WHETHER BILL ITEMS EXIST
@@ -97,7 +96,6 @@ const ActionCardButton = ({
                 item
             ])
         );
-
     }, [billdetail]);
 
 
@@ -184,6 +182,15 @@ const ActionCardButton = ({
 
     }, [FinalBillingItem]);
 
+    const finalPaidBillItems = useMemo(() => {
+        return items ? items?.filter((item) => item.bill_item_status === 'PAID') : []
+    }, [items]);
+
+
+    const isPaymentPendingExist = useMemo(() => {
+        return items ? items?.some((item) => item.bill_item_status !== 'PAID') : []
+    }, [items]);
+
 
     const summary = useMemo(() => ({
         gross: (items || []).reduce((sum, item) => sum + Number(item?.gross || 0), 0),
@@ -199,6 +206,21 @@ const ActionCardButton = ({
         gst: (finalSelected || []).reduce((sum, item) => sum + Number(item?.gst || 0), 0),
         total: (finalSelected || []).reduce((sum, item) => sum + Number(item?.total || 0), 0)
     }), [finalSelected]);
+
+
+    const billedItemSummary = useMemo(() => ({
+        gross: (finalPaidBillItems || []).reduce((sum, item) => sum + Number(item?.gross || 0), 0),
+        discount: (finalPaidBillItems || []).reduce((sum, item) => sum + Number(item?.discount || 0), 0),
+        gst: (finalPaidBillItems || []).reduce((sum, item) => sum + Number(item?.gst || 0), 0),
+        total: (finalPaidBillItems || []).reduce((sum, item) => sum + Number(item?.total || 0), 0)
+    }), [finalPaidBillItems]);
+
+
+    console.log({
+        finalPaidBillItems,
+        isPaymentPendingExist
+    });
+
     /*
     ============================================================
     NAVIGATE TO PAYMENT
@@ -227,6 +249,8 @@ const ActionCardButton = ({
         summary,
         patientData
     ]);
+
+
 
     return (
 
@@ -260,9 +284,10 @@ const ActionCardButton = ({
 
             <PaymentSummaryCard
                 expand={expand}
-                amount={selectedSummary.total
-                }
+                isPaymentPendingExist={isPaymentPendingExist}
+                amount={selectedSummary.total}
                 deliveredAmount={summary.total}
+                totalPayedAmount={billedItemSummary.total}
                 onClick={handleNavigate}
             />
 

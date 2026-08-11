@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/joy";
 import TextComponent from "../../../components/TextComponent";
 
@@ -35,11 +35,20 @@ const BillDetailList = ({
     selectedItems
 }) => {
 
+    const unpaidItems = useMemo(
+        () => items?.filter((item) => item?.bill_item_status !== "PAID"),
+        [items]
+    );
+
+    const unpaidItemIds = useMemo(
+        () => unpaidItems?.map((item) => item?.id),
+        [unpaidItems]
+    );
+
     // Default select all
     useEffect(() => {
-        setSelectedItems(items.map((val, index) => val?.id));
-    }, [items]);
-
+        setSelectedItems(unpaidItemIds);
+    }, [unpaidItemIds, setSelectedItems]);
 
     const handleToggle = (id) => {
         setSelectedItems(prev =>
@@ -48,6 +57,7 @@ const BillDetailList = ({
                 : [...prev, id]
         );
     };
+
 
     return (
         <Box
@@ -60,7 +70,7 @@ const BillDetailList = ({
                 mb: 2,
                 boxShadow: "0 -6px 30px rgba(0,0,0,.18)",
                 border: "1px dashed #636161",
-                mx:1
+                mx: 1
             }}
         >
             <Box
@@ -77,9 +87,8 @@ const BillDetailList = ({
                 }}
             >
                 {items?.map((item, index) => {
-
                     const checked = selectedItems.includes(item?.id);
-
+                    const isPayed = item?.bill_item_status === 'PAID';
                     return (
                         <Box
                             key={index}
@@ -90,29 +99,28 @@ const BillDetailList = ({
                                 justifyContent: "space-between",
                                 alignItems: "center",
                                 gap: 1,
-                            }}
-                        >
+                            }}>
                             {/* Checkbox */}
                             <Box
-                                onClick={() => handleToggle(item.id)}
+                                onClick={isPayed ? undefined : () => handleToggle(item.id)}
                                 sx={{
                                     cursor: "pointer",
-                                    width: 10,
-                                    height: 10,
+                                    width: isPayed ? 15 : 10,
+                                    height: isPayed ? 15 : 10,
                                     borderRadius: "50%",
-                                    bgcolor: checked ? "#7933ea" : "#fff",
-                                    border: "2px solid #7933ea",
+                                    bgcolor: isPayed ? "#91cd24" : checked ? "#7933ea" : "#fff",
+                                    border: isPayed ? "2px solid #91cd24" : "2px solid #7933ea",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     color: "#fff",
-                                    fontSize: 12,
+                                    fontSize: isPayed ? 14 : 12,
                                     fontWeight: 700,
                                     flexShrink: 0,
                                     transition: ".2s",
                                 }}
                             >
-                                {checked && "✓"}
+                                {isPayed ? "₹" : checked && "✓"}
                             </Box>
 
                             <Box flex={1}>
@@ -138,24 +146,24 @@ const BillDetailList = ({
                     );
                 })}
             </Box>
-
+            {/* {
+                isBilledItemExist && */}
             <Box sx={{ p: 2 }}>
                 <Row
                     label="Item Total"
                     value={`₹${summary.gross.toFixed(2)}`}
                 />
-
                 <Row
                     label="Discount"
                     value={`-₹${summary.discount.toFixed(2)}`}
                     color="#2E7D32"
                 />
-
                 <Row
                     label="GST"
                     value={`₹${summary.gst.toFixed(2)}`}
                 />
             </Box>
+            {/* } */}
         </Box>
     );
 };

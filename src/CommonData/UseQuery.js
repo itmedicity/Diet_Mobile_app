@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -276,7 +276,6 @@ export const useBystanderBillingDetails = (assignment_detail_id) => {
         staleTime: Infinity,
         enabled: !!assignment_detail_id
     });
-
 };
 
 
@@ -297,3 +296,13 @@ export const useDeliveryBillDetails = (DeliveredItemDetail = []) => {
     });
 
 };
+
+export const useDietPlanRemarkDetails = (plan_id) => {
+    return useQuery({
+        queryKey: ["plan-remarks", plan_id],
+        queryFn: () => getPatientDietRemarkDetails(plan_id),
+        staleTime: Infinity,
+        enabled: !!plan_id
+    });
+};
+

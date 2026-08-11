@@ -104,19 +104,6 @@ const DeliveryMarkingContainer = () => {
     const bills = BystanderBillingDetails?.bills || [];
     const billItems = BystanderBillingDetails?.bill_items || [];
 
-    console.log({
-        bills,
-        billItems
-    });
-
-
-    // getting only the ledger id for hte billed item using the set for fast look up 
-    const billedLedgerIds = useMemo(() => {
-        return new Set((billItems || [])
-            .map(item => Number(item?.delivery_id))
-            .filter(Boolean));
-    }, [billItems]);
-
 
     // complete page loading 
     const isPageLoading =
@@ -225,9 +212,15 @@ const DeliveryMarkingContainer = () => {
         ============================================
         */
 
-            const isBilled = billedLedgerIds?.has(
-                Number(item?.delivery_id)
+            const matchedBillItem = billItems?.find(
+                (billItem) =>
+                    Number(billItem?.delivery_id) === Number(item?.delivery_id)
             );
+
+            const ItemBillStatus = matchedBillItem?.bill_item_status || null;
+
+            const isBilled = !!matchedBillItem;
+
 
 
             return {
@@ -235,7 +228,8 @@ const DeliveryMarkingContainer = () => {
                 source_type,
                 source_id,
                 // BILLING STATUS
-                isBilled
+                isBilled,
+                ItemBillStatus
             };
         });
 
@@ -248,7 +242,7 @@ const DeliveryMarkingContainer = () => {
         type_slno,
         dietPlanId,
         patientData?.party_type_id,
-        billedLedgerIds
+        billItems
     ]);
 
     //Getting only the Dlevierd Items
@@ -424,6 +418,11 @@ const DeliveryMarkingContainer = () => {
         refetchBystanderBilling
         // handleViewServiceLedger
     ]);
+
+    console.log({
+        PendingBillDetails
+    });
+
 
 
     return (

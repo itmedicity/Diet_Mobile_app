@@ -11,11 +11,13 @@ const PaymentSummaryCard = ({
     title = "Total Payable",
     subtitle = "Amount Due",
     deliveredAmount,
-    onClick
+    onClick,
+    isPaymentPendingExist,
+    totalPayedAmount
 }) => {
     return (
         <Box
-            onClick={onClick}
+            onClick={!isPaymentPendingExist ? undefined : onClick}
             sx={{
                 display: !expand ? "none" : "flex",
                 alignItems: "center",
@@ -26,8 +28,9 @@ const PaymentSummaryCard = ({
                 borderRadius: 50,
                 position: "relative",
                 overflow: "hidden",
-                background:
-                    "linear-gradient(#7c13ec,#7c13ec 0%,#7c13ec 100%)",
+                background: isPaymentPendingExist
+                    ? "linear-gradient(135deg, #7c13ec 0%, #9b4dff 100%)"
+                    : "linear-gradient(135deg, #15803D 0%, #16A34A 55%, #22C55E 100%)",
                 color: "#ffffff",
                 boxShadow: "0 10px 25px rgba(46,125,50,.28)",
                 transition: ".3s",
@@ -161,7 +164,7 @@ const PaymentSummaryCard = ({
                     />
 
                     <TextComponent
-                        value={subtitle}
+                        value={!isPaymentPendingExist ? "Total Payed" : "Amount Due"}
                         size={12}
                         weight={800}
                         color="#fff"
@@ -188,7 +191,11 @@ const PaymentSummaryCard = ({
                     }}
                 >
                     <TextComponent
-                        value={`₹${Number(amount).toFixed(2)}`}
+                        value={
+                            !isPaymentPendingExist
+                                ? `₹${Number(totalPayedAmount || 0).toFixed(2)}`
+                                : `₹${Number(amount || 0).toFixed(2)}`
+                        }
                         size={16}
                         weight={900}
                         color="#fff"

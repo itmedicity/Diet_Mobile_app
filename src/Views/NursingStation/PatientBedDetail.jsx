@@ -11,13 +11,14 @@ import { buildBystanderCategories, filterFoodsByType, infoNofity, warningNofity 
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
-import { useAllFoodAndBeverage, useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
+import { useAllFoodAndBeverage, useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, useDietPlanRemarkDetails, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
 import { groupMeals } from "../../CommonData/Common";
 import FloatingOrderTaking from "../../components/FloatingOrderTaking";
 import OrderTakingPanel from "./Component/OrderTakingPanel";
 import EmptyDietState from "./Component/EmptyDietState";
 import { IconMap } from "./Component/TrendingIcons";
 import CategoryIcon from '@mui/icons-material/Category';
+import DietPlanRemark from "./Component/DietPlanRemark";
 
 const PatientBedDetail = () => {
 
@@ -41,17 +42,17 @@ const PatientBedDetail = () => {
   const assignedFoods = selected?.party_name === "PATIENT" ? patientFoods : bystanderFoods;
   const setAssignedFoods = selected?.party_name === "PATIENT" ? setPatientFoods : setBystanderFoods;
 
-    console.log({
-    assignedFoods
-  });
-  
-
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const { data: FetchPlanFoodDetail = [] } = usePatientPlanFoodDetails(fullDetail?.plan_id);
 
-  const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
+  const { data: DietPlanRemarkDetails = [] } = useDietPlanRemarkDetails(fullDetail?.plan_id);
 
+  console.log({
+    DietPlanRemarkDetails
+  });
+
+  const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
 
   const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
     useCustomerPreviousCanteenOrder(fullDetail?.ip_no, selected?.party_type_id);
@@ -77,10 +78,6 @@ const PatientBedDetail = () => {
     FetchAllTemplateId,
     FetchPlanFoodDetail
   ]);
-
-  console.log({
-    FinalMappingTemplateFood
-  });
 
 
   const handleOpen = (value) => {
@@ -239,7 +236,13 @@ const PatientBedDetail = () => {
               <SpecialMealSelectScollBox selectedFilter={selectedFilter} setSelectedFilter={setSelectedFilter} />
             )}
         </Box>
-
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: "center"
+        }}>
+          <DietPlanRemark remark={DietPlanRemarkDetails?.remarks} />
+        </Box>
         <Box sx={{ mt: 2 }}>
 
           {
