@@ -12,7 +12,7 @@ import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
 import { useAllFoodAndBeverage, useAllHighlightMaster, useAllPateinetFoodDetail, useAllPatientPreviousOrders, useCustomerPreviousCanteenOrder, useDietPlanRemarkDetails, usePatientPlanFoodDetails } from "../../CommonData/UseQuery";
-import { groupMeals } from "../../CommonData/Common";
+import { groupMeals, groupMealsByProcessDate } from "../../CommonData/Common";
 import FloatingOrderTaking from "../../components/FloatingOrderTaking";
 import OrderTakingPanel from "./Component/OrderTakingPanel";
 import EmptyDietState from "./Component/EmptyDietState";
@@ -29,13 +29,9 @@ const PatientBedDetail = () => {
   const [activeTab, setActiveTab] = useState(null);
   const [openOrderPanel, setOpenOrderPanel] = useState(false);
 
-
-
   //  FIXED: separate states
   const [patientFoods, setPatientFoods] = useState({});
   const [bystanderFoods, setBystanderFoods] = useState({});
-
-
 
 
   //  FIXED: dynamic state selection
@@ -48,9 +44,6 @@ const PatientBedDetail = () => {
 
   const { data: DietPlanRemarkDetails = [] } = useDietPlanRemarkDetails(fullDetail?.plan_id);
 
-  console.log({
-    DietPlanRemarkDetails
-  });
 
   const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
 
@@ -63,11 +56,8 @@ const PatientBedDetail = () => {
     return FetchPlanFoodDetail?.map(item => item.type_id);
   }, [FetchPlanFoodDetail]);
 
-  const { data: FetchAllTemplateId = [] } = useAllPateinetFoodDetail(template_id, typeIds);
 
-  // const FinalMappingTemplateFood = useMemo(() => {
-  //   return groupMeals(FetchAllTemplateId);
-  // }, [FetchAllTemplateId]);
+  const { data: FetchAllTemplateId = [] } = useAllPateinetFoodDetail(template_id, typeIds);
 
   const FinalMappingTemplateFood = useMemo(() => {
     return groupMeals(
@@ -78,6 +68,11 @@ const PatientBedDetail = () => {
     FetchAllTemplateId,
     FetchPlanFoodDetail
   ]);
+
+
+  const ProcessDateGroupedMeals = useMemo(() => {
+    return groupMealsByProcessDate(FinalMappingTemplateFood);
+  }, [FinalMappingTemplateFood]);
 
 
   const handleOpen = (value) => {
@@ -195,9 +190,6 @@ const PatientBedDetail = () => {
     }));
   };
 
-
-
-
   const filteredFoods = useMemo(() => {
     return filterFoodsByType(ExistFoodDetail, selectedFilter);
   }, [ExistFoodDetail, selectedFilter]);
@@ -209,16 +201,10 @@ const PatientBedDetail = () => {
   }, [selected, filteredFoods]);
 
 
-
-
   //  Check localStorage for previous orders
   const hasOrders = useMemo(() => {
     return PreviousOrders && PreviousOrders?.length > 0;
   }, [PreviousOrders]);
-
-
-
-
 
 
   return (
@@ -236,16 +222,20 @@ const PatientBedDetail = () => {
               <SpecialMealSelectScollBox selectedFilter={selectedFilter} setSelectedFilter={setSelectedFilter} />
             )}
         </Box>
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: "center"
-        }}>
-          <DietPlanRemark remark={DietPlanRemarkDetails?.remarks} />
-        </Box>
+        {
+          selected?.party_name === "PATIENT" &&
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: "center"
+          }}>
+            <DietPlanRemark remark={DietPlanRemarkDetails?.remarks} />
+          </Box>
+        }
+
         <Box sx={{ mt: 2 }}>
 
-          {
+          {/* {
             selected?.party_name === "PATIENT" && (
               FinalMappingTemplateFood?.length > 0 ? (
                 FinalMappingTemplateFood?.map((time) => (
@@ -283,6 +273,79 @@ const PatientBedDetail = () => {
                     })}
                   </Box>
                 ))
+              ) : (
+                <EmptyDietState />
+              )
+            )
+          } */}
+          {
+            selected?.party_name === "PATIENT" && (
+              Object.keys(ProcessDateGroupedMeals)?.length > 0 ? (
+                Object.entries(ProcessDateGroupedMeals).map(
+                  ([processDate, meals]) => (
+                    <Box key={processDate} sx={{ mb: 4 }}>
+
+                      {/* PROCESS DATE */}
+                      <TextComponent
+                        color="#0b0b0b"
+                        value={processDate}
+                        size={17}
+                        weight={800}
+                      />
+
+                      <Divider sx={{ my: 1.5 }} />
+
+                      {/* MEALS UNDER THIS PROCESS DATE */}
+                      {meals?.map((time) => (
+                        <Box key={time.type} sx={{ mb: 3 }}>
+
+                          <TextComponent
+                            color="#0b0b0b"
+                            value={time.type}
+                            size={16}
+                            weight={800}
+                          />
+
+                          <Divider sx={{ my: 1 }} />
+
+                          {time.foods.map((food) => {
+                            const assignedTime =
+                              assignedFoods[food?.time_id];
+
+                            const assignedFood =
+                              assignedTime?.foods?.find(
+                                (f) =>
+                                  f?.item_id === food?.item_id
+                              );
+
+                            return (
+                              <FoodItemAddCard
+                                key={food?.item_id}
+                                foodDetail={food}
+                                assignedFood={assignedFood}
+                                onClick={() =>
+                                  handleToggleFood(food)
+                                }
+                                onIncrement={() =>
+                                  handleIncrement(
+                                    food?.time_id,
+                                    food?.item_id
+                                  )
+                                }
+                                onDecrement={() =>
+                                  handleDecrement(
+                                    food?.time_id,
+                                    food?.item_id
+                                  )
+                                }
+                              />
+                            );
+                          })}
+                        </Box>
+                      ))}
+                    </Box>
+                  )
+                )
               ) : (
                 <EmptyDietState />
               )

@@ -65,10 +65,6 @@ const PaymentMethod = () => {
     }, {});
 
 
-    console.log(
-        groupedBills
-    );
-
 
     const handleContinue = useCallback(async () => {
         if (!items?.length) {

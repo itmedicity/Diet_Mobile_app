@@ -231,130 +231,397 @@ export const DeliveryData = Array.from({ length: 20 }).map((_, index) => {
 
 
 
-export const groupMeals = (data, schedule = []) => {
+// export const groupMeals = (data, schedule = []) => {
 
+//     if (!data || data.length === 0) return [];
+
+
+//     const grouped = data.reduce((acc, item) => {
+
+//         const key = item?.type_desc;
+//         const foodId = item.item_id;
+
+
+//         if (!acc[key]) {
+//             acc[key] = [];
+//         }
+
+
+//         let existingFood = acc[key].find(
+//             f => f.item_id === foodId
+//         );
+
+
+//         if (!existingFood) {
+
+
+//             // find matching schedule
+//             const scheduleDetail = schedule.find(
+//                 s => s.type_id === item.type_id
+//             );
+
+
+//             existingFood = {
+
+//                 item_id: item.item_id,
+//                 item_name: item.item_name,
+//                 category: item.category_name,
+//                 description: item.description,
+
+//                 qty: item.quantity,
+
+//                 unit_code: item.unit_code,
+//                 unit_id: item.unit_id,
+
+
+//                 time_id: item.type_id,
+//                 time_name: item.type_desc,
+
+
+//                 // ADD SCHEDULE DATA HERE
+//                 patient_schedule: scheduleDetail
+//                     ? {
+//                         patient_diet_id:
+//                             scheduleDetail.patient_diet_id,
+
+//                         plan_id:
+//                             scheduleDetail.plan_id,
+
+//                         process_date:
+//                             scheduleDetail.process_date,
+
+//                         schedule_status:
+//                             scheduleDetail.schedule_status,
+
+//                         diet_id:
+//                             scheduleDetail.diet_id
+//                     }
+//                     : null,
+
+
+//                 prices: []
+//             };
+
+
+//             acc[key].push(existingFood);
+//         }
+
+
+
+//         if (item?.price !== null) {
+
+//             existingFood.prices.push({
+
+//                 party_type_id:
+//                     item.party_type_id,
+
+//                 party_name:
+//                     item.party_name,
+
+//                 price:
+//                     item.price,
+
+//                 gst_rate:
+//                     item.gst_rate,
+
+//                 discount:
+//                     item.discount,
+
+//                 discount_rate:
+//                     item.discount_rate
+//             });
+
+//         }
+
+
+//         return acc;
+
+
+//     }, {});
+
+
+
+//     return Object.keys(grouped).map(key => ({
+
+//         type: key,
+
+//         foods: grouped[key],
+
+//         // meal level schedule
+//         schedule:
+//             grouped[key]?.[0]?.patient_schedule || null
+
+//     }));
+
+// };
+
+
+// export const groupMeals = (data, schedule = []) => {
+//     if (!data || data.length === 0) return [];
+
+//     const grouped = data.reduce((acc, item) => {
+//         const key = item?.type_desc;
+//         const foodId = item.item_id;
+
+//         if (!acc[key]) {
+//             acc[key] = [];
+//         }
+
+//         let existingFood = acc[key].find(
+//             f => f.item_id === foodId
+//         );
+
+//         if (!existingFood) {
+
+//             // Match schedule by meal type
+//             const scheduleDetail = schedule.find(
+//                 s => s.type_id === item.type_id
+//             );
+
+//             existingFood = {
+//                 item_id: item.item_id,
+//                 item_name: item.item_name,
+//                 category: item.category_name,
+//                 description: item.description,
+//                 qty: item.quantity,
+//                 unit_code: item.unit_code,
+//                 unit_id: item.unit_id,
+//                 time_id: item.type_id,
+//                 time_name: item.type_desc,
+
+//                 // Keep patient schedule details
+//                 patient_schedule: scheduleDetail
+//                     ? {
+//                         patient_diet_id:
+//                             scheduleDetail.patient_diet_id,
+//                         plan_id:
+//                             scheduleDetail.plan_id,
+//                         process_date:
+//                             scheduleDetail.process_date,
+//                         schedule_status:
+//                             scheduleDetail.schedule_status,
+//                         diet_id:
+//                             scheduleDetail.diet_id
+//                     }
+//                     : null,
+
+//                 prices: []
+//             };
+
+//             acc[key].push(existingFood);
+//         }
+
+//         // Add party-wise price
+//         if (item?.price !== null) {
+//             existingFood.prices.push({
+//                 party_type_id: item.party_type_id,
+//                 party_name: item.party_name,
+//                 price: item.price,
+//                 gst_rate: item.gst_rate,
+//                 discount: item.discount,
+//                 discount_rate: item.discount_rate
+//             });
+//         }
+
+//         return acc;
+//     }, {});
+
+//     return Object.keys(grouped)?.map(key => {
+//         const firstFood = grouped[key]?.[0];
+
+//         return {
+//             type: key,
+//             foods: grouped[key],
+
+//             // Keep existing schedule mapping
+//             schedule: firstFood?.patient_schedule || null,
+
+//             // Add processing date at meal level
+//             process_date:
+//                 firstFood?.patient_schedule?.process_date || null
+//         };
+//     });
+// };
+
+// export const groupMeals = (data, schedule = []) => {
+//     if (!data || data.length === 0) return [];
+
+//     const grouped = data.reduce((acc, item) => {
+//         const key = item?.type_desc;
+//         const foodId = item.item_id;
+
+//         if (!acc[key]) {
+//             acc[key] = [];
+//         }
+
+//         let existingFood = acc[key].find(
+//             f => f.item_id === foodId
+//         );
+
+//         if (!existingFood) {
+
+//             // Match schedule by meal type AND process date
+//             const scheduleDetail = schedule?.find(
+//                 s =>
+//                     s?.type_id === item.type_id &&
+//                     s?.process_date?.split(" ")[0] ===
+//                     item?.process_date?.split(" ")[0]
+//             );
+
+//             existingFood = {
+//                 item_id: item.item_id,
+//                 item_name: item.item_name,
+//                 category: item.category_name,
+//                 description: item.description,
+//                 qty: item.quantity,
+//                 unit_code: item.unit_code,
+//                 unit_id: item.unit_id,
+//                 time_id: item.type_id,
+//                 time_name: item.type_desc,
+
+//                 patient_schedule: scheduleDetail
+//                     ? {
+//                         patient_diet_id:
+//                             scheduleDetail.patient_diet_id,
+//                         plan_id:
+//                             scheduleDetail.plan_id,
+//                         process_date:
+//                             scheduleDetail.process_date,
+//                         schedule_status:
+//                             scheduleDetail.schedule_status,
+//                         diet_id:
+//                             scheduleDetail.diet_id
+//                     }
+//                     : null,
+
+//                 prices: []
+//             };
+
+//             acc[key].push(existingFood);
+//         }
+
+//         // Add party-wise price
+//         if (item?.price !== null) {
+//             existingFood.prices.push({
+//                 party_type_id: item.party_type_id,
+//                 party_name: item.party_name,
+//                 price: item.price,
+//                 gst_rate: item.gst_rate,
+//                 discount: item.discount,
+//                 discount_rate: item.discount_rate
+//             });
+//         }
+
+//         return acc;
+//     }, {});
+
+//     return Object.keys(grouped)?.map(key => {
+//         const firstFood = grouped[key]?.[0];
+
+//         return {
+//             type: key,
+//             foods: grouped[key],
+
+//             schedule: firstFood?.patient_schedule || null,
+
+//             process_date:
+//                 firstFood?.patient_schedule?.process_date || null
+//         };
+//     });
+// };
+export const groupMeals = (data, schedule = []) => {
     if (!data || data.length === 0) return [];
 
-
     const grouped = data.reduce((acc, item) => {
+        const processDate = item?.process_date?.split(" ")[0];
 
-        const key = item?.type_desc;
+        // IMPORTANT:
+        // Group by BOTH process date and meal type
+        const key = `${processDate}_${item?.type_desc}`;
+
         const foodId = item.item_id;
-
 
         if (!acc[key]) {
             acc[key] = [];
         }
 
+        // Match schedule by meal type AND process date
+        const scheduleDetail = schedule.find(
+            s =>
+                Number(s.type_id) === Number(item.type_id) &&
+                s.process_date?.split(" ")[0] === processDate
+        );
+
+        if (!scheduleDetail) {
+            return acc;
+        }
 
         let existingFood = acc[key].find(
             f => f.item_id === foodId
         );
 
-
         if (!existingFood) {
-
-
-            // find matching schedule
-            const scheduleDetail = schedule.find(
-                s => s.type_id === item.type_id
-            );
-
-
             existingFood = {
-
                 item_id: item.item_id,
                 item_name: item.item_name,
                 category: item.category_name,
                 description: item.description,
-
                 qty: item.quantity,
-
                 unit_code: item.unit_code,
                 unit_id: item.unit_id,
-
-
                 time_id: item.type_id,
                 time_name: item.type_desc,
 
-
-                // ADD SCHEDULE DATA HERE
-                patient_schedule: scheduleDetail
-                    ? {
-                        patient_diet_id:
-                            scheduleDetail.patient_diet_id,
-
-                        plan_id:
-                            scheduleDetail.plan_id,
-
-                        process_date:
-                            scheduleDetail.process_date,
-
-                        schedule_status:
-                            scheduleDetail.schedule_status,
-
-                        diet_id:
-                            scheduleDetail.diet_id
-                    }
-                    : null,
-
+                patient_schedule: {
+                    patient_diet_id:
+                        scheduleDetail.patient_diet_id,
+                    plan_id:
+                        scheduleDetail.plan_id,
+                    process_date:
+                        scheduleDetail.process_date,
+                    schedule_status:
+                        scheduleDetail.schedule_status,
+                    diet_id:
+                        scheduleDetail.diet_id
+                },
 
                 prices: []
             };
 
-
             acc[key].push(existingFood);
         }
 
-
-
+        // Add party-wise price
         if (item?.price !== null) {
-
             existingFood.prices.push({
-
-                party_type_id:
-                    item.party_type_id,
-
-                party_name:
-                    item.party_name,
-
-                price:
-                    item.price,
-
-                gst_rate:
-                    item.gst_rate,
-
-                discount:
-                    item.discount,
-
-                discount_rate:
-                    item.discount_rate
+                party_type_id: item.party_type_id,
+                party_name: item.party_name,
+                price: item.price,
+                gst_rate: item.gst_rate,
+                discount: item.discount,
+                discount_rate: item.discount_rate
             });
-
         }
 
-
         return acc;
-
-
     }, {});
 
+    return Object.keys(grouped).map(key => {
+        const firstFood = grouped[key]?.[0];
 
+        return {
+            // Still return only LUNCH, BREAKFAST etc.
+            type: firstFood?.time_name || null,
 
-    return Object.keys(grouped).map(key => ({
+            foods: grouped[key],
 
-        type: key,
+            schedule: firstFood?.patient_schedule || null,
 
-        foods: grouped[key],
-
-        // meal level schedule
-        schedule:
-            grouped[key]?.[0]?.patient_schedule || null
-
-    }));
-
+            process_date:
+                firstFood?.patient_schedule?.process_date || null
+        };
+    });
 };
-
 
 // hanlde session error here
 export const handleAuthError = (err) => {
@@ -690,4 +957,29 @@ export const prepareBillingPayload = ({
         })),
     };
 
+};
+
+
+export const groupMealsByProcessDate = (meals = []) => {
+    const grouped = meals?.reduce((acc, meal) => {
+        const processDate = meal?.process_date?.split(" ")[0];
+
+        if (!processDate) return acc;
+
+        if (!acc[processDate]) {
+            acc[processDate] = [];
+        }
+
+        acc[processDate].push(meal);
+
+        return acc;
+    }, {});
+
+    // Sort process dates: earliest date first
+    return Object.keys(grouped)
+        .sort((a, b) => new Date(a) - new Date(b))
+        .reduce((acc, date) => {
+            acc[date] = grouped[date];
+            return acc;
+        }, {});
 };

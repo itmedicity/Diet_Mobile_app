@@ -216,11 +216,6 @@ const ActionCardButton = ({
     }), [finalPaidBillItems]);
 
 
-    console.log({
-        finalPaidBillItems,
-        isPaymentPendingExist
-    });
-
     /*
     ============================================================
     NAVIGATE TO PAYMENT

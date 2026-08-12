@@ -8,10 +8,7 @@ import FloatingBackButton from '../components/FloatingBackButton';
 const ProtectedRoute = () => {
     const { isValid, isLoading } = useValidateToken()
 
-    console.log({
-        isLoading,
-        isValid
-    });
+
 
 
     const handleReturnHome = useCallback(() => {

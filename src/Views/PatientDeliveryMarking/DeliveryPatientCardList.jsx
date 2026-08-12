@@ -101,9 +101,7 @@ const DeliveryPatientCardList = ({ filterdData = [],
     const handleStatusClick = (e, item) => {
         e.stopPropagation();
         const status = statusStyles[item?.ItemStatus];
-        console.log({
-            status
-        });
+
 
         if (status?.label === "Pending") return;
 

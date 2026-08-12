@@ -419,10 +419,6 @@ const DeliveryMarkingContainer = () => {
         // handleViewServiceLedger
     ]);
 
-    console.log({
-        PendingBillDetails
-    });
-
 
 
     return (

@@ -37,10 +37,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
 
     const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
 
-    console.log({
-        item
-    });
-
+   
 
     const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
 
