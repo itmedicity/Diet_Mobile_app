@@ -5,15 +5,12 @@ import AddIcon from '@mui/icons-material/Add';
 
 
 const FloatingOrderTaking = ({ onOpen }) => {
-    
-
     return (
         <Box
-
             onClick={onOpen}
             sx={{
                 position: "fixed",
-                bottom: 140,
+                bottom: 160,
                 right: 20,
                 width: 52,
                 height: 52,

@@ -1,20 +1,21 @@
 import { Box } from "@mui/joy";
-import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import React, { useMemo, useState, useCallback, memo } from "react";
 import { useLocation } from "react-router-dom";
 import NursingStaionHeader from "../NursingStation/NursingStaionHeader";
 import DeliveryFoodItemCard from "./DeliveryFoodItemCard";
 import TextComponent from "../../components/TextComponent";
-import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useBystanderBillingDetails, useDeliveryBillDetails, useOrderItemDetail, usePatientExtraOrders } from "../../CommonData/UseQuery";
-import PickupConfirmationModal from "./PickupConfirmationModal";
+import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useBystanderBillingDetails, useDeliveryBillDetails, useOrderItemDetail, usePatientExtraOrders, useProformaDetails } from "../../CommonData/UseQuery";
+// import PickupConfirmationModal from "./PickupConfirmationModal";
 import { EmpauthId, infoNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
-import FloatingPickupButton from "./FloatingPickupButton";
-import { useQueryClient } from "@tanstack/react-query";
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+// import FloatingPickupButton from "./FloatingPickupButton";
+// import { useQueryClient } from "@tanstack/react-query";
+// import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import MissingOrderItemCard from "./MissingOrderItemCard";
 import ActionCardButton from "./DeliveryMarkingComponent/ActionCardButton";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import { format } from "date-fns";
+import GenerateBillModal from "./DeliveryMarkingComponent/GenerateBillModal";
 
 
 const DeliveryMarkingContainer = () => {
@@ -27,33 +28,40 @@ const DeliveryMarkingContainer = () => {
 
     const {
         fb_ns_name,
-        nurse_station_name,
-        orders,
+        // nurse_station_name,
+        // orders,
         canteen_order_id,
         fb_ipad_slno,
         fb_ip_no,
         type_slno,
-        type_desc,
+        // type_desc,
         fb_bdc_no,
         assignment_id,
-        ItemStatus,
-        assignment_detail_id
+        // ItemStatus,
+        assignment_detail_id,
+        party_name
     } = patientData ?? {};
 
 
 
 
-    const queryClient = useQueryClient();
-    const [openPickupModal, setOpenPickupModal] = useState(false);
+    const isBystander = party_name?.toUpperCase() === "BYSTANDER";
+
+    // const queryClient = useQueryClient();
+    // const [openPickupModal, setOpenPickupModal] = useState(false);
     const [loading, setLoading] = useState(false)
     const [openbillingdialog, setOpenBillDialog] = useState(false);
-
-    const hasShownModal = useRef(false);
+    const [openPaymentTypeModal, setOpenPaymentTypeModal] = useState(false);
 
     const {
         data: ItemDetailStatus = [],
         isLoading: isDetailLoading
     } = useAllAssignedItemStatus(id, assignment_id);
+
+    const {
+        data: ProformaDetails = [],
+    } = useProformaDetails(assignment_detail_id);
+
 
     const {
         data: ItemDeliveryStatus = [],
@@ -77,13 +85,13 @@ const DeliveryMarkingContainer = () => {
 
     const {
         data: OrderFoodDetails = [],
-        refetch: FetchPatientFoodOrderDetails,
+        // refetch: FetchPatientFoodOrderDetails,
         isLoading: isOrderLoading
     } = useOrderItemDetail(canteen_order_id);
 
     const {
         data: PatientExtraOrders = [],
-        refetch: FetcthPatienExtraOrders,
+        // refetch: FetcthPatienExtraOrders,
         isLoading: isExtraLoading
     } = usePatientExtraOrders(fb_ipad_slno, 'CONFIRMED');
 
@@ -101,8 +109,14 @@ const DeliveryMarkingContainer = () => {
     );
 
     //Bill and it Item Details
-    const bills = BystanderBillingDetails?.bills || [];
+    // const bills = BystanderBillingDetails?.bills || [];
     const billItems = BystanderBillingDetails?.bill_items || [];
+
+    // console.log({
+    //     billItems,
+    //     bills
+    // });
+
 
 
     // complete page loading 
@@ -175,7 +189,9 @@ const DeliveryMarkingContainer = () => {
                 develivered_by:
                     matchedDelivery?.develivered_by || null,
                 UpdatedByEmployee:
-                    matchedDelivery?.UpdatedByEmployee || null
+                    matchedDelivery?.UpdatedByEmployee || null,
+
+
             };
         });
 
@@ -186,9 +202,12 @@ const DeliveryMarkingContainer = () => {
         ItemDeliveryStatus
     ]);
 
+
+
+
     //Filtering Based on the Meal type for only corresponding food items
     const FinalFilteredData = useMemo(() => {
-        const data = (items || []).map(item => {
+        const data = (items || [])?.map(item => {
 
             let source_type = "CANTEEN_ORDER";
             let source_id = item.canteen_order_item_id;
@@ -220,9 +239,6 @@ const DeliveryMarkingContainer = () => {
             const ItemBillStatus = matchedBillItem?.bill_item_status || null;
 
             const isBilled = !!matchedBillItem;
-
-
-
             return {
                 ...item,
                 source_type,
@@ -245,19 +261,23 @@ const DeliveryMarkingContainer = () => {
         billItems
     ]);
 
+
     //Getting only the Dlevierd Items
     const DeliveredItemDetail = useMemo(() => {
         return FinalFilteredData?.filter((item) => item?.delivery_status === "DELIVERED")
     }, [FinalFilteredData]);
 
+
     //Query to fetch the billing detail items fromt he ledger 
     const {
         data: FetchedBillDetail = [],
-        isLoading: isBillingDetailLoading,
-        refetch: refetchBillingDetails
+        // isLoading: isBillingDetailLoading,
+        // refetch: refetchBillingDetails
     } = useDeliveryBillDetails(
         DeliveredItemDetail
     );
+
+    const FinalBillItemDetails = billItems?.length > 0 ? billItems : (FetchedBillDetail || []);
 
     //Pending not Billed item for generating New Bill if Needed
     const PendingBillDetails = useMemo(
@@ -270,57 +290,57 @@ const DeliveryMarkingContainer = () => {
         [FetchedBillDetail]);
 
     // Funciton genering the Pick Up sound
-    const playPickupSound = () => {
-        const audio = new Audio("/pickupnofication.mp3");
-        audio.volume = 1;
-        audio.play().catch((err) => {
-            console.log("Audio play blocked:", err);
-        });
-    };
+    // const playPickupSound = () => {
+    //     const audio = new Audio("/pickupnofication.mp3");
+    //     audio.volume = 1;
+    //     audio.play().catch((err) => {
+    //         console.log("Audio play blocked:", err);
+    //     });
+    // };
 
 
     // Picking up Function for the Manuial Inside Pickup modal
-    const handleConfirmPickup = async () => {
-        const payload = {
-            assignment_id: patientData?.assignment_id,
-            patient_diet_id: dietPlanId,
-            canteen_order_id: patientData?.canteen_order_id,
-            type_slno: type_slno,
-            delivery_status: "PICKEDUP",
-            remarks: "Order picked up from kitchen",
-            updated_by: Number(id),
-            item: FinalFilteredData,
-            item_name: canteen_order_id,
-            meal: type_desc,
-        };
-        try {
-            const result = await axioslogin.post(
-                "/dietdelivery/update-delivery-status",
-                payload
-            );
-            const { success, message } = result.data || {};
-            if (success === 0) {
-                return warningNofity(message);
-            }
-            succesNofity(message);
-            FetchPatientFoodOrderDetails()
-            FetcthPatienExtraOrders()
-            playPickupSound();
-            await queryClient.invalidateQueries([
-                "assigneditem",
-                id
-            ]);
-            setOpenPickupModal(false);
-            // setDeliveryStatus("PICKEDUP");
-        } catch (error) {
-            console.log(error);
-            warningNofity("Something went wrong");
-        }
-    };
+    // const handleConfirmPickup = async () => {
+    //     const payload = {
+    //         assignment_id: patientData?.assignment_id,
+    //         patient_diet_id: dietPlanId,
+    //         canteen_order_id: patientData?.canteen_order_id,
+    //         type_slno: type_slno,
+    //         delivery_status: "PICKEDUP",
+    //         remarks: "Order picked up from kitchen",
+    //         updated_by: Number(id),
+    //         item: FinalFilteredData,
+    //         item_name: canteen_order_id,
+    //         meal: type_desc,
+    //     };
+    //     try {
+    //         const result = await axioslogin.post(
+    //             "/dietdelivery/update-delivery-status",
+    //             payload
+    //         );
+    //         const { success, message } = result.data || {};
+    //         if (success === 0) {
+    //             return warningNofity(message);
+    //         }
+    //         succesNofity(message);
+    //         FetchPatientFoodOrderDetails()
+    //         FetcthPatienExtraOrders()
+    //         playPickupSound();
+    //         await queryClient.invalidateQueries([
+    //             "assigneditem",
+    //             id
+    //         ]);
+    //         setOpenPickupModal(false);
+    //         // setDeliveryStatus("PICKEDUP");
+    //     } catch (error) {
+    //         console.log(error);
+    //         warningNofity("Something went wrong");
+    //     }
+    // };
 
-    const handleCloseModal = () => {
-        setOpenPickupModal(false);
-    };
+    // const handleCloseModal = () => {
+    //     setOpenPickupModal(false);
+    // };
 
     // checking the Delivered Item Details
     const hasDeliveredItems = FinalFilteredData?.some(
@@ -328,8 +348,22 @@ const DeliveryMarkingContainer = () => {
     );
 
 
+    const handleOpenPaymentType = useCallback(() => {
+
+        if (!Array.isArray(FetchedBillDetail) || FetchedBillDetail.length === 0) {
+            return warningNofity("Billing details are not available");
+        }
+
+        if (PendingBillDetails?.length === 0) {
+            infoNofity("All delivered items are already billed");
+            return;
+        }
+        setOpenPaymentTypeModal(true);
+
+    }, [FetchedBillDetail, PendingBillDetails]);
+
     // Generating the Bill Details for the Order
-    const HandleGenerateBill = useCallback(async () => {
+    const HandleGenerateBill = useCallback(async (paymentType) => {
         // If details could not be fetched, stop
         if (!Array.isArray(FetchedBillDetail)) {
             return;
@@ -354,7 +388,7 @@ const DeliveryMarkingContainer = () => {
             return;
         }
 
-        const totalAmount = FetchedBillDetail?.reduce(
+        const totalAmount = PendingBillDetails?.reduce(
             (sum, item) =>
                 sum + Number(item?.net_amount || 0),
             0
@@ -364,12 +398,13 @@ const DeliveryMarkingContainer = () => {
                 patient_id: patientData?.fb_pt_no,
                 admission_id: patientData?.fb_ip_no,
                 assignment_detail_id: assignment_detail_id,
-                billing_party_type: 2, // BYSTANDER
+                billing_party_type: 1, // BYSTANDER
                 billing_date: format(new Date(), "yyyy-MM-dd"),
                 bill_type: "DELIVERY_GENERATED",
                 bill_generated_by: Number(id),
                 bill_generated_location: "DELIVERY",
                 total_amount: totalAmount,
+                bill_pay_type: paymentType,
                 paid_amount: 0,
                 balance_amount: totalAmount,
                 billing_status: "OPEN",
@@ -402,6 +437,7 @@ const DeliveryMarkingContainer = () => {
             succesNofity(message || "Bill generated successfully");
             refetchBystanderBilling()
             setOpenBillDialog(true);
+            setOpenPaymentTypeModal(false)
         } catch (error) {
             console.error("Generate Bill Error:", error);
             warningNofity(error?.response?.data?.message || "Unable to generate bill")
@@ -415,7 +451,7 @@ const DeliveryMarkingContainer = () => {
         id,
         FetchedBillDetail,
         PendingBillDetails,
-        refetchBystanderBilling
+        refetchBystanderBilling,
         // handleViewServiceLedger
     ]);
 
@@ -432,7 +468,7 @@ const DeliveryMarkingContainer = () => {
                 stationname={fb_ns_name}
                 bed={fb_bdc_no}
             />
-
+            {/* 
             {
                 deliveryStatus === "PENDING" && FinalFilteredData?.length > 0 && (
                     <FloatingPickupButton
@@ -440,14 +476,14 @@ const DeliveryMarkingContainer = () => {
                         onClick={() => setOpenPickupModal(true)}
                     />
                 )
-            }
+            } */}
 
-            <PickupConfirmationModal
+            {/* <PickupConfirmationModal
                 open={openPickupModal}
                 onClose={handleCloseModal}
                 onConfirm={handleConfirmPickup}
                 patientData={patientData}
-            />
+            /> */}
             <Box
                 sx={{
                     flex: 1,
@@ -482,15 +518,19 @@ const DeliveryMarkingContainer = () => {
 
                     ) : FinalFilteredData?.length > 0 ? (
 
-                        FinalFilteredData?.map((food) => (
-                            <DeliveryFoodItemCard
-                                key={`${food.item_id}-${food.type_slno}-${food.quantity}`}
-                                item={food}
-                                patientData={patientData}
-                                deliveryStatus={deliveryStatus}
-                                dietPlanId={dietPlanId}
-                            />
-                        ))
+                        FinalFilteredData?.map((food) => {
+                            const BillingDetail = FetchedBillDetail?.find((item) => item?.delivery_id === food?.delivery_id);
+                            return (
+                                <DeliveryFoodItemCard
+                                    key={`${food.item_id}-${food.type_slno}-${food.quantity}`}
+                                    item={food}
+                                    BillingDetail={BillingDetail}
+                                    patientData={patientData}
+                                    deliveryStatus={deliveryStatus}
+                                    dietPlanId={dietPlanId}
+                                />
+                            )
+                        })
 
                     ) : (
 
@@ -499,25 +539,36 @@ const DeliveryMarkingContainer = () => {
                     )
                 }
             </Box>
-            {hasDeliveredItems && (
-                <ActionCardButton
-                    loading={loading}
-                    expand={openbillingdialog}
-                    billdetail={billItems}
-                    patientData={patientData}
-                    floating
-                    title="Bill Details"
-                    subtitle="View  delivered items"
-                    buttonText="View"
-                    icon={ReceiptLongRoundedIcon}
-                    // onClick={handleViewServiceLedger}
-                    isPending={PendingBillDetails?.length}
-                    setOpenBillDialog={setOpenBillDialog}
-                    OnGenerateBill={HandleGenerateBill}
-                />
-            )}
+            {
+                (ProformaDetails?.length > 0 || hasDeliveredItems) && (
+                    <ActionCardButton
+                        porformainvoice={ProformaDetails}
+                        loading={loading}
+                        expand={openbillingdialog}
+                        billdetail={FinalBillItemDetails}
+                        patientData={patientData}
+                        floating
+                        title="Bill Details"
+                        subtitle="View bill"
+                        buttonText="View"
+                        icon={ReceiptLongRoundedIcon}
+                        isBystander={isBystander}
+                        setOpenBillDialog={setOpenBillDialog}
+                        OnGenerateBill={handleOpenPaymentType}
+                    />
+                )
+            }
+
+
+            <GenerateBillModal
+                open={openPaymentTypeModal}
+                onClose={() => setOpenPaymentTypeModal(false)}
+                onContinue={(paymentType) => {
+                    HandleGenerateBill(paymentType);
+                }}
+            />
         </Box>
     );
 };
 
-export default DeliveryMarkingContainer;
+export default memo(DeliveryMarkingContainer);

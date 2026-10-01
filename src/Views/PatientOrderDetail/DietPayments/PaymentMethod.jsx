@@ -28,6 +28,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import UploadQrcode from "./UploadQrcode";
 import { axioslogin } from "../../../Axios/axios";
+import PizzaLoader from "../../../components/PizzaLoader";
 
 
 const PaymentMethod = () => {
@@ -50,8 +51,11 @@ const PaymentMethod = () => {
     const [paymentMethod, setPaymentMethod] = useState("UPI");
     const [upiId, setUpiId] = useState("");
     const [loading, setLoading] = useState(false);
+    const [cashAmount, setCashAmount] = useState(Number(amount || 0).toFixed(2));
 
     const totalItems = useMemo(() => items.length, [items]);
+
+
 
 
 
@@ -64,6 +68,17 @@ const PaymentMethod = () => {
         return acc;
     }, {});
 
+
+    const receivedAmount = Number(cashAmount || 0);
+    const billAmount = Number(amount || 0);
+
+    const changeAmount = Math.max(receivedAmount - billAmount, 0);
+
+
+    console.log({
+        receivedAmount,
+        changeAmount
+    });
 
 
     const handleContinue = useCallback(async () => {
@@ -146,19 +161,40 @@ const PaymentMethod = () => {
         if (Number(calculatedAmount.toFixed(2)) !== Number(Number(amount).toFixed(2))) {
             return warningNofity("Payment amount does not match selected items");
         };
+        const isCash = paymentMethod === "CASH";
+        const isUpi = paymentMethod === "UPI";
+        if (isCash) {
+            if (!cashAmount || receivedAmount <= 0) {
+                warningNofity("Please enter the cash received amount");
+                return;
+            }
+
+            if (receivedAmount < billAmount) {
+                warningNofity(
+                    `Cash received cannot be less than ₹${billAmount.toFixed(3)}`
+                );
+                return;
+            }
+        }
         /* FINAL PAYLOAD*/
         const payload = {
             amount: Number(calculatedAmount.toFixed(2)),
             payment_mode: paymentMethod,
             collected_by: Number(id) || null,
             collected_location: "DELIVERY",
-            remarks: null,
-            transaction_id:
-                paymentMethod === "UPI"
-                    ? upiId.trim()
-                    : null,
-            payments
+
+            transaction_id: isUpi ? upiId.trim() : null,
+            received_amount: isCash ? Number(receivedAmount.toFixed(3)) : null,
+            change_amount: isCash ? Number(changeAmount.toFixed(3)) : null,
+            change_status: isCash && changeAmount > 0 ? 'PENDING' : null,
+            remarks: "paid successfully",
+            payments,
         };
+
+        console.log({
+            payload
+        });
+        
         /*  CALL PAYMENT API */
         try {
             try {
@@ -240,7 +276,10 @@ const PaymentMethod = () => {
         upiId,
         groupedBills,
         customer,
-        navigate
+        navigate,
+        receivedAmount,
+        changeAmount
+
     ]);
 
     if (!location.state) {
@@ -257,6 +296,7 @@ const PaymentMethod = () => {
                     gap: 2,
                 }}
             >
+
 
                 <TextComponent
                     value="No payment information found."
@@ -278,594 +318,642 @@ const PaymentMethod = () => {
     }
 
     return (
-
-        <Box
-            sx={{
-                minHeight: "100vh",
-                bgcolor: "#F5F7FA",
-                pb: 2,
-            }}
-        >
-
-            {/* HEADER */}
-
+        <>
+            {
+                loading &&
+                <PizzaLoader />
+            }
             <Box
                 sx={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 1000,
-                    px: 2,
-                    pt: 1,
-                    pb: 1,
-                    bgcolor: "#f5f5f7",
-                    borderBottom: "1px solid #E5E5E5",
-                    backdropFilter: "blur(10px)",
-                }}
-            >
-                <TextComponent
-                    value="Complete Payment"
-                    size={20}
-                    weight={800}
-                />
-
-                <TextComponent
-                    value="Choose your preferred payment method"
-                    size={10}
-                    color="#666"
-                />
-            </Box>
-
-            {/* HERO PAYMENT CARD */}
-
-            <Card
-                sx={{
-                    mx: 2,
-                    p: 3,
-                    borderRadius: 6,
-                    mt: 2,
-                    overflow: "hidden",
-                    position: "relative",
-                    color: "#ffffff",
-                    background:
-                        "linear-gradient(135deg,#7c13ec 0%,#c53dff 45%,#7c13ec 100%)",
-                    boxShadow:
-                        "0 18px 40px rgba(99, 46, 125, 0.35)",
-                }}>
-                <Box
-                    sx={{
-                        position: "absolute",
-                        width: 180,
-                        height: 180,
-                        borderRadius: "50%",
-                        bgcolor: "rgba(255,255,255,.08)",
-                        top: -80,
-                        right: -60,
-                    }}
-                />
-
-                <Box
-                    sx={{
-                        position: "absolute",
-                        width: 100,
-                        height: 100,
-                        borderRadius: "50%",
-                        bgcolor: "rgba(255,255,255,.06)",
-                        bottom: -40,
-                        left: -20,
-                    }}
-                />
-
-                <Box
-                    sx={{
-                        position: "relative",
-                        zIndex: 2,
-                    }}
-                >
-
-                    <Chip
-                        startDecorator={
-                            <VerifiedUserRounded
-                                sx={{ fontSize: 12 }}
-                            />
-                        }
-                        sx={{
-                            bgcolor: "rgba(255,255,255,.16)",
-                            color: "#fff",
-                            mb: 2,
-                            fontWeight: 700,
-                            fontSize: 10
-                        }}
-                    >
-                        Secure Hospital Payment
-                    </Chip>
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                        }}
-                    >
-
-                        <Box>
-
-                            <TextComponent
-                                value="Amount Payable"
-                                size={10}
-                                color="rgba(255,255,255,.75)"
-                            />
-
-                            <TextComponent
-                                value={`₹${Number(amount).toFixed(2)}`}
-                                size={30}
-                                weight={900}
-                                color="#fff"
-                            />
-
-                        </Box>
-
-                        <Box
-                            sx={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: "50%",
-                                bgcolor: "rgba(255,255,255,.15)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-
-                            <AccountBalanceWalletRounded
-                                sx={{
-                                    fontSize: 26,
-                                    color: "#fff",
-                                }}
-                            />
-
-                        </Box>
-
-                    </Box>
-
-                    <Divider
-                        sx={{
-                            my: 2,
-                            borderColor: "rgba(255,255,255,.18)",
-                        }}
-                    />
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                        }}
-                    >
-
-                        <Box>
-
-                            <TextComponent
-                                value="Selected Items"
-                                size={10}
-                                color="rgba(255,255,255,.7)"
-                            />
-
-                            <TextComponent
-                                value={`${totalItems} Items`}
-                                weight={800}
-                                color="#fff"
-                                size={12}
-                            />
-
-                        </Box>
-
-                        <Box>
-
-                            <TextComponent
-                                value="Delivered Amount"
-                                size={10}
-                                color="rgba(255,255,255,.7)"
-                            />
-
-                            <TextComponent
-                                value={`₹${Number(deliveredAmount).toFixed(2)}`}
-                                weight={800}
-                                color="#fff"
-                                size={12}
-                            />
-
-                        </Box>
-
-                    </Box>
-
-                </Box>
-
-            </Card>
-
-            {/* ================= PAYMENT METHOD ================= */}
-
-            <Box
-                sx={{
-                    px: 2,
-                    mt: 3,
-                }}
-            >
-                <TextComponent
-                    value="Choose Payment Method"
-                    size={20}
-                    weight={800}
-                />
-
-                <TextComponent
-                    value="Select how you'd like to pay"
-                    size={10}
-                    color="#777"
-                />
-            </Box>
-
-            {/* CARD */}
-
-            <Card
-                onClick={() => setPaymentMethod("CASH")}
-                sx={{
-                    mx: 2,
-                    mt: 2,
-                    p: 2,
-                    borderRadius: 5,
-                    cursor: "pointer",
-                    transition: ".25s",
-
-                    border:
-                        paymentMethod === "CASH"
-                            ? "1px solid #7d2e71"
-                            : "1px solid #E4E4E4",
-
-                    bgcolor:
-                        paymentMethod === "CASH"
-                            ? "#fdf4ff"
-                            : "#FFF",
-
-                    boxShadow:
-                        paymentMethod === "CASH"
-                            ? "0 10px 28px rgba(46,125,50,.15)"
-                            : "0 4px 18px rgba(0,0,0,.05)",
-
-                    "&:hover": {
-                        transform: "translateY(-3px)",
-                    },
+                    minHeight: "100vh",
+                    bgcolor: "#F5F7FA",
+                    pb: 2,
                 }}
             >
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            gap: 2,
-                            alignItems: "center",
-                        }}
-                    >
-
-                        <Box
-                            sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "50%",
-                                bgcolor: "#f3c1f9",
-
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <CreditCardRounded
-                                sx={{
-                                    fontSize: 24,
-                                    color: "#7c13ec",
-                                }}
-                            />
-                        </Box>
-
-                        <Box>
-
-                            <TextComponent
-                                value="Cash Payment"
-                                weight={700}
-                                size={14}
-                            />
-
-                            <TextComponent
-                                value="Credit / Debit Card"
-                                size={10}
-                                color="#666"
-                            />
-
-                        </Box>
-
-                    </Box>
-
-                    {paymentMethod === "CASH"
-                        ? <CheckCircleRounded color="success" />
-                        : <KeyboardArrowRightRounded />
-                    }
-
-                </Box>
-
-            </Card>
-
-            {/* UPI */}
-
-            <Card
-                onClick={() => setPaymentMethod("UPI")}
-                sx={{
-                    mx: 2,
-                    mt: 2,
-                    p: 2,
-                    borderRadius: 5,
-                    cursor: "pointer",
-                    transition: ".25s",
-
-                    border:
-                        paymentMethod === "UPI"
-                            ? "1px solid #720d6a"
-                            : "1px solid #E4E4E4",
-
-                    bgcolor:
-                        paymentMethod === "UPI"
-                            ? "#fff4ff"
-                            : "#FFF",
-
-                    boxShadow:
-                        paymentMethod === "UPI"
-                            ? "0 10px 28px rgba(46,125,50,.15)"
-                            : "0 4px 18px rgba(0,0,0,.05)",
-
-                    "&:hover": {
-                        transform: "translateY(-3px)",
-                    },
-                }}
-            >
+                {/* HEADER */}
 
                 <Box
                     sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            gap: 2,
-                            alignItems: "center",
-                        }}
-                    >
-
-                        <Box
-                            sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "50%",
-                                bgcolor: "#fdc0f8",
-
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <QrCode2Rounded
-                                sx={{
-                                    fontSize: 24,
-                                    color: "#7c13ec",
-                                }}
-                            />
-                        </Box>
-
-                        <Box>
-
-                            <TextComponent
-                                value="UPI Payment"
-                                weight={700}
-                                size={14}
-                            />
-
-                            <TextComponent
-                                value="Fast & Secure"
-                                size={10}
-                                color="#666"
-                            />
-
-                        </Box>
-
-                    </Box>
-
-                    {paymentMethod === "UPI"
-                        ? <CheckCircleRounded color="success" />
-                        : <KeyboardArrowRightRounded />
-                    }
-
-                </Box>
-
-            </Card>
-
-
-            {/* BILL SUMMARY */}
-
-            <Card
-                sx={{
-                    mx: 2,
-                    mt: 3,
-                    p: 2,
-                    borderRadius: 5,
-                    boxShadow: "0 8px 24px rgba(0,0,0,.06)",
-                }}
-            >
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 2,
-                    }}
-                >
-
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                        }}
-                    >
-
-                        <ReceiptLongRounded
-                            sx={{
-                                color: "#790a6a",
-                            }}
-                        />
-
-                        <TextComponent
-                            value="Bill Summary"
-                            size={17}
-                            weight={800}
-                        />
-
-                    </Box>
-
-                    <Chip
-                        sx={{
-                            color: '#720d6a'
-                        }}
-                    >
-                        {totalItems} Items
-                    </Chip>
-
-                </Box>
-
-                <PaymentBillDetailList
-                    items={items}
-                    summary={summary}
-                />
-
-            </Card>
-
-            {paymentMethod === "UPI" && (
-                <Card
-                    sx={{
-                        mx: 2,
-                        mt: 2,
-                        p: 2.5,
-                        borderRadius: 5,
-                        border: "1px solid #e6c8e3",
-                        bgcolor: "#f4f4f4",
-                        boxShadow: "0 8px 20px rgba(46,125,50,.08)",
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 1000,
+                        px: 2,
+                        pt: 1,
+                        pb: 1,
+                        bgcolor: "#f5f5f7",
+                        borderBottom: "1px solid #E5E5E5",
+                        backdropFilter: "blur(10px)",
                     }}
                 >
                     <TextComponent
-                        value="Enter your Transaction ID"
-                        weight={700}
-                        size={15}
+                        value="Complete Payment"
+                        size={20}
+                        weight={800}
                     />
 
                     <TextComponent
-                        value="Please enter the Transaction Id Before complete the Pay!"
+                        value="Choose your preferred payment method"
                         size={10}
                         color="#666"
                     />
+                </Box>
 
-                    <Input
-                        value={upiId}
-                        onChange={(e) => setUpiId(e.target.value)}
-                        placeholder="e.g. 123456789012"
-                        endDecorator={
-                            <QrCode2RoundedIcon
-                                onClick={() => setOpenQrModal(true)}
-                                sx={{
-                                    cursor: "pointer",
-                                    color: "#720d6a",
-                                    transition: "0.2s",
-                                    "&:hover": {
-                                        color: "#5b0a55",
-                                        transform: "scale(1.1)",
-                                    },
-                                }}
-                            />
-                        }
+                {/* HERO PAYMENT CARD */}
+
+                <Card
+                    sx={{
+                        mx: 2,
+                        p: 3,
+                        borderRadius: 6,
+                        mt: 2,
+                        overflow: "hidden",
+                        position: "relative",
+                        color: "#ffffff",
+                        background:
+                            "linear-gradient(135deg,#7c13ec 0%,#c53dff 45%,#7c13ec 100%)",
+                        boxShadow:
+                            "0 18px 40px rgba(99, 46, 125, 0.35)",
+                    }}>
+                    <Box
                         sx={{
-                            mt: 2,
-                            height: 52,
-                            borderRadius: 12,
-
-                            "&:hover": {
-                                borderColor: "#720d6a",
-                            },
-
-                            "&.Mui-focused": {
-                                borderColor: "#720d6a",
-                                boxShadow: "0 0 0 3px rgba(125, 46, 117, 0.15)",
-                            },
+                            position: "absolute",
+                            width: 180,
+                            height: 180,
+                            borderRadius: "50%",
+                            bgcolor: "rgba(255,255,255,.08)",
+                            top: -80,
+                            right: -60,
                         }}
                     />
 
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            width: 100,
+                            height: 100,
+                            borderRadius: "50%",
+                            bgcolor: "rgba(255,255,255,.06)",
+                            bottom: -40,
+                            left: -20,
+                        }}
+                    />
+
+                    <Box
+                        sx={{
+                            position: "relative",
+                            zIndex: 2,
+                        }}
+                    >
+
+                        <Chip
+                            startDecorator={
+                                <VerifiedUserRounded
+                                    sx={{ fontSize: 12 }}
+                                />
+                            }
+                            sx={{
+                                bgcolor: "rgba(255,255,255,.16)",
+                                color: "#fff",
+                                mb: 2,
+                                fontWeight: 700,
+                                fontSize: 10
+                            }}
+                        >
+                            Secure Hospital Payment
+                        </Chip>
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                            }} >
+
+                            <Box>
+
+                                <TextComponent
+                                    value="Amount Payable"
+                                    size={10}
+                                    color="rgba(255,255,255,.75)"
+                                />
+
+                                <TextComponent
+                                    value={`₹${Number(amount).toFixed(2)}`}
+                                    size={30}
+                                    weight={900}
+                                    color="#fff"
+                                />
+
+                            </Box>
+                            <Box
+                                sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: "50%",
+                                    bgcolor: "rgba(255,255,255,.15)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+
+                                <AccountBalanceWalletRounded
+                                    sx={{
+                                        fontSize: 26,
+                                        color: "#fff",
+                                    }}
+                                />
+
+                            </Box>
+                        </Box>
+
+                        <Divider
+                            sx={{
+                                my: 2,
+                                borderColor: "rgba(255,255,255,.18)",
+                            }}
+                        />
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                            }}
+                        >
+
+                            <Box>
+                                <TextComponent
+                                    value="Selected Items"
+                                    size={10}
+                                    color="rgba(255,255,255,.7)"
+                                />
+
+                                <TextComponent
+                                    value={`${totalItems} Items`}
+                                    weight={800}
+                                    color="#fff"
+                                    size={12}
+                                />
+                            </Box>
+
+                            <Box>
+                                <TextComponent
+                                    value="Delivered Amount"
+                                    size={10}
+                                    color="rgba(255,255,255,.7)"
+                                />
+
+                                <TextComponent
+                                    value={`₹${Number(deliveredAmount).toFixed(2)}`}
+                                    weight={800}
+                                    color="#fff"
+                                    size={12}
+                                />
+                            </Box>
+                        </Box>
+                    </Box>
                 </Card>
-            )}
 
 
-            {/* Floating Continue Button */}
 
-            <Box
-                sx={{
-                    bottom: 0,
-                    mt: 3,
-                    p: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: '#fff'
-                }}
-            >
-                <Button
-                    fullWidth
-                    size="lg"
-                    // color="success"
-                    startDecorator={<ShoppingCartIcon />}
+                <Box
                     sx={{
-                        height: 40,
-                        borderRadius: 999,
-                        fontWeight: 800,
-                        fontSize: 16,
-                        width: '90%',
+                        px: 2,
+                        mt: 3,
+                    }}
+                >
+                    <TextComponent
+                        value="Choose Payment Method"
+                        size={20}
+                        weight={800}
+                    />
+
+                    <TextComponent
+                        value="Select how you'd like to pay"
+                        size={10}
+                        color="#777"
+                    />
+                </Box>
+
+                {/* CARD */}
+
+                <Card
+                    onClick={() => setPaymentMethod("CASH")}
+                    sx={{
+                        mx: 2,
+                        mt: 2,
+                        p: 2,
+                        borderRadius: 5,
+                        cursor: "pointer",
+                        transition: ".25s",
+
+                        border:
+                            paymentMethod === "CASH"
+                                ? "1px solid #7d2e71"
+                                : "1px solid #E4E4E4",
+
+                        bgcolor:
+                            paymentMethod === "CASH"
+                                ? "#fdf4ff"
+                                : "#FFF",
+
                         boxShadow:
-                            "0 12px 30px rgba(125, 46, 116, 0.35)",
-                        background:
-                            "linear-gradient(135deg,#2E7D32,#43A047)",
+                            paymentMethod === "CASH"
+                                ? "0 10px 28px rgba(46,125,50,.15)"
+                                : "0 4px 18px rgba(0,0,0,.05)",
 
                         "&:hover": {
-                            background:
-                                "linear-gradient(135deg,#723d6a,#720d6a)",
-                            transform: "translateY(-2px)",
+                            transform: "translateY(-3px)",
                         },
-                        background: '#7c13ec'
                     }}
-                    onClick={handleContinue}
                 >
-                    Pay ₹{Number(amount).toFixed(2)}
-                </Button>
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 2,
+                                alignItems: "center",
+                            }}
+                        >
+
+                            <Box
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: "50%",
+                                    bgcolor: "#f3c1f9",
+
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <CreditCardRounded
+                                    sx={{
+                                        fontSize: 24,
+                                        color: "#7c13ec",
+                                    }}
+                                />
+                            </Box>
+
+                            <Box>
+
+                                <TextComponent
+                                    value="Cash Payment"
+                                    weight={700}
+                                    size={14}
+                                />
+
+                                <TextComponent
+                                    value="Credit / Debit Card"
+                                    size={10}
+                                    color="#666"
+                                />
+
+                            </Box>
+
+                        </Box>
+
+                        {paymentMethod === "CASH"
+                            ? <CheckCircleRounded color="success" />
+                            : <KeyboardArrowRightRounded />
+                        }
+
+                    </Box>
+
+                </Card>
+
+                {/* UPI */}
+
+                <Card
+                    onClick={() => setPaymentMethod("UPI")}
+                    sx={{
+                        mx: 2,
+                        mt: 2,
+                        p: 2,
+                        borderRadius: 5,
+                        cursor: "pointer",
+                        transition: ".25s",
+
+                        border:
+                            paymentMethod === "UPI"
+                                ? "1px solid #720d6a"
+                                : "1px solid #E4E4E4",
+
+                        bgcolor:
+                            paymentMethod === "UPI"
+                                ? "#fff4ff"
+                                : "#FFF",
+
+                        boxShadow:
+                            paymentMethod === "UPI"
+                                ? "0 10px 28px rgba(46,125,50,.15)"
+                                : "0 4px 18px rgba(0,0,0,.05)",
+
+                        "&:hover": {
+                            transform: "translateY(-3px)",
+                        },
+                    }}
+                >
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                gap: 2,
+                                alignItems: "center",
+                            }}
+                        >
+
+                            <Box
+                                sx={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: "50%",
+                                    bgcolor: "#fdc0f8",
+
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <QrCode2Rounded
+                                    sx={{
+                                        fontSize: 24,
+                                        color: "#7c13ec",
+                                    }}
+                                />
+                            </Box>
+
+                            <Box>
+
+                                <TextComponent
+                                    value="UPI Payment"
+                                    weight={700}
+                                    size={14}
+                                />
+
+                                <TextComponent
+                                    value="Fast & Secure"
+                                    size={10}
+                                    color="#666"
+                                />
+
+                            </Box>
+
+                        </Box>
+
+                        {paymentMethod === "UPI"
+                            ? <CheckCircleRounded color="success" />
+                            : <KeyboardArrowRightRounded />
+                        }
+
+                    </Box>
+
+                </Card>
+
+
+                {/* BILL SUMMARY */}
+
+                <Card
+                    sx={{
+                        mx: 2,
+                        mt: 3,
+                        p: 2,
+                        borderRadius: 5,
+                        boxShadow: "0 8px 24px rgba(0,0,0,.06)",
+                    }}
+                >
+
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 2,
+                        }}
+                    >
+
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+
+                            <ReceiptLongRounded
+                                sx={{
+                                    color: "#790a6a",
+                                }}
+                            />
+
+                            <TextComponent
+                                value="Bill Summary"
+                                size={17}
+                                weight={800}
+                            />
+
+                        </Box>
+
+                        <Chip
+                            sx={{
+                                color: '#720d6a'
+                            }}
+                        >
+                            {totalItems} Items
+                        </Chip>
+
+                    </Box>
+
+                    <PaymentBillDetailList
+                        items={items}
+                        summary={summary}
+                    />
+
+                </Card>
+
+                {["UPI", "CASH"].includes(paymentMethod) && (
+                    <Card
+                        sx={{
+                            mx: 2,
+                            mt: 2,
+                            p: 2.5,
+                            borderRadius: 5,
+                            border: "1px solid #e6c8e3",
+                            bgcolor: "#f4f4f4",
+                            boxShadow: "0 8px 20px rgba(46,125,50,.08)",
+                        }}
+                    >
+                        <TextComponent
+                            value={
+                                paymentMethod === "UPI"
+                                    ? "Enter your Transaction ID"
+                                    : "Enter Cash Amount"
+                            }
+                            weight={700}
+                            size={15}
+                        />
+
+                        <TextComponent
+                            value={
+                                paymentMethod === "UPI"
+                                    ? "Please enter the Transaction Id Before complete the Pay!"
+                                    : "Please enter the amount received in cash"
+                            }
+                            size={10}
+                            color="#666"
+                        />
+
+                        <Input
+                            type={paymentMethod === "CASH" ? "number" : "text"}
+                            value={paymentMethod === "UPI" ? upiId : cashAmount}
+                            onChange={(e) => {
+                                if (paymentMethod === "UPI") {
+                                    setUpiId(e.target.value);
+                                } else {
+                                    setCashAmount(e.target.value);
+                                }
+                            }}
+                            placeholder={
+                                paymentMethod === "UPI"
+                                    ? "e.g. 123456789012"
+                                    : "e.g. 1000"
+                            }
+                            startDecorator={
+                                paymentMethod === "CASH" ? (
+                                    <TextComponent
+                                        value="₹"
+                                        weight={700}
+                                        size={16}
+                                        color="#720d6a"
+                                    />
+                                ) : undefined
+                            }
+                            endDecorator={
+                                paymentMethod === "UPI" ? (
+                                    <QrCode2RoundedIcon
+                                        onClick={() => setOpenQrModal(true)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            color: "#720d6a",
+                                            transition: "0.2s",
+                                            "&:hover": {
+                                                color: "#5b0a55",
+                                                transform: "scale(1.1)",
+                                            },
+                                        }}
+                                    />
+                                ) : undefined
+                            }
+                            sx={{
+                                mt: 2,
+                                height: 52,
+                                borderRadius: 12,
+
+                                "&:hover": {
+                                    borderColor: "#720d6a",
+                                },
+
+                                "&.Mui-focused": {
+                                    borderColor: "#720d6a",
+                                    boxShadow: "0 0 0 3px rgba(125, 46, 117, 0.15)",
+                                },
+                            }}
+                        />
+
+                        {paymentMethod === "CASH" && (
+                            <Box
+                                sx={{
+                                    mt: 1.5,
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
+                            >
+                                <TextComponent
+                                    value="Change to Return"
+                                    weight={700}
+                                    size={13}
+                                />
+
+                                <TextComponent
+                                    value={`₹${changeAmount.toFixed(3)}`}
+                                    weight={700}
+                                    size={15}
+                                    color="#720d6a"
+                                />
+                            </Box>
+                        )}
+                    </Card>
+                )}
+
+                {/* Floating Continue Button */}
+
+                <Box
+                    sx={{
+                        bottom: 0,
+                        mt: 3,
+                        p: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: '#fff'
+                    }}
+                >
+                    <Button
+                        fullWidth
+                        size="lg"
+                        // color="success"
+                        startDecorator={<ShoppingCartIcon />}
+                        sx={{
+                            height: 40,
+                            borderRadius: 999,
+                            fontWeight: 800,
+                            fontSize: 16,
+                            width: '90%',
+                            boxShadow:
+                                "0 12px 30px rgba(125, 46, 116, 0.35)",
+                            background:
+                                "linear-gradient(135deg,#2E7D32,#43A047)",
+
+                            "&:hover": {
+                                background:
+                                    "linear-gradient(135deg,#723d6a,#720d6a)",
+                                transform: "translateY(-2px)",
+                            },
+                            background: '#7c13ec'
+                        }}
+                        onClick={handleContinue}
+                    >
+                        Pay ₹{Number(amount).toFixed(2)}
+                    </Button>
+                </Box>
+
+
+                <UploadQrcode
+                    open={openQrModal}
+                    onClose={() => setOpenQrModal(false)}
+                    qrImage="/images/upi-qr.png"
+                />
             </Box>
-
-
-            <UploadQrcode
-                open={openQrModal}
-                onClose={() => setOpenQrModal(false)}
-                qrImage="/images/upi-qr.png"
-            />
-        </Box>
+        </>
     );
 };
 

@@ -1,11 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
 import {
     Modal,
     ModalDialog,
     Box
 } from "@mui/joy";
 
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import DoneAllRoundedIcon from "@mui/icons-material/DoneAllRounded";
 import DeliveryDiningRoundedIcon from "@mui/icons-material/DeliveryDiningRounded";
 import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
@@ -46,6 +45,11 @@ const DeliveryStatusModal = ({
     selectedItem,
     handleStatusUpdate
 }) => {
+
+    console.log({
+        selectedItem
+    });
+
     return (
         <Modal open={open} onClose={onClose}>
             <ModalDialog
@@ -80,7 +84,7 @@ const DeliveryStatusModal = ({
                         gap: 1.2
                     }}
                 >
-                    {statuses.map((s) => (
+                    {statuses?.map((s) => (
                         <Box
                             key={s.value}
                             onClick={() => handleStatusUpdate(s.value)}
@@ -115,4 +119,4 @@ const DeliveryStatusModal = ({
     );
 };
 
-export default DeliveryStatusModal;
+export default memo(DeliveryStatusModal);

@@ -70,7 +70,8 @@ const BillDetailList = ({
                 mb: 2,
                 boxShadow: "0 -6px 30px rgba(0,0,0,.18)",
                 border: "1px dashed #636161",
-                mx: 1
+                mx: 1,
+                zIndex:999
             }}
         >
             <Box
@@ -88,7 +89,7 @@ const BillDetailList = ({
             >
                 {items?.map((item, index) => {
                     const checked = selectedItems.includes(item?.id);
-                    const isPayed = item?.bill_item_status === 'PAID';
+                    const isPayed = item?.billing_status === 'PAID';
                     return (
                         <Box
                             key={index}

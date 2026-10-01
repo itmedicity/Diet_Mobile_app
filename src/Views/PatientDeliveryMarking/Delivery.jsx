@@ -18,11 +18,12 @@ const Delivery = () => {
         refetch: FetchDeliveryDetails
     } = useAllAssingedDeliveryItem(id);
 
-    
+
 
     const [seachVal, setSearchVal] = useState("");
     const [selectionMode, setSelectionMode] = useState(true);
     const [selectedItems, setSelectedItems] = useState([]);
+
 
     // LOAD INITIAL VALUE FROM LOCAL STORAGE
     const [deliveryStatus, setDeliveryStatus] = useState(() => {
@@ -100,7 +101,7 @@ const Delivery = () => {
             const response = await axioslogin.post('/dietdelivery/update-bulk-pickup', {
                 Items: selectedItems
             });
-            const { success, data, message } = response?.data ?? {};
+            const { success, message } = response?.data ?? {};
             if (success !== 1) return warningNofity(message || "Error in Picking Up Details");
             succesNofity(message || "SuccessFully PickedUp Details!!")
             FetchDeliveryDetails()

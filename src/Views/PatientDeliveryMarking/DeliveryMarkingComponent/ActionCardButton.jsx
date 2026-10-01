@@ -20,36 +20,9 @@ import TextComponent from "../../../components/TextComponent";
 import PaymentSummaryCard from "./PaymentSummaryCard";
 import BillDetailList from "./BillDetailList";
 import { useNavigate } from "react-router-dom";
+import ProformaDetailList from "./ProformaDetailList";
+import FloatingProformaInvoiceButton from "../../../components/FloatingProformaInvoiceButton";
 
-
-const Row = ({
-    label,
-    value,
-    bold = false,
-    color = "#444"
-}) => (
-    <Box
-        sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 0.5
-        }}>
-        <TextComponent
-            value={label}
-            size={12}
-            weight={bold ? 700 : 500}
-            color={color}
-        />
-
-        <TextComponent
-            value={value}
-            size={12}
-            weight={bold ? 700 : 600}
-            color={color}
-        />
-    </Box>
-);
 
 
 const ActionCardButton = ({
@@ -59,15 +32,18 @@ const ActionCardButton = ({
     loading = false,
     expand = false,
     billdetail = [],
-    isPending = 0,
     setOpenBillDialog,
     patientData,
-    OnGenerateBill
+    OnGenerateBill,
+    isBystander,
+    porformainvoice
 }) => {
+
 
     const navigate = useNavigate();
 
     const [selectedItems, setSelectedItems] = useState([]);
+    const [expandProforma, setExpandProforma] = useState(false)
 
     /*
     ============================================================
@@ -75,10 +51,14 @@ const ActionCardButton = ({
     ============================================================
     */
 
-    const isBillItemExist =
-        Array.isArray(billdetail) &&
-        billdetail.length > 0;
+    const isBillItemExist = Array.isArray(billdetail) &&
+        billdetail.length > 0 &&
+        billdetail?.some(item => item.billing_status === 'NOT_BILLED');
 
+
+    const canView = Array.isArray(billdetail) &&
+        billdetail?.length > 0 &&
+        billdetail.some((item) => item?.billing_id != null);
 
     /*
     ============================================================
@@ -89,15 +69,28 @@ const ActionCardButton = ({
     item.
     */
 
+    // const billMap = useMemo(() => {
+    //     return new Map(
+    //         (billdetail || []).map(item => [
+    //             Number(item?.ledger_id),
+    //             item
+    //         ])
+    //     );
+    // }, [billdetail]);
+
+
     const billMap = useMemo(() => {
         return new Map(
-            (billdetail || []).map(item => [
-                Number(item?.ledger_id),
-                item
-            ])
+            (billdetail || []).map(item => {
+                const key = `${item?.reference_table}-${item?.reference_id}`;
+                return [
+                    key,
+                    item
+                ];
+            })
         );
-    }, [billdetail]);
 
+    }, [billdetail]);
 
     /*
     ============================================================
@@ -107,13 +100,10 @@ const ActionCardButton = ({
 
     const FinalBillingItem = useMemo(() => {
         return (selectedItems || [])
-            .map(id => billMap.get(Number(id)))
+            .map(key => billMap.get(key))
             .filter(Boolean);
-    }, [
-        selectedItems,
-        billMap
-    ]);
 
+    }, [selectedItems, billMap]);
 
     /*
     ============================================================
@@ -121,41 +111,150 @@ const ActionCardButton = ({
     ============================================================
     */
 
+    // const items = useMemo(() => {
+    //     return (billdetail || []).map(item => {
+    //         const isBilled =
+    //             item?.ledger_status === "BILLED";
+    //         return {
+    //             id: Number(item?.ledger_id),
+    //             ledger_id: Number(item?.ledger_id),
+    //             billing_id:
+    //                 Number(item?.billing_id || 0),
+    //             billing_detail_id: Number(item?.billing_detail_id || 0),
+    //             name: item?.item_name || "Unknown Item",
+    //             quantity:
+    //                 Number(item?.quantity || 0),
+    //             rate:
+    //                 Number(item?.unit_rate || 0),
+    //             gross:
+    //                 Number(item?.gross_amount || 0),
+    //             discount:
+    //                 Number(item?.discount || 0),
+    //             gstRate:
+    //                 Number(item?.gst_rate || 0),
+    //             gst:
+    //                 Number(item?.gst_amount || 0),
+    //             total:
+    //                 Number(item?.net_amount || 0),
+    //             ledger_status:
+    //                 item?.ledger_status || "PENDING",
+    //             bill_item_status:
+    //                 item?.billing_status || null,
+
+    //             billing_status:
+    //                 item?.billing_status || "NOT_BILLED",
+
+    //             bill_status:
+    //                 item?.bill_status || null,
+    //             isBilled
+    //         };
+    //     });
+
+    // }, [billdetail]);
+
+
     const items = useMemo(() => {
+
         return (billdetail || []).map(item => {
-            const isBilled =
-                item?.ledger_status === "BILLED";
+
+            const referenceKey =
+                `${item?.reference_table}-${item?.reference_id}`;
+
+            const isLedgerItem =
+                item?.reference_table === "diet_service_ledger";
+
+            const isProformaItem =
+                item?.reference_table === "proforma_detail";
+
             return {
-                id: Number(item?.ledger_id),
-                ledger_id: Number(item?.ledger_id),
+
+                id: referenceKey,
+
+                reference_key: referenceKey,
+
+                reference_table:
+                    item?.reference_table || null,
+
+                reference_id:
+                    Number(item?.reference_id || 0),
+
+                ledger_id:
+                    item?.ledger_id
+                        ? Number(item.ledger_id)
+                        : null,
+
+                delivery_id:
+                    item?.delivery_id
+                        ? Number(item.delivery_id)
+                        : null,
+
                 billing_id:
                     Number(item?.billing_id || 0),
-                billing_detail_id: Number(item?.billing_detail_id || 0),
-                name: item?.description || "Unknown Item",
+
+                billing_detail_id:
+                    Number(item?.billing_detail_id || 0),
+
+                name:
+                    item?.item_name ||
+                    item?.description ||
+                    "Unknown Item",
+
                 quantity:
                     Number(item?.quantity || 0),
+
                 rate:
-                    Number(item?.rate || 0),
+                    Number(item?.unit_rate ?? item?.rate ?? 0),
+
                 gross:
-                    Number(item?.rate || 0) *
-                    Number(item?.quantity || 0),
+                    Number(
+                        item?.gross_amount ??
+                        item?.amount ??
+                        0
+                    ),
+
                 discount:
                     Number(item?.discount || 0),
+
                 gstRate:
-                    Number(item?.gst || 0),
+                    Number(
+                        item?.gst_rate ??
+                        item?.gst ??
+                        0
+                    ),
+
                 gst:
                     Number(item?.gst_amount || 0),
+
                 total:
-                    Number(item?.amount || 0),
+                    Number(
+                        item?.net_amount ??
+                        item?.amount ??
+                        0
+                    ),
+
                 ledger_status:
-                    item?.ledger_status || "PENDING",
+                    item?.ledger_status || null,
+
                 bill_item_status:
                     item?.bill_item_status || null,
-                isBilled
+
+                billing_status:
+                    item?.billing_status ||
+                    item?.bill_item_status ||
+                    "NOT_BILLED",
+
+                bill_status:
+                    item?.bill_status || null,
+
+                isLedgerItem,
+                isProformaItem
+
             };
+
         });
 
     }, [billdetail]);
+
 
     /*
     ============================================================
@@ -163,33 +262,116 @@ const ActionCardButton = ({
     ============================================================
     */
 
+    // const finalSelected = useMemo(() => {
+    //     return FinalBillingItem.map(item => ({
+    //         id: Number(item?.ledger_id),
+    //         ledger_id: Number(item?.ledger_id),
+    //         billing_id: Number(item?.billing_id || 0),
+    //         billing_detail_id: Number(item?.billing_detail_id || 0),
+    //         name: item?.item_name || "Unknown Item",
+    //         quantity: Number(item?.quantity || 0),
+    //         rate: Number(item?.unit_rate || 0),
+    //         gross:
+    //             Number(item?.gross_amount || 0),
+    //         discount: Number(item?.discount || 0),
+    //         gst: Number(item?.gst_amount || 0),
+    //         total: Number(item?.net_amount || 0)
+    //     }));
+
+    // }, [FinalBillingItem]);
+
     const finalSelected = useMemo(() => {
-        return FinalBillingItem.map(item => ({
-            id: Number(item?.ledger_id),
-            ledger_id: Number(item?.ledger_id),
-            billing_id: Number(item?.billing_id || 0),
-            billing_detail_id: Number(item?.billing_detail_id || 0),
-            name: item?.description || "Unknown Item",
-            quantity: Number(item?.quantity || 0),
-            rate: Number(item?.rate || 0),
-            gross:
-                Number(item?.rate || 0) *
-                Number(item?.quantity || 0),
-            discount: Number(item?.discount || 0),
-            gst: Number(item?.gst_amount || 0),
-            total: Number(item?.amount || 0)
-        }));
+        return FinalBillingItem?.map(item => {
+
+            const referenceKey =
+                `${item?.reference_table}-${item?.reference_id}`;
+
+            return {
+                id: referenceKey,
+
+                reference_key: referenceKey,
+
+                reference_table:
+                    item?.reference_table || null,
+
+                reference_id:
+                    Number(item?.reference_id || 0),
+
+                // Exists only for ledger-based billing
+                ledger_id:
+                    item?.ledger_id
+                        ? Number(item.ledger_id)
+                        : null,
+
+                delivery_id:
+                    item?.delivery_id
+                        ? Number(item.delivery_id)
+                        : null,
+
+                billing_id:
+                    Number(item?.billing_id || 0),
+
+                billing_detail_id:
+                    Number(item?.billing_detail_id || 0),
+
+                name:
+                    item?.item_name ||
+                    item?.description ||
+                    "Unknown Item",
+
+                quantity:
+                    Number(item?.quantity || 0),
+
+                rate:
+                    Number(
+                        item?.unit_rate ??
+                        item?.rate ??
+                        0
+                    ),
+
+                gross:
+                    Number(
+                        item?.gross_amount ??
+                        item?.amount ??
+                        0
+                    ),
+
+                discount:
+                    Number(item?.discount || 0),
+
+                gst:
+                    Number(item?.gst_amount || 0),
+
+                total:
+                    Number(
+                        item?.net_amount ??
+                        item?.amount ??
+                        0
+                    )
+            };
+
+        });
 
     }, [FinalBillingItem]);
 
     const finalPaidBillItems = useMemo(() => {
-        return items ? items?.filter((item) => item.bill_item_status === 'PAID') : []
+        return items ? items?.filter((item) => item.billing_status === 'PAID') : []
     }, [items]);
 
 
     const isPaymentPendingExist = useMemo(() => {
-        return items ? items?.some((item) => item.bill_item_status !== 'PAID') : []
+        return items ? items?.some((item) => item.billing_status !== 'PAID') : []
     }, [items]);
+
+
+    console.log({
+        items,
+        isPaymentPendingExist,
+        finalSelected
+    });
+
+
+
 
 
     const summary = useMemo(() => ({
@@ -198,6 +380,7 @@ const ActionCardButton = ({
         gst: (items || []).reduce((sum, item) => sum + Number(item?.gst || 0), 0),
         total: (items || []).reduce((sum, item) => sum + Number(item?.total || 0), 0)
     }), [items]);
+
 
 
     const selectedSummary = useMemo(() => ({
@@ -269,6 +452,12 @@ const ActionCardButton = ({
                 overflow: "hidden"
             }}
         >
+
+            <ProformaDetailList
+                expand={expandProforma}
+                setExpand={setExpandProforma}
+                items={porformainvoice}
+            />
             <BillDetailList
                 expand={expand}
                 items={items}
@@ -285,6 +474,8 @@ const ActionCardButton = ({
                 totalPayedAmount={billedItemSummary.total}
                 onClick={handleNavigate}
             />
+            <FloatingProformaInvoiceButton
+                onClick={() => setExpandProforma(prev => !prev)} />
 
             <Box
                 sx={{
@@ -334,75 +525,70 @@ const ActionCardButton = ({
                         alignItems: "center"
                     }}
                 >
-                    {Number(isPending) > 0 && (
+                    {
+                        isBillItemExist && isBystander && (
+                            <Button
+                                loading={loading}
 
-                        <Button
-                            loading={loading}
+                                sx={{
+                                    bgcolor: "#8629d1",
+                                    cursor: "pointer",
+                                    fontSize: 10
+                                }}
 
-                            sx={{
-                                bgcolor: "#8629d1",
-                                cursor: "pointer",
-                                fontSize: 12
-                            }}
+                                endDecorator={
+                                    <ReceiptIcon
+                                        sx={{
+                                            fontSize: 16
+                                        }}
+                                    />
+                                }
 
-                            endDecorator={
-                                <ReceiptIcon
-                                    sx={{
-                                        fontSize: 16
-                                    }}
-                                />
-                            }
+                                onClick={
+                                    OnGenerateBill
+                                }
+                            >
+                                Generate Bill
+                            </Button>
+                        )}
+                    {
+                        canView && (
+                            <Button
+                                loading={loading}
 
-                            onClick={
-                                OnGenerateBill
-                            }
-                        >
-                            Generate Bill
-                        </Button>
+                                sx={{
+                                    bgcolor: "#8629d1",
+                                    cursor: "pointer",
+                                    fontSize: 10
+                                }}
 
-                    )}
+                                endDecorator={
 
-                    {isBillItemExist && (
+                                    expand
+                                        ? (
+                                            <ExpandLessRoundedIcon />
+                                        )
+                                        : (
+                                            <ChevronRightRoundedIcon />
+                                        )
 
-                        <Button
-                            loading={loading}
+                                }
 
-                            sx={{
-                                bgcolor: "#8629d1",
-                                cursor: "pointer",
-                                fontSize: 12
-                            }}
+                                onClick={
+                                    () => setOpenBillDialog(prev => !prev)
+                                }
+                            >
 
-                            endDecorator={
+                                {
 
-                                expand
-                                    ? (
-                                        <ExpandLessRoundedIcon />
-                                    )
-                                    : (
-                                        <ChevronRightRoundedIcon />
-                                    )
+                                    expand
+                                        ? "Hide"
+                                        : "View"
+                                }
 
-                            }
-
-                            onClick={() =>
-                                setOpenBillDialog(
-                                    prev => !prev
-                                )
-                            }>
-
-                            {
-                                expand
-                                    ? "Hide"
-                                    : "View"
-                            }
-
-                        </Button>
-
-                    )}
-
+                            </Button>
+                        )}
                 </Box>
-
             </Box>
 
         </Box>

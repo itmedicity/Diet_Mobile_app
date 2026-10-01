@@ -26,7 +26,9 @@ const statusConfig = {
     UNDELIVERED: { label: "Undelivered", color: "#adb5bd", bg: "#f8f9fa", icon: CancelIcon },
 };
 
-const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId }) => {
+const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
+    BillingDetail
+}) => {
 
     const id = EmpauthId();
     const [expanded, setExpanded] = useState(true);
@@ -37,7 +39,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
 
     const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
 
-   
+    const { bill_no, billing_status, bill_status, bill_source } = BillingDetail ?? {};
 
     const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
 
@@ -212,7 +214,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId })
                                 fontWeight: 700
                             }}
                         >
-                            {ItemBillStatus ? ItemBillStatus : currentStatus.label}
+                            {bill_status ? bill_status : ItemBillStatus ? ItemBillStatus : currentStatus.label}
                         </Box>
                     </Box>
 

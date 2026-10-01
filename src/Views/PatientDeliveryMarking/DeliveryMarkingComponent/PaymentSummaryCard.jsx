@@ -9,7 +9,6 @@ const PaymentSummaryCard = ({
     expand = true,
     amount = 0,
     title = "Total Payable",
-    subtitle = "Amount Due",
     deliveredAmount,
     onClick,
     isPaymentPendingExist,

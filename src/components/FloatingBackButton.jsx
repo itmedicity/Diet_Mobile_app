@@ -16,7 +16,7 @@ const FloatingBackButton = () => {
             onClick={() => navigate(-1)}
             sx={{
                 position: "fixed",
-                bottom: 70,
+                bottom: 100,
                 right: 20,
                 width: 52,
                 height: 52,
