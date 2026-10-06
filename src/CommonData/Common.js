@@ -1,5 +1,14 @@
-import { useMemo } from "react";
 import { warningNofity } from "../Views/Constant/Constant";
+import {
+    MdReceiptLong,
+    MdCheckCircle,
+    MdDescription,
+    MdAssignmentTurnedIn,
+    MdPersonOff,
+    MdPersonAddAlt
+} from "react-icons/md";
+
+
 
 export const Data = {
     "ingredients": [
@@ -982,4 +991,74 @@ export const groupMealsByProcessDate = (meals = []) => {
             acc[date] = grouped[date];
             return acc;
         }, {});
+};
+
+
+export const PatientstatusConfig = {
+    // ADMISSION
+    ADM: {
+        label: 'Admitted',
+        shortLabel: 'ADM',
+        color: '#1565c0',
+        bgColor: '#e3f2fd',
+        borderColor: '#64b5f6',
+        icon: <MdPersonAddAlt size={18} />,
+        active: true
+    },
+
+    // BILLING ON PROCESS
+    DBP: {
+        label: 'Billing on Process',
+        shortLabel: 'DBP',
+        color: '#1976d2',
+        bgColor: '#eaf3ff',
+        borderColor: '#90caf9',
+        icon: <MdReceiptLong size={18} />,
+        active: true
+    },
+
+    // BILLING COMPLETED
+    DBC: {
+        label: 'Billing Completed',
+        shortLabel: 'DBC',
+        color: '#2e7d32',
+        bgColor: '#edf7ed',
+        borderColor: '#81c784',
+        icon: <MdCheckCircle size={18} />,
+        active: true
+    },
+
+    // DISCHARGE SUMMARY ON PROCESS
+    DSP: {
+        label: 'Discharge Summary on Process',
+        shortLabel: 'DSP',
+        color: '#ed6c02',
+        bgColor: '#fff4e5',
+        borderColor: '#ffb74d',
+        icon: <MdDescription size={18} />,
+        active: true
+    },
+
+    // DISCHARGE SUMMARY COMPLETED
+    DSC: {
+        label: 'Discharge Summary Completed',
+        shortLabel: 'DSC',
+        color: '#7b1fa2',
+        bgColor: '#f6eefa',
+        borderColor: '#ba68c8',
+        icon: <MdAssignmentTurnedIn size={18} />,
+        active: true
+    },
+
+    // PATIENT CHECKED OUT
+    PCO: {
+        label: 'Patient Checked Out',
+        shortLabel: 'PCO',
+        color: '#757575',
+        bgColor: '#eeeeee',
+        borderColor: '#bdbdbd',
+        icon: <MdPersonOff size={18} />,
+        active: false
+    },
+
 };

@@ -363,17 +363,6 @@ const ActionCardButton = ({
         return items ? items?.some((item) => item.billing_status !== 'PAID') : []
     }, [items]);
 
-
-    console.log({
-        items,
-        isPaymentPendingExist,
-        finalSelected
-    });
-
-
-
-
-
     const summary = useMemo(() => ({
         gross: (items || []).reduce((sum, item) => sum + Number(item?.gross || 0), 0),
         discount: (items || []).reduce((sum, item) => sum + Number(item?.discount || 0), 0),

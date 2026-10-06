@@ -80,10 +80,6 @@ const DeliveryPatientCardList = ({ filterdData = [],
     const [selectedOrder, setSelectedOrders] = useState({});
     const [packagedetail, setPackageDetails] = useState([])
 
-    console.log({
-        selectedOrder
-    });
-
 
     const handleCardClick = (item) => {
 

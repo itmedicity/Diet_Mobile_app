@@ -75,10 +75,7 @@ const PaymentMethod = () => {
     const changeAmount = Math.max(receivedAmount - billAmount, 0);
 
 
-    console.log({
-        receivedAmount,
-        changeAmount
-    });
+  
 
 
     const handleContinue = useCallback(async () => {
@@ -191,9 +188,7 @@ const PaymentMethod = () => {
             payments,
         };
 
-        console.log({
-            payload
-        });
+      
         
         /*  CALL PAYMENT API */
         try {

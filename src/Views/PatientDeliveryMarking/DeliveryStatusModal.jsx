@@ -46,9 +46,7 @@ const DeliveryStatusModal = ({
     handleStatusUpdate
 }) => {
 
-    console.log({
-        selectedItem
-    });
+
 
     return (
         <Modal open={open} onClose={onClose}>

@@ -112,10 +112,6 @@ const DeliveryMarkingContainer = () => {
     // const bills = BystanderBillingDetails?.bills || [];
     const billItems = BystanderBillingDetails?.bill_items || [];
 
-    // console.log({
-    //     billItems,
-    //     bills
-    // });
 
 
 

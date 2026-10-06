@@ -78,12 +78,6 @@ const PatientBedDetail = () => {
     FetchPlanFoodDetail
   ]);
 
-
-  console.log({
-    ExistFoodDetail
-  });
-
-
   const ProcessDateGroupedMeals = useMemo(() => {
     return groupMealsByProcessDate(FinalMappingTemplateFood);
   }, [FinalMappingTemplateFood]);
