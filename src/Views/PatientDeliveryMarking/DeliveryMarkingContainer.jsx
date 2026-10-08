@@ -5,12 +5,8 @@ import NursingStaionHeader from "../NursingStation/NursingStaionHeader";
 import DeliveryFoodItemCard from "./DeliveryFoodItemCard";
 import TextComponent from "../../components/TextComponent";
 import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useBystanderBillingDetails, useDeliveryBillDetails, useOrderItemDetail, usePatientExtraOrders, useProformaDetails } from "../../CommonData/UseQuery";
-// import PickupConfirmationModal from "./PickupConfirmationModal";
 import { EmpauthId, infoNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
-// import FloatingPickupButton from "./FloatingPickupButton";
-// import { useQueryClient } from "@tanstack/react-query";
-// import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import MissingOrderItemCard from "./MissingOrderItemCard";
 import ActionCardButton from "./DeliveryMarkingComponent/ActionCardButton";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -28,16 +24,12 @@ const DeliveryMarkingContainer = () => {
 
     const {
         fb_ns_name,
-        // nurse_station_name,
-        // orders,
         canteen_order_id,
         fb_ipad_slno,
         fb_ip_no,
         type_slno,
-        // type_desc,
         fb_bdc_no,
         assignment_id,
-        // ItemStatus,
         assignment_detail_id,
         party_name
     } = patientData ?? {};

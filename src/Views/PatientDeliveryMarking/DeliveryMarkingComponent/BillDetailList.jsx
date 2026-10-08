@@ -35,6 +35,8 @@ const BillDetailList = ({
     selectedItems
 }) => {
 
+
+  
     const unpaidItems = useMemo(
         () => items?.filter((item) => item?.bill_item_status !== "PAID"),
         [items]
@@ -87,7 +89,7 @@ const BillDetailList = ({
                     },
                 }}
             >
-                {items?.map((item, index) => {
+                {items?.map((item, index) => {       
                     const checked = selectedItems.includes(item?.id);
                     const isPayed = item?.billing_status === 'PAID';
                     return (
@@ -139,7 +141,7 @@ const BillDetailList = ({
                             </Box>
 
                             <TextComponent
-                                value={`₹${item.total.toFixed(2)}`}
+                                value={`₹${item.rate.toFixed(2)}`}
                                 weight={700}
                                 size={13}
                             />

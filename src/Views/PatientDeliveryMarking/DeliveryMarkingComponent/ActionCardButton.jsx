@@ -354,6 +354,9 @@ const ActionCardButton = ({
 
     }, [FinalBillingItem]);
 
+   
+    
+
     const finalPaidBillItems = useMemo(() => {
         return items ? items?.filter((item) => item.billing_status === 'PAID') : []
     }, [items]);
@@ -364,7 +367,7 @@ const ActionCardButton = ({
     }, [items]);
 
     const summary = useMemo(() => ({
-        gross: (items || []).reduce((sum, item) => sum + Number(item?.gross || 0), 0),
+        gross: (items || []).reduce((sum, item) => sum + Number(item?.rate || 0), 0),
         discount: (items || []).reduce((sum, item) => sum + Number(item?.discount || 0), 0),
         gst: (items || []).reduce((sum, item) => sum + Number(item?.gst || 0), 0),
         total: (items || []).reduce((sum, item) => sum + Number(item?.total || 0), 0)
@@ -373,7 +376,7 @@ const ActionCardButton = ({
 
 
     const selectedSummary = useMemo(() => ({
-        gross: (finalSelected || []).reduce((sum, item) => sum + Number(item?.gross || 0), 0),
+        gross: (finalSelected || []).reduce((sum, item) => sum + Number(item?.rate || 0), 0),
         discount: (finalSelected || []).reduce((sum, item) => sum + Number(item?.discount || 0), 0),
         gst: (finalSelected || []).reduce((sum, item) => sum + Number(item?.gst || 0), 0),
         total: (finalSelected || []).reduce((sum, item) => sum + Number(item?.total || 0), 0)

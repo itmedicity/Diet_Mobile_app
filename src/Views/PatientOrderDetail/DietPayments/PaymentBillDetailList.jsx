@@ -92,7 +92,7 @@ const PaymentBillDetailList = ({
                         </Box>
 
                         <TextComponent
-                            value={`₹${Number(item.total).toFixed(2)}`}
+                            value={`₹${Number(item?.rate).toFixed(2)}`}
                             weight={700}
                             size={13}
                         />
@@ -103,12 +103,12 @@ const PaymentBillDetailList = ({
             <Box sx={{ p: 2 }}>
                 <Row
                     label="Item Total"
-                    value={`₹${Number(summary.gross || 0).toFixed(2)}`}
+                    value={`₹${Number(summary?.gross || 0).toFixed(2)}`}
                 />
 
                 <Row
                     label="Discount"
-                    value={`-₹${Number(summary.discount || 0).toFixed(2)}`}
+                    value={`-₹${Number(summary?.discount || 0).toFixed(2)}`}
                     color="#2E7D32"
                 />
 
