@@ -250,7 +250,7 @@ const BottomFloatingPanel = ({
 
         const isPatient = selected?.party_name === 'PATIENT';
 
-        if (!isPatient && type_slno === 0) return infoNofity("Please Select Expected Delivery Time!");
+        if (!isPatient && type_slno === 0) return infoNofity("Please select Meal Type!");
 
         if (hasInvalidItem)
             return warningNofity("Some items are invalid");
