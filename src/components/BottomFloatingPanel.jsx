@@ -31,8 +31,10 @@ const BottomFloatingPanel = ({
     setAssignedFoods,
     setActiveTab,
     setShowConfirmation,
-    showConfirmation
+    showConfirmation,
+    PreviousOrders
 }) => {
+
 
 
     const [showConfetti, setShowConfetti] = useState(false);
@@ -41,6 +43,7 @@ const BottomFloatingPanel = ({
     const [typename, setTypeName] = useState("")
     const queryClient = useQueryClient()
     const id = EmpauthId()
+
 
 
     const { data: DietOrders = [], refetch: RefetchDietOrders } =
@@ -202,6 +205,9 @@ const BottomFloatingPanel = ({
         const error = validateOrder();
         if (error) return warningNofity(error);
 
+
+
+
         const {
             dietpt_slno,
             plan_id,
@@ -215,6 +221,32 @@ const BottomFloatingPanel = ({
         const existingCanteenOrderId = PatientDietOrderDetails?.find(i => i.order_status === "PENDING")?.canteen_order_id;
 
         const { orderDetails, canteenDetails, hasInvalidItem } = buildOrderData();
+
+        // Check duplicate food in the same meal/type
+        const duplicateFood = canteenDetails.find((food) =>
+            PreviousOrders?.some(
+                (order) =>
+                    Number(order?.type_slno) === Number(food?.type_slno) &&
+                    Number(order?.item_id) === Number(food?.item_id) &&
+                    order?.order_status === "PENDING"
+            )
+        );
+
+        if (duplicateFood) {
+
+            const duplicateFoodName =
+                Object.values(assignedFoods || {})
+                    .flatMap((time) => time?.foods || [])
+                    .find(
+                        (food) =>
+                            Number(food?.item_id) ===
+                            Number(duplicateFood?.item_id)
+                    )?.item_name || "This food";
+
+            return infoNofity(
+                `${duplicateFoodName} is already added to this meal.`
+            );
+        }
 
         const isPatient = selected?.party_name === 'PATIENT';
 
@@ -476,3 +508,6 @@ const BottomFloatingPanel = ({
 };
 
 export default memo(BottomFloatingPanel);
+
+
+

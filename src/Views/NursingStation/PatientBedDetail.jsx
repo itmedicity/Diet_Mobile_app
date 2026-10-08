@@ -96,16 +96,6 @@ const PatientBedDetail = () => {
 
   const handleToggleFood = (food) => {
 
-    const IsItemInPendingList = PreviousOrders?.some(
-      (item) =>
-        item.item_id === food.item_id &&
-        item?.order_status === 'PENDING'
-    );
-
-    if (IsItemInPendingList) {
-      return infoNofity("Item Already In the Pending Order!");
-    }
-
     // skip time check for bystander
     const isBystander = selected?.party_name === "BYSTANDER";
 
@@ -496,6 +486,7 @@ const PatientBedDetail = () => {
       <ActiveTabOverlay activeTab={activeTab} onClose={handleClose} />
 
       <BottomFloatingPanel
+        PreviousOrders={PreviousOrders}
         setActiveTab={setActiveTab}
         selected={selected}
         PatientDetail={fullDetail}
