@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getCustomerPreviousOrder, getDietDeliveryTime, getDietName, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -190,10 +190,33 @@ export const useItemFullDetials = (enabled) => {
     return useQuery({
         queryKey: ['itemfulldetail'],
         queryFn: getFullDetailofItem,
-        enabled, // only fetch when needed
-        staleTime: Infinity
-    });
-};
+        enabled: enabled,
+        staleTime: Infinity,
+        select: (data) => {
+            return data?.filter((val) =>
+                (Number(val?.item_type_id) === 1 || Number(val?.item_type_id) === 3) &&
+                Number(val?.is_active) === 1
+            )
+        }
+    })
+}
+
+
+export const useAllFoodAndBeverage = (enabled) => {
+    return useQuery({
+        queryKey: ['food-bev'],
+        queryFn: getFoodandBeverage,
+        enabled: enabled,
+        staleTime: Infinity,
+        select: (data) => {
+            return data?.filter((val) =>
+                (Number(val?.item_type_id) === 1 || Number(val?.item_type_id) === 3) &&
+                Number(val?.is_active) === 1
+            )
+        }
+    })
+}
+
 
 
 export const useAllOrderPartyType = () => {
@@ -237,4 +260,122 @@ export const useOrderItemDetail = (memoOrder) => {
 
 
 
+export const useAllHighlightMaster = () => {
+    return useQuery({
+        queryKey: ['highlights'],
+        queryFn: getAllHighlightTypes,
+        staleTime: Infinity,
+    });
+};
 
+
+export const useBystanderBillingDetails = (assignment_detail_id) => {
+    return useQuery({
+        queryKey: ["bystanderbilling", assignment_detail_id],
+        queryFn: () => getBystanderBillingDetails(assignment_detail_id),
+        staleTime: Infinity,
+        enabled: !!assignment_detail_id
+    });
+};
+
+
+export const useDeliveryBillDetails = (DeliveredItemDetail = []) => {
+    return useQuery({
+        queryKey: [
+            "deliveryBillDetails",
+            DeliveredItemDetail
+        ],
+        queryFn: () =>
+            getDeliveryBillDetails(
+                DeliveredItemDetail
+            ),
+        staleTime: Infinity,
+        enabled:
+            Array.isArray(DeliveredItemDetail) &&
+            DeliveredItemDetail.length > 0
+    });
+
+};
+
+export const useDietPlanRemarkDetails = (plan_id) => {
+    return useQuery({
+        queryKey: ["plan-remarks", plan_id],
+        queryFn: () => getPatientDietRemarkDetails(plan_id),
+        staleTime: Infinity,
+        enabled: !!plan_id
+    });
+};
+
+
+
+export const useProformaDetails = (assignmentDetailId) => {
+    return useQuery({
+        queryKey: ['proforma-details', assignmentDetailId],
+        queryFn: () => getProformaDetails(assignmentDetailId),
+        staleTime: Infinity,
+        enabled: !!assignmentDetailId
+    });
+
+};
+
+export const useCashSummaryDetail = (empid) => {
+    return useQuery({
+        queryKey: ['payment-summary', empid],
+        queryFn: () => getPaymentSummary(empid),
+        staleTime: Infinity,
+        enabled: !!empid
+    });
+};
+
+export const useCashPaymentModeDetail = (empid) => {
+    return useQuery({
+        queryKey: ['payment-mode', empid],
+        queryFn: () => getPaymentMode(empid),
+        staleTime: Infinity,
+        enabled: !!empid
+    });
+
+};
+
+export const usePaymentHistory = (empid) => {
+    return useQuery({
+        queryKey: ['payment-history', empid],
+        queryFn: () => getPaymentHistoryDetails(empid),
+        staleTime: Infinity,
+        enabled: !!empid
+    });
+
+};
+
+
+
+export const usePaymentHistoryBillDetail = (billingId) => {
+    return useQuery({
+        queryKey: ["payment-history-bill-detail", billingId],
+        queryFn: () => getPaymentHistoryBillDetail(billingId),
+        staleTime: Infinity,
+        enabled: !!billingId,
+    });
+};
+
+
+
+export const usePaymentReturnDetails = (empid) => {
+    return useQuery({
+        queryKey: ["payment-return", empid],
+        queryFn: () => getPaymentReturnDetails(empid),
+        staleTime: Infinity,
+        enabled: !!empid,
+    });
+};
+
+
+
+export const useReturnLogDetails = (paymentId) => {
+    return useQuery({
+        queryKey: ["payment-return-log", paymentId],
+        queryFn: () => getReturnLogDetails(paymentId),
+        staleTime: Infinity,
+        enabled: !!paymentId,
+    });
+};

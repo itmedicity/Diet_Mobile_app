@@ -3,7 +3,7 @@ import { Box, Button } from "@mui/joy";
 import TextComponent from "./TextComponent";
 import OrderSummaryContent from "./OrderSummaryContent";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-import { EmpauthId, errorNofity, warningNofity } from "../Views/Constant/Constant";
+import { EmpauthId, errorNofity, infoNofity, warningNofity } from "../Views/Constant/Constant";
 import OrderStatsCard from "./OrderStatsCard";
 import OrderConfirmationPage from "./OrderConfirmationPage";
 import { format } from "date-fns";
@@ -15,6 +15,7 @@ import {
     useCustomerPreviousCanteenOrder
 } from "../CommonData/UseQuery";
 import PizzaLoader from "./PizzaLoader";
+import ChooseDietType from "../SelectComponents/ChooseDietType";
 
 
 const HEADER_HEIGHT = 60;
@@ -30,14 +31,19 @@ const BottomFloatingPanel = ({
     setAssignedFoods,
     setActiveTab,
     setShowConfirmation,
-    showConfirmation
+    showConfirmation,
+    PreviousOrders
 }) => {
+
 
 
     const [showConfetti, setShowConfetti] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [type_slno, setDietType] = useState(0);
+    const [typename, setTypeName] = useState("")
     const queryClient = useQueryClient()
     const id = EmpauthId()
+
 
 
     const { data: DietOrders = [], refetch: RefetchDietOrders } =
@@ -45,6 +51,19 @@ const BottomFloatingPanel = ({
 
     const { data: PatientDietOrderDetails = [], refetch: RefetchPreviousOrder } =
         useCustomerPreviousCanteenOrder(PatientDetail?.ip_no, selected?.party_type_id);
+
+
+    const getPatientDietId = () => {
+
+        if (selected?.party_name !== "PATIENT")
+            return null;
+
+        const food = Object.values(assignedFoods || {})
+            .flatMap(time => time.foods || [])
+            .find(food => food?.patient_schedule?.patient_diet_id);
+
+        return food?.patient_schedule?.patient_diet_id || null;
+    };
 
 
     // TotalAmount for the List of Detail
@@ -101,7 +120,16 @@ const BottomFloatingPanel = ({
             (time?.foods || []).forEach(food => {
                 if (!food || !food.qty || food.qty <= 0) return;
 
-                if (!food.food_id || !food.time_id || !food.unit_id) {
+                const isBystander =
+                    selected?.party_name === "BYSTANDER";
+
+                // use stored state key for bystander
+                const finalTimeId = isBystander
+                    ? type_slno
+                    : food.time_id;
+
+
+                if (!food.item_id || !finalTimeId) {
                     hasInvalidItem = true;
                     return;
                 }
@@ -111,19 +139,23 @@ const BottomFloatingPanel = ({
                 );
 
                 orderDetails.push({
-                    diet_type_id: food.time_id,
-                    item_id: food.food_id,
+                    diet_type_id: finalTimeId,
+                    item_id: food.item_id,
                     quantity: Number(food.qty),
                     unit_id: food.unit_id,
+                    patient_diet_id: food?.patient_schedule?.patient_diet_id || null,
                     is_substitute: false
                 });
 
                 canteenDetails.push({
-                    item_id: food.food_id,
+                    item_id: food.item_id,
                     qty: Number(food.qty),
                     price: priceObj?.price,
                     gst: priceObj?.gst_rate,
-                    type_slno: food.time_id,
+                    type_slno: finalTimeId,
+                    // diet reference
+                    patient_diet_id:
+                        food?.patient_schedule?.patient_diet_id || null,
                     gst_amount:
                         (Number(priceObj?.price) *
                             Number(food.qty) *
@@ -169,9 +201,12 @@ const BottomFloatingPanel = ({
 
 
     const handleConfirmOrder = async () => {
-        setLoading(true)
+
         const error = validateOrder();
         if (error) return warningNofity(error);
+
+
+
 
         const {
             dietpt_slno,
@@ -187,13 +222,44 @@ const BottomFloatingPanel = ({
 
         const { orderDetails, canteenDetails, hasInvalidItem } = buildOrderData();
 
+        // Check duplicate food in the same meal/type
+        const duplicateFood = canteenDetails.find((food) =>
+            PreviousOrders?.some(
+                (order) =>
+                    Number(order?.type_slno) === Number(food?.type_slno) &&
+                    Number(order?.item_id) === Number(food?.item_id) &&
+                    order?.order_status === "PENDING"
+            )
+        );
+
+        if (duplicateFood) {
+
+            const duplicateFoodName =
+                Object.values(assignedFoods || {})
+                    .flatMap((time) => time?.foods || [])
+                    .find(
+                        (food) =>
+                            Number(food?.item_id) ===
+                            Number(duplicateFood?.item_id)
+                    )?.item_name || "This food";
+
+            return infoNofity(
+                `${duplicateFoodName} is already added to this meal.`
+            );
+        }
+
+        const isPatient = selected?.party_name === 'PATIENT';
+
+        if (!isPatient && type_slno === 0) return infoNofity("Please select Meal Type!");
+
         if (hasInvalidItem)
             return warningNofity("Some items are invalid");
 
         if (!orderDetails.length)
             return warningNofity("No valid food items");
 
-        const isPatient = selected?.party_name === 'PATIENT';
+
+
 
         const canteenPayload = {
             admission_id: ip_no,
@@ -201,7 +267,8 @@ const BottomFloatingPanel = ({
             nursing_station_id: fb_nurse_stn_slno,
             room_id: fb_bed_slno,
             order_status: "PENDING",
-            created_by: id
+            created_by: id,
+            patient_diet_id: getPatientDietId()
         };
 
         const dietPayload = {
@@ -217,7 +284,7 @@ const BottomFloatingPanel = ({
         try {
 
 
-
+            setLoading(true)
             //  NON-PATIENT FLOW
             if (!isPatient) {
                 if (existingCanteenOrderId) {
@@ -226,6 +293,7 @@ const BottomFloatingPanel = ({
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
                         patient_id: dietpt_slno,
+                        patient_diet_id: getPatientDietId(),
                         created_by: id,
                         order_status: 'PENDING'
                     });
@@ -249,9 +317,6 @@ const BottomFloatingPanel = ({
             //  PATIENT FLOW
             if (existingDietOrderId) {
 
-                console.log("order id working");
-
-
                 await safeApiCall(addDietItems, {
                     order_id: existingDietOrderId,
                     details: orderDetails
@@ -264,6 +329,7 @@ const BottomFloatingPanel = ({
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
                         patient_id: dietpt_slno,
+                        patient_diet_id: getPatientDietId(),
                         created_by: id,
                         order_status: 'PENDING'
                     });
@@ -361,6 +427,7 @@ const BottomFloatingPanel = ({
                     Close
                 </Button>
             </Box>
+
             {loading && <PizzaLoader />}
             {
                 showConfirmation ? (
@@ -372,10 +439,16 @@ const BottomFloatingPanel = ({
                         }}
                     />
                 ) : activeTab === "list" ? (
-                    <OrderSummaryContent
-                        assignedFoods={assignedFoods}
-                        selected={selected?.party_name}
-                    />
+                    <>
+                        {
+                            selected?.party_name !== 'PATIENT' &&
+                            <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+                        }
+                        <OrderSummaryContent
+                            assignedFoods={assignedFoods}
+                            selected={selected?.party_name}
+                        />
+                    </>
                 ) : (
                     <OrderStatsCard
                         PreviousOrders={PatientDietOrderDetails}
@@ -388,7 +461,6 @@ const BottomFloatingPanel = ({
 
             {
                 (activeTab === "list" && !showConfirmation) &&
-
                 <Box
                     sx={{
                         px: 2,
@@ -436,3 +508,6 @@ const BottomFloatingPanel = ({
 };
 
 export default memo(BottomFloatingPanel);
+
+
+

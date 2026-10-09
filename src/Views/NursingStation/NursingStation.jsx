@@ -21,8 +21,6 @@ const NursingStation = () => {
 
 
 
-
-
     // Filter based on search value (bed + patient name)
     const filteredBedDetail = useMemo(() => {
         if (!seachVal) return allPatientDiet;

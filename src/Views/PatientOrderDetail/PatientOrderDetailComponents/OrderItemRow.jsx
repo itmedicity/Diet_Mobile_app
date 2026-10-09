@@ -93,14 +93,25 @@ const OrderItemRow = ({
                             <AddIcon sx={{ fontSize: 15 }} />
                         </IconButton>
 
-                        <IconButton
+
+                        {order?.items?.length > 1 && (
+                            <IconButton
+                                size="sm"
+                                color="danger"
+                                variant="soft"
+                                onClick={() => handleCancelItem(order, item)}
+                            >
+                                <CancelIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                        )}
+                        {/* <IconButton
                             size="sm"
                             color="danger"
                             variant="soft"
                             onClick={() => handleCancelItem(order, item)}
                         >
                             <CancelIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
+                        </IconButton> */}
 
                     </Box>
                 ) : (

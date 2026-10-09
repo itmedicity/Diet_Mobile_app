@@ -254,7 +254,10 @@ const PatientOrdersDashboard = ({
                 return;
             }
             if (canteenSuccess || dietSuccess) {
-                return warningNofity("Partially cancelled. Please refresh");
+                succesNofity(canteenRes?.data?.message || "cancelled SuccessFully");
+                await invalidateQueries();
+                setEditingOrder(null);
+                return
             }
             return warningNofity("Cancel failed in both APIs");
         } catch (err) {
@@ -279,13 +282,6 @@ const PatientOrdersDashboard = ({
         const order_id = PendingOrderItem?.find(item => item.order_id != null)?.order_id
 
         const canteen_order_id = order?.canteen_order_id;
-
-
-        console.log({
-            ExtraOrder,
-            order_id,
-            canteen_order_id
-        });
 
 
 

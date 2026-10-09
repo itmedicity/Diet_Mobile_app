@@ -26,25 +26,22 @@ const statusConfig = {
     UNDELIVERED: { label: "Undelivered", color: "#adb5bd", bg: "#f8f9fa", icon: CancelIcon },
 };
 
-const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
+const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
+    BillingDetail
+}) => {
 
     const id = EmpauthId();
-
-    const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
-
-    const { item_name, description, quantity, unit_code, item_id } = item ?? {};
-
-    console.log({
-        item
-    });
-    
-
-    const queryClient = useQueryClient()
-
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("");
     const [remarks, setRemarks] = useState("");
     const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient()
+
+    const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
+
+    const { bill_no, billing_status, bill_status, bill_source } = BillingDetail ?? {};
+
+    const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
 
     /* TOGGLE SELECT */
     const handleToggle = (st) => {
@@ -52,7 +49,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
     };
 
     const allowedStatusFlow = {
-        PENDING: ["PICKEDUP", "CANCELLED"],
+        PENDING: ["DELIVERED", "RETURNED", "UNDELIVERED", "CANCELLED"],
         PICKEDUP: ["DELIVERED", "RETURNED", "UNDELIVERED"],
         DELIVERED: [],
         CANCELLED: [],
@@ -68,22 +65,23 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
         if (!selectedStatus)
             return warningNofity("Select Status Before Updating");
 
-        if (!remarks)
-            return warningNofity("Please Enter Remark");
 
         const payload = {
             // ASSIGNMENT
             assignment_id: patientData?.assignment_id,
             canteen_order_id: patientData?.canteen_order_id,
             item_id: item?.item_id,
-            item_name:item.item_name,
-            meal:item?.type_desc,
+            patient_diet_id: patient_diet_id,
+            item_name: item.item_name,
+            meal: item?.type_desc,
             delivered_qty: item?.quantity,
             type_slno: item?.type_slno,
+            source_type: item?.source_type,
+            source_id: item?.source_id,
             // STATUS
             delivery_status: selectedStatus,
             // REMARKS
-            remarks: remarks,
+            remarks: remarks || null,
             // UPDATED BY
             updated_by: Number(id),
             // ONLY WHEN DELIVERED
@@ -126,7 +124,8 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
         remarks,
         item,
         patientData,
-        id
+        id,
+        dietPlanId
     ]);
 
     useEffect(() => {
@@ -135,8 +134,10 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
 
     const visibleStatuses =
         allowedStatusFlow[item?.delivery_status || "PENDING"];
+
     const currentStatus =
         statusConfig[item?.delivery_status || "PENDING"];
+
     return (
         <Box
             sx={{
@@ -164,7 +165,7 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
                     <TextComponent noWrap value={description} size={9} color="#666" />
                 </Box>
 
-                <Box sx={{ textAlign: "right", display: 'flex', gap: 1 }}>
+                {/* <Box sx={{ textAlign: "right", display: 'flex', gap: 1 }}>
                     <Box>
                         <TextComponent
                             value={`Qty: ${quantity}`}
@@ -189,6 +190,39 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus }) => {
                     <ExpandMoreRoundedIcon
                         sx={{
                             transform: expanded ? "rotate(180deg)" : "rotate(0deg)"
+                        }}
+                    />
+                </Box> */}
+
+                <Box sx={{ textAlign: "right", display: "flex", gap: 1 }}>
+                    <Box>
+                        <TextComponent
+                            value={`Qty: ${quantity}`}
+                            size={11}
+                            weight={700}
+                        />
+
+                        <Box
+                            sx={{
+                                mt: 0.5,
+                                px: 1.2,
+                                py: 0.3,
+                                borderRadius: 20,
+                                bgcolor: isBilled ? "#E8F5E9" : "#fff",
+                                color: isBilled ? "#2E7D32" : currentStatus.color,
+                                fontSize: 10,
+                                fontWeight: 700
+                            }}
+                        >
+                            {bill_status ? bill_status : ItemBillStatus ? ItemBillStatus : currentStatus.label}
+                        </Box>
+                    </Box>
+
+                    <ExpandMoreRoundedIcon
+                        sx={{
+                            transform: expanded
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)"
                         }}
                     />
                 </Box>

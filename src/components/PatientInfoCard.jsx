@@ -2,6 +2,8 @@ import { Avatar, Box } from '@mui/joy'
 import TextComponent from './TextComponent'
 import React, { memo } from 'react'
 import { format } from 'date-fns';
+import { PatientstatusConfig } from '../CommonData/Common';
+import { Chip } from '@mui/material';
 
 const PatientInfoCard = ({ PatientDetail }) => {
 
@@ -11,16 +13,7 @@ const PatientInfoCard = ({ PatientDetail }) => {
         return name.trim().charAt(0).toUpperCase();
     };
 
-    //  Format date to YYYY-MM-DD HH:mm:ss
-    const formatDateTime = (dateString) => {
-        if (!dateString) return "";
-
-        try {
-            return format(new Date(dateString), "yyyy-MM-dd HH:mm:ss");
-        } catch (error) {
-            return "";
-        }
-    };
+    const AdmissiongStatus = PatientstatusConfig[PatientDetail?.fb_ipc_curstatus];
 
     return (
         <Box
@@ -78,12 +71,38 @@ const PatientInfoCard = ({ PatientDetail }) => {
                     </Box>
                 </Box>
 
-                <TextComponent
-                    value={formatDateTime(PatientDetail?.ipd_date)}
-                    color='black'
-                    size={8}
-                    weight={400}
-                />
+                <Box
+                    display="flex"
+                    alignItems="center"
+                    gap={0.5}
+                    sx={{
+                        cursor: 'pointer'
+                    }}
+                >
+                    <Chip
+                        icon={AdmissiongStatus?.icon && (
+                            React.cloneElement(AdmissiongStatus.icon, {
+                                size: 14,
+                                color: AdmissiongStatus?.color,
+                            })
+                        )}
+                        label={AdmissiongStatus?.label || "-"}
+                        size="small"
+                        sx={{
+                            height: 24,
+                            borderRadius: "6px",
+                            fontSize: 10,
+                            fontWeight: 800,
+                            backgroundColor:
+                                AdmissiongStatus?.bgColor ||
+                                "rgba(37, 99, 235, 0.08)",
+                            color: AdmissiongStatus?.color || "inherit",
+                            border: `1px solid ${AdmissiongStatus?.borderColor || "transparent"
+                                }`,
+                        }}
+                    />
+
+                </Box>
             </Box>
         </Box>
     )

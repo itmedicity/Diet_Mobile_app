@@ -13,6 +13,15 @@ import PatientBedDetail from "./Views/NursingStation/PatientBedDetail";
 import DeliveryMarkingContainer from "./Views/PatientDeliveryMarking/DeliveryMarkingContainer";
 import ParentComponent from "./Views/Home/ParentComponent";
 import Delivery from "./Views/PatientDeliveryMarking/Delivery";
+import PaymentMethod from "./Views/PatientOrderDetail/DietPayments/PaymentMethod";
+import PaymentSuccessPage from "./Views/PatientOrderDetail/DietPayments/PaymentSuccessPage";
+import CashCollection from "./Views/CashCollection/CashCollection";
+import PaymentHistory from "./Views/CashCollection/PaymentHistory";
+import CashCollectionSummary from "./Views/CashCollection/CashCollectionSummary";
+import PaymentMode from "./Views/CashCollection/PaymentMode";
+import CashCollectionBillDetails from "./Views/CashCollection/CashCollectionBillDetails";
+import CashReturnDetail from "./Views/CashCollection/CashReturnDetail";
+import CashReturnClosePage from "./Views/CashCollection/CashReturnClosePage";
 
 const Home = lazy(() => import("./Views/Home/Home"))
 
@@ -50,6 +59,43 @@ const routes = createBrowserRouter([
         path: "/deliverydetail",
         element: <DeliveryMarkingContainer />,
       },
+      {
+        path: "/diet/payment",
+        element: <PaymentMethod />,
+      },
+      {
+        path: "/diet/payment/success",
+        element: <PaymentSuccessPage />,
+      },
+      {
+        path: "/cash-collection",
+        element: <CashCollection />,
+      },
+      {
+        path: "/cash-collection/modes",
+        element: <PaymentMode />,
+      },
+      {
+        path: "/cash-collection/summary",
+        element: <CashCollectionSummary />,
+      },
+      {
+        path: "/cash-collection/history",
+        element: <PaymentHistory />,
+      },
+      {
+        path: "/cash-collection/bill/:billingId",
+        element: < CashCollectionBillDetails />
+      },
+      {
+        path: "/cash-collection/return",
+        element: < CashReturnDetail />
+      },
+      {
+        path: "/cash-collection/return/:billingId/:paymentId",
+        element: < CashReturnClosePage />
+      },
+
     ],
     errorElement: <ErrorElement />,
   },

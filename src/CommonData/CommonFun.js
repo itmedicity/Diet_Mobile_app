@@ -452,6 +452,8 @@ export const getFullDetailofItem = async () => {
         if (success === 2 && Array.isArray(data) && data.length > 0) {
             return data;
         }
+
+
         return [];
     } catch (error) {
         console.error("Error In Fetching Detail:", error?.message || error);
@@ -459,7 +461,21 @@ export const getFullDetailofItem = async () => {
     }
 };
 
+export const getFoodandBeverage = async () => {
+    try {
+        const result = await axioslogin.get('/fooditemmast/get-food-bev')
+        const { success, data } = result.data
+        if (success === 2 && Array.isArray(data) && data.length > 0) {
+            return data;
+        }
 
+
+        return [];
+    } catch (error) {
+        console.error("Error In Fetching Detail:", error?.message || error);
+        return [];
+    }
+};
 
 export const getItemFileDetails = async (item_id) => {
 
@@ -560,6 +576,327 @@ export const getAllOrderItemDetails = async (memoOrder) => {
         return [];
     } catch (error) {
         console.error("Error In Fetching Canteen Foods", error?.message || error);
+        return [];
+    }
+};
+
+
+
+export const getAllHighlightTypes = async () => {
+    try {
+        const result = await axioslogin.get(
+            '/highlight/highlight-type'
+        );
+        const { success, data } = result?.data;
+        if (success === 1) {
+            return data || [];
+        } else {
+            return [];
+        }
+    } catch (error) {
+        console.error("Error Fetching Highlight Types:", error);
+        warningNofity("Error Fetching Highlight Types");
+        return [];
+    }
+};
+
+
+export const getBystanderBillingDetails = async (assignment_detail_id) => {
+
+    if (!assignment_detail_id) {
+        warningNofity("Assignment Detail ID is Missing");
+        return {
+            bills: [],
+            bill_items: []
+        };
+    }
+
+    try {
+
+        const res = await axioslogin.post(
+            "/dietdelivery/get-bystander-billing-details",
+            {
+                assignment_detail_id
+            }
+        );
+
+        const {
+            success,
+            data,
+            message
+        } = res?.data || {};
+
+        if (success === 1) {
+            return data ?? {
+                bills: [],
+                bill_items: []
+            };
+        }
+
+        if (success === 2) {
+            return {
+                bills: [],
+                bill_items: []
+            };
+        }
+
+        warningNofity(
+            message || "Failed to fetch bystander billing details"
+        );
+
+        return {
+            bills: [],
+            bill_items: []
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Error In Fetching Bystander Billing Details:",
+            error?.message || error
+        );
+
+        return {
+            bills: [],
+            bill_items: []
+        };
+
+    }
+};
+
+
+export const getDeliveryBillDetails = async (DeliveredItemDetail = []) => {
+
+    if (!Array.isArray(DeliveredItemDetail) || DeliveredItemDetail.length === 0) {
+        return [];
+    }
+
+    const payload = DeliveredItemDetail.map(item => ({
+        delivery_id: item.delivery_id,
+        patient_diet_id: item.patient_diet_id,
+        type_slno: item.type_slno,
+        source_type: item.source_type
+    }));
+
+    try {
+
+        const response = await axioslogin.post(
+            "/dietdelivery/get-bill-details",
+            payload
+        );
+        const {
+            data,
+            success,
+            message
+        } = response?.data || {};
+        if (success === 1) {
+            return Array.isArray(data) ? data : [];
+        }
+        if (success === 2) return [];
+        console.error("Get Delivery Bill Details:", message);
+        return [];
+    } catch (error) {
+        console.error("Error fetching delivery bill details:", error?.message || error);
+        return [];
+    }
+};
+
+export const getPatientDietRemarkDetails = async (plan_id) => {
+    if (!plan_id) return warningNofity("Plan Id is Missing!");
+    try {
+        const res = await axioslogin.get(`/patientdietplan/plan-remarks/${plan_id}`, {
+            plan_id: plan_id
+        });
+        const { success, data } = res.data;
+        if (success === 2) {
+            return data ? data?.[0] : [];
+        }
+        // fallback for any other success code
+        return [];
+    } catch (error) {
+        console.error("Error Fetching Diet Plan Remark Details:", error?.message || error);
+        return [];
+    }
+};
+
+
+
+export const getProformaDetails = async (assignmentDetailId) => {
+    if (!assignmentDetailId) {
+        return warningNofity("Assignment Detail ID is Missing");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-proforma/${assignmentDetailId}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
+        return [];
+    }
+};
+
+
+
+export const getPaymentSummary = async (emid) => {
+    if (!emid) {
+        return warningNofity("Employee Id is Missing!");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-cash-collection/${emid}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
+        return [];
+    }
+};
+
+
+export const getPaymentMode = async (emid) => {
+    if (!emid) {
+        return warningNofity("Employee Id is Missing!");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-paymentmode/${emid}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
+        return [];
+    }
+};
+
+
+
+export const getPaymentHistoryDetails = async (emid) => {
+    if (!emid) {
+        return warningNofity("Employee Id is Missing!");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-paymenthistory/${emid}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
+        return [];
+    }
+};
+
+
+
+export const getPaymentHistoryBillDetail = async (billingId) => {
+    if (!billingId) {
+        return warningNofity("Billing Id is Missing!");
+    }
+
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-paymenthistory-bill-detail/${billingId}`
+        );
+
+        const { success, data } = res.data;
+
+        if (success === 1) {
+            return data ?? {
+                bill: null,
+                items: [],
+                payments: [],
+            };
+        }
+
+        return {
+            bill: null,
+            items: [],
+            payments: [],
+        };
+    } catch (error) {
+        console.error(
+            "Error In Fetching Payment History Bill Details",
+            error?.message || error
+        );
+
+        return {
+            bill: null,
+            items: [],
+            payments: [],
+        };
+    }
+};
+
+
+export const getPaymentReturnDetails = async (emid) => {
+    if (!emid) {
+        return warningNofity("Employee Id is Missing!");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/get-cash-return/${emid}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
+        return [];
+    }
+};
+
+
+export const getReturnLogDetails = async (paymentId) => {
+    if (!paymentId) {
+        return warningNofity("Billing Id is Missing!");
+    }
+    try {
+        const res = await axioslogin.get(
+            `/dietdelivery/bill-change-return/${paymentId}`
+        );
+        const { success, data } = res.data;
+        if (success === 1) {
+            return data ?? [];
+        }
+        return [];
+    } catch (error) {
+        console.error(
+            "Error In Fetching Proforma Details",
+            error?.message || error
+        );
         return [];
     }
 };
