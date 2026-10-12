@@ -1,7 +1,9 @@
 import React, { memo } from "react";
 import { Box } from "@mui/joy";
 import { useAllHighlightMaster } from "../CommonData/UseQuery";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
+// Filter chips for the bystander food list (All, then each highlight group)
 const SpecialMealSelectScollBox = ({
   selectedFilter = 0,
   setSelectedFilter,
@@ -16,7 +18,7 @@ const SpecialMealSelectScollBox = ({
   const filterData = [
     {
       highlight_type_id: 0,
-      highlight_name: "ALL",
+      highlight_name: "All",
     },
     ...allHighlights,
   ];
@@ -27,15 +29,16 @@ const SpecialMealSelectScollBox = ({
 
   return (
     <Box
+      role="group"
+      aria-label="Filter foods"
       sx={{
-        width: "95%",
         display: "flex",
         gap: 1,
         overflowX: "auto",
-        whiteSpace: "nowrap",
-        p: 1,
-        mt: 1,
+        py: 1,
+        mt: 0.5,
         "&::-webkit-scrollbar": { display: "none" },
+        scrollbarWidth: "none",
       }}
     >
 
@@ -47,33 +50,24 @@ const SpecialMealSelectScollBox = ({
         return (
           <Box
             key={item.highlight_type_id}
+            component="button"
+            type="button"
+            aria-pressed={isSelected}
             onClick={() => handleSelect(item)}
             sx={{
-              fontSize: 11,
-              fontWeight: 600,
+              flexShrink: 0,
+              height: 40,
+              px: 2,
               borderRadius: "20px",
               cursor: "pointer",
-              px: 2,
-              py: 0.6,
-              transition: "0.2s ease",
-
-              backgroundColor: isSelected
-                ? "#9d25b8"
-                : "transparent",
-
-              color: isSelected
-                ? "#fff"
-                : "#555",
-
-              border: isSelected
-                ? "1px solid #9d25b8"
-                : "1px solid #ddd",
-
-              "&:hover": {
-                backgroundColor: isSelected
-                  ? "#8a1fa3"
-                  : "#f3f3f3",
-              },
+              whiteSpace: "nowrap",
+              fontFamily: FONT,
+              fontSize: 15,
+              fontWeight: 600,
+              bgcolor: isSelected ? COLORS.plum : COLORS.white,
+              color: isSelected ? COLORS.white : COLORS.ink,
+              border: `1.5px solid ${isSelected ? COLORS.plum : COLORS.fieldBorder}`,
+              ...focusRing,
             }}
           >
             {item.highlight_name}

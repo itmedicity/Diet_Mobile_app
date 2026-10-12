@@ -1,29 +1,18 @@
-import { Box, Button } from "@mui/joy";
+import { Box } from "@mui/joy";
 import React, { memo, useState, useCallback, useEffect } from "react";
-import TextComponent from "../../components/TextComponent";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
-import CancelIcon from "@mui/icons-material/Cancel";
-import ReplayIcon from "@mui/icons-material/Replay";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import BlockIcon from "@mui/icons-material/Block";
-import InventoryIcon from "@mui/icons-material/Inventory";
 import { axioslogin } from "../../Axios/axios";
 import { EmpauthId, succesNofity, warningNofity } from "../Constant/Constant";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
+import { DELIVERY_STATUS } from "../../CommonData/deliveryStatus";
 
-/* STATUS CONFIG */
+/* STATUS CONFIG: the shared delivery colours, plus two that only items have */
 const statusConfig = {
-    PENDING: { label: "Pending", color: "#f0ad4e", bg: "#fff4e5", icon: AccessTimeIcon },
-    PREPARED: { label: "Prepared", color: "#0dcaf0", bg: "#e7f9fc", icon: InventoryIcon },
-    DELIVERED: { label: "Delivered", color: "#198754", bg: "#f0faf4", icon: DoneAllIcon },
-    SKIPPED: { label: "Skipped", color: "#6c757d", bg: "#f1f3f5", icon: BlockIcon },
-    CANCELLED: { label: "Cancelled", color: "#dc3545", bg: "#fdf1f0", icon: CancelIcon },
-    PICKEDUP: { label: "Picked Up", color: "#6610f2", bg: "#f3f0ff", icon: LocalShippingIcon },
-    RETURNED: { label: "Returned", color: "#fd7e14", bg: "#fff4e6", icon: ReplayIcon },
-    UNDELIVERED: { label: "Undelivered", color: "#adb5bd", bg: "#f8f9fa", icon: CancelIcon },
+    ...DELIVERY_STATUS,
+    PREPARED: { label: "Prepared", color: "#17608F", tint: "#E1F0FA", line: "#9CC7E3" },
+    SKIPPED: { label: "Skipped", color: COLORS.muted, tint: COLORS.surface, line: COLORS.line },
 };
 
 const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
@@ -37,11 +26,9 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
     const [loading, setLoading] = useState(false);
     const queryClient = useQueryClient()
 
-    const { patient_id, diet_plan_id, AssignyStatus } = patientData ?? {};
+    const { bill_status } = BillingDetail ?? {};
 
-    const { bill_no, billing_status, bill_status, bill_source } = BillingDetail ?? {};
-
-    const { item_name, description, quantity, unit_code, item_id, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
+    const { item_name, description, quantity, patient_diet_id, isBilled, ItemBillStatus } = item ?? {};
 
     /* TOGGLE SELECT */
     const handleToggle = (st) => {
@@ -125,7 +112,8 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
         item,
         patientData,
         id,
-        dietPlanId
+        patient_diet_id,
+        queryClient
     ]);
 
     useEffect(() => {
@@ -133,208 +121,145 @@ const DeliveryFoodItemCard = ({ item, patientData, deliveryStatus, dietPlanId,
     }, [item]);
 
     const visibleStatuses =
-        allowedStatusFlow[item?.delivery_status || "PENDING"];
+        allowedStatusFlow[item?.delivery_status || "PENDING"] || [];
 
     const currentStatus =
-        statusConfig[item?.delivery_status || "PENDING"];
+        statusConfig[item?.delivery_status || "PENDING"] || statusConfig.PENDING;
+
+    // the tag shows the bill state once there is one, otherwise the delivery state
+    const tagText = bill_status || ItemBillStatus || currentStatus.label;
+    const orderNotPickedUp = deliveryStatus === "PENDING";
 
     return (
         <Box
             sx={{
-                width: "94%",
-                borderRadius: 4,
-                bgcolor: currentStatus.bg,
-                p: 1,
-                mt: 1,
-                border: `1px solid ${currentStatus.color}`,
-                boxShadow: "sm"
+                width: "100%", mb: 1.5, borderRadius: "16px", overflow: "hidden", fontFamily: FONT,
+                bgcolor: COLORS.white, border: `1.5px solid ${currentStatus.line}`,
             }}
         >
             {/* HEADER */}
             <Box
+                component="button"
+                type="button"
+                aria-expanded={expanded}
                 onClick={() => setExpanded(prev => !prev)}
                 sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    cursor: "pointer"
+                    width: "100%", minHeight: 64, p: 1.5, border: 0, textAlign: "left", cursor: "pointer",
+                    bgcolor: currentStatus.tint, fontFamily: FONT,
+                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5,
+                    ...focusRing,
                 }}
             >
-                <Box sx={{ width: "40%" }}>
-                    <TextComponent value={item_name} size={13} weight={600} />
-                    <TextComponent noWrap value={description} size={9} color="#666" />
+                <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25 }}>{item_name}</Box>
+                    {description && (
+                        <Box sx={{ mt: 0.25, fontSize: 14, color: COLORS.muted, lineHeight: 1.35 }}>{description}</Box>
+                    )}
                 </Box>
 
-                {/* <Box sx={{ textAlign: "right", display: 'flex', gap: 1 }}>
-                    <Box>
-                        <TextComponent
-                            value={`Qty: ${quantity}`}
-                            size={11}
-                            weight={700}
-                        />
+                <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box sx={{ textAlign: "right" }}>
+                        <Box sx={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>{`Qty ${quantity}`}</Box>
                         <Box
+                            component="span"
                             sx={{
-                                mt: 0.5,
-                                px: 1.2,
-                                py: 0.3,
-                                borderRadius: 20,
-                                bgcolor: "#fff",
-                                color: currentStatus.color,
-                                fontSize: 10,
-                                fontWeight: 700
+                                display: "inline-block", mt: 0.5, px: 1.25, py: 0.25, borderRadius: "999px",
+                                fontSize: 13, fontWeight: 700, bgcolor: COLORS.white,
+                                color: isBilled ? COLORS.success : currentStatus.color,
+                                border: `1px solid ${isBilled ? "#A9D3B8" : currentStatus.line}`,
                             }}
                         >
-                            {currentStatus.label}
+                            {tagText}
                         </Box>
                     </Box>
                     <ExpandMoreRoundedIcon
-                        sx={{
-                            transform: expanded ? "rotate(180deg)" : "rotate(0deg)"
-                        }}
-                    />
-                </Box> */}
-
-                <Box sx={{ textAlign: "right", display: "flex", gap: 1 }}>
-                    <Box>
-                        <TextComponent
-                            value={`Qty: ${quantity}`}
-                            size={11}
-                            weight={700}
-                        />
-
-                        <Box
-                            sx={{
-                                mt: 0.5,
-                                px: 1.2,
-                                py: 0.3,
-                                borderRadius: 20,
-                                bgcolor: isBilled ? "#E8F5E9" : "#fff",
-                                color: isBilled ? "#2E7D32" : currentStatus.color,
-                                fontSize: 10,
-                                fontWeight: 700
-                            }}
-                        >
-                            {bill_status ? bill_status : ItemBillStatus ? ItemBillStatus : currentStatus.label}
-                        </Box>
-                    </Box>
-
-                    <ExpandMoreRoundedIcon
-                        sx={{
-                            transform: expanded
-                                ? "rotate(180deg)"
-                                : "rotate(0deg)"
-                        }}
+                        aria-hidden="true"
+                        sx={{ color: COLORS.muted, transform: expanded ? "rotate(180deg)" : "none" }}
                     />
                 </Box>
-
-
             </Box>
 
             {/* EXPANDED */}
-            <Box
-                sx={{
-                    maxHeight: expanded ? 600 : 0,
-                    overflow: "hidden",
-                    transition: "0.3s"
-                }}
-            >
-                <Box sx={{ mt: 1.5 }}>
+            {expanded && visibleStatuses.length > 0 && (
+                <Box sx={{ p: 1.5, borderTop: `1px solid ${COLORS.line}` }}>
+
+                    <Box sx={{ mb: 1, fontSize: 15, fontWeight: 600, color: COLORS.ink }}>Mark this item as</Box>
 
                     {/* TOGGLE STATUS CARDS */}
+                    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                        {visibleStatuses.map((st) => {
+                            const s = statusConfig[st];
+                            const isActive = selectedStatus === st;
+
+                            return (
+                                <Box
+                                    key={st}
+                                    component="button"
+                                    type="button"
+                                    aria-pressed={isActive}
+                                    onClick={() => handleToggle(st)}
+                                    sx={{
+                                        minHeight: 52, px: 1.5, borderRadius: "12px", cursor: "pointer", fontFamily: FONT,
+                                        fontSize: 16, fontWeight: 700,
+                                        bgcolor: isActive ? s.color : COLORS.white,
+                                        color: isActive ? COLORS.white : s.color,
+                                        border: `1.5px solid ${isActive ? s.color : s.line}`,
+                                        ...focusRing,
+                                    }}
+                                >
+                                    {s.label}
+                                </Box>
+                            );
+                        })}
+                    </Box>
+
+                    {/* REMARKS */}
+                    <Box component="label" htmlFor={`remarks-${item?.item_id}-${item?.type_slno}`}
+                        sx={{ display: "block", mt: 1.5, mb: 0.75, fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
+                        Remarks (optional)
+                    </Box>
                     <Box
+                        component="textarea"
+                        id={`remarks-${item?.item_id}-${item?.type_slno}`}
+                        rows={2}
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
                         sx={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(2, 1fr)",
-                            gap: 1.2
+                            boxSizing: "border-box", width: "100%", p: 1.5, fontFamily: FONT, fontSize: 16, color: COLORS.ink,
+                            bgcolor: COLORS.surface, border: `1.5px solid ${COLORS.fieldBorder}`, borderRadius: "12px",
+                            outline: "none", resize: "vertical",
+                            "&:focus": { borderColor: COLORS.plum, boxShadow: `0 0 0 3px ${COLORS.orchid}` },
+                        }}
+                    />
+
+                    {orderNotPickedUp && (
+                        <Box sx={{ mt: 1, fontSize: 14, color: COLORS.warning }}>
+                            Pick up the order from the kitchen first, then you can set a status.
+                        </Box>
+                    )}
+
+                    {/* CONFIRM */}
+                    <Box
+                        component="button"
+                        type="button"
+                        onClick={confirmAction}
+                        disabled={
+                            orderNotPickedUp || loading || !selectedStatus ||
+                            item?.delivery_status === "DELIVERED" ||
+                            item?.delivery_status === "CANCELLED"
+                        }
+                        sx={{
+                            mt: 1.5, width: "100%", height: 52, border: 0, borderRadius: "14px", cursor: "pointer",
+                            bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 17, fontWeight: 700,
+                            "&:active": { bgcolor: COLORS.plumDark },
+                            "&:disabled": { bgcolor: COLORS.orchid, color: COLORS.muted, cursor: "not-allowed" },
+                            ...focusRing,
                         }}
                     >
-                        {
-                            visibleStatuses.map((st) => {
-                                const Icon = statusConfig[st].icon;
-                                const isActive = selectedStatus === st;
-
-                                return (
-                                    <Box
-                                        key={st}
-                                        onClick={() => handleToggle(st)}
-                                        sx={{
-                                            p: 1.2,
-                                            borderRadius: 3,
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "space-between",
-                                            border: isActive
-                                                ? `2px solid ${statusConfig[st].color}`
-                                                : "1px solid #ddd",
-                                            bgcolor: isActive
-                                                ? statusConfig[st].bg
-                                                : "#fff",
-                                            transition: "0.2s"
-                                        }}
-                                    >
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <Icon sx={{ fontSize: 18, color: statusConfig[st].color }} />
-                                            <TextComponent value={statusConfig[st].label} size={11} weight={600} />
-                                        </Box>
-
-                                        {/* ACTIVE DOT */}
-                                        {isActive && (
-                                            <Box
-                                                sx={{
-                                                    width: 8,
-                                                    height: 8,
-                                                    borderRadius: "50%",
-                                                    bgcolor: statusConfig[st].color
-                                                }}
-                                            />
-                                        )}
-                                    </Box>
-                                );
-                            })}
+                        {loading ? "Saving…" : item?.delivery_status === "PENDING" ? "Pick up order" : "Apply status"}
                     </Box>
-                    {
-                        visibleStatuses?.length > 0 &&
-                        <>
-                            {/* REMARKS */}
-                            <textarea
-                                rows={3}
-                                placeholder="Add remarks"
-                                value={remarks}
-                                onChange={(e) => setRemarks(e.target.value)}
-                                style={{
-                                    width: "98%",
-                                    marginTop: 10,
-                                    padding: 2,
-                                    borderRadius: 6,
-                                    border: "1px solid #ccc"
-                                }}
-                            />
-
-                            {/* CONFIRM */}
-                            <Button
-                                fullWidth
-                                sx={{ mt: 1.5 }}
-                                loading={loading}
-                                disabled={
-                                    deliveryStatus === "PENDING" || loading || !selectedStatus ||
-                                    item?.delivery_status === "DELIVERED" ||
-                                    item?.delivery_status === "CANCELLED"
-                                }
-                                onClick={confirmAction}
-                            >{
-                                    item?.delivery_status === "PENDING"
-                                        ? "Pick Up Order"
-                                        : "Apply Status"
-                                }
-
-                            </Button>
-                        </>
-                    }
-
                 </Box>
-
-            </Box>
+            )}
         </Box>
     );
 };

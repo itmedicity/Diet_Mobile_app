@@ -1,437 +1,122 @@
-import React, { memo } from "react";
-import { Box, Typography } from "@mui/joy";
+import React, { memo, useMemo } from "react";
+import { Box } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
-
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
-import CircleRoundedIcon from "@mui/icons-material/CircleRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
+import MealRoundStrip from "../../components/MealRoundStrip";
+import { ROUNDS, currentRoundIndex } from "../../CommonData/mealRound";
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
 
-
-
-// const TotalNavs = [
-//     {
-//         label: "Order Taking",
-//         shortLabel: "New Order",
-//         path: "/Home",
-//         icon: AddRoundedIcon,
-//     },
-//     {
-//         label: "Delivery",
-//         path: "/delivery",
-//         icon: LocalShippingRoundedIcon,
-//     },
-//     {
-//         label: "Collection",
-//         path: "/cash-collection",
-//         icon: PaymentsRoundedIcon,
-//     },
-// ];
+// What staff can start from here, in the order of a ward round: take the order, deliver it, collect the cash
+const ACTIONS = [
+    {
+        key: "order",
+        path: "/Home",
+        title: "Take an order",
+        hint: "Choose a nursing station, then a patient's bed.",
+        icon: AddRoundedIcon,
+        primary: true,
+    },
+    {
+        key: "delivery",
+        path: "/delivery",
+        title: "Deliver orders",
+        hint: "Pick up packed trays and mark them delivered.",
+        icon: LocalShippingRoundedIcon,
+    },
+    {
+        key: "cash",
+        path: "/cash-collection",
+        title: "Cash collection",
+        hint: "Your payments, returns and history.",
+        icon: PaymentsRoundedIcon,
+    },
+];
 
 const ParentComponent = () => {
     const navigate = useNavigate();
 
-    const handleNavigation = (path) => {
-        navigate(path);
-    };
+    const roundIndex = useMemo(() => currentRoundIndex(), []);
 
     return (
         <Box
             sx={{
                 minHeight: "100dvh",
                 width: "100%",
-                background: "#F7F7F5",
+                bgcolor: COLORS.wash,
                 display: "flex",
                 flexDirection: "column",
-                overflow: "hidden",
-                boxSizing: "border-box",
+                fontFamily: FONT,
+                color: COLORS.ink,
             }}
         >
-         
             <LoginEmployeeHeader />
 
-       
-            <Box
-                sx={{
-                    flex: 1,
-                    width: "100%",
-                    maxWidth: "480px",
-                    mx: "auto",
-                    px: {
-                        xs: 2,
-                        sm: 2.5,
-                    },
-                    py: {
-                        xs: 1.5,
-                        sm: 2,
-                    },
-                    display: "flex",
-                    flexDirection: "column",
-                    boxSizing: "border-box",
-                    minHeight: 0,
-                }}
-            >
-              
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        mb: {
-                            xs: 1,
-                            sm: 1.5,
-                        },
-                    }}
-                >
-                    <Box>
-                        <Typography
-                            sx={{
-                                mt: 0.4,
-                                fontSize: {
-                                    xs: "0.72rem",
-                                    sm: "0.78rem",
-                                },
-                                fontWeight: 600,
-                                color: "#8A8A8A",
-                                letterSpacing: "0.01em",
-                            }}
-                        >
-                            Kitchen Operations
-                        </Typography>
+            <Box sx={{ width: "100%", maxWidth: 480, mx: "auto", flex: 1, display: "flex", flexDirection: "column" }}>
+
+                {/* The round that is running now */}
+                <Box sx={{ px: 3, pt: 4, pb: 4 }}>
+                    <Box component="h1" sx={{ m: 0, fontSize: 32, lineHeight: 1.1, fontWeight: 700, letterSpacing: "-0.02em" }}>
+                        {ROUNDS[roundIndex].name} round
                     </Box>
-
-                    {/* Online indicator */}
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.7,
-                            pt: 0.5,
-                        }}
-                    >
-                        <CircleRoundedIcon
-                            sx={{
-                                fontSize: 9,
-                                color: "#28A745",
-                            }}
-                        />
-
-                        <Typography
-                            sx={{
-                                fontSize: "0.65rem",
-                                fontWeight: 700,
-                                color: "#777",
-                            }}
-                        >
-                            ONLINE
-                        </Typography>
+                    <Box sx={{ mt: 3 }}>
+                        <MealRoundStrip activeIndex={roundIndex} />
                     </Box>
                 </Box>
 
-          
+                {/* What to do next */}
                 <Box
+                    component="main"
                     sx={{
-                        flex: 1,
-                        minHeight: 0,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        py: {
-                            xs: 1,
-                            sm: 2,
-                        },
+                        flex: 1, bgcolor: COLORS.white, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+                        px: 2.5, pt: 3, pb: "calc(24px + env(safe-area-inset-bottom))",
+                        display: "flex", flexDirection: "column", gap: 1.5,
                     }}
                 >
-                    <Typography
-                        sx={{
-                            fontSize: "0.65rem",
-                            fontWeight: 800,
-                            letterSpacing: "0.16em",
-                            color: "#A0A0A0",
-                            mb: {
-                                xs: 1.5,
-                                sm: 2,
-                            },
-                        }}
-                    >
-                        QUICK ACTION
-                    </Typography>
-
-                    <Box
-                        onClick={() => handleNavigation("/Home")}
-                        sx={{
-                            position: "relative",
-                            width: {
-                                xs: 96,
-                                sm: 110,
-                            },
-                            height: {
-                                xs: 96,
-                                sm: 110,
-                            },
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-
-                            "&:hover .outer-ring": {
-                                transform: "rotate(45deg)",
-                            },
-
-                            "&:active": {
-                                transform: "scale(0.96)",
-                            },
-
-                            transition: "transform 0.15s ease",
-                        }}
-                    >
-                      
+                    {ACTIONS.map(({ key, path, title, hint, icon: Icon, primary }) => (
                         <Box
-                            className="outer-ring"
+                            key={key}
+                            component="button"
+                            type="button"
+                            onClick={() => navigate(path)}
                             sx={{
-                                position: "absolute",
-                                inset: 8,
-                                border: "2px solid #9b1ea9",
-                                borderRadius: "24px",
-                                transform: "rotate(45deg)",
-                                transition: "transform 0.3s ease",
-                            }}
-                        />
-
-                     
-                        <Box
-                            sx={{
-                                width: {
-                                    xs: 66,
-                                    sm: 76,
-                                },
-                                height: {
-                                    xs: 66,
-                                    sm: 76,
-                                },
-                                borderRadius: "20px",
-                                background: "#9b1ea9",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                position: "relative",
-                                zIndex: 2,
-                                boxShadow:
-                                    "0 10px 25px rgba(0,0,0,0.14)",
+                                width: "100%", minHeight: primary ? 92 : 76, px: 2, py: 1.5,
+                                display: "flex", alignItems: "center", gap: 2, textAlign: "left", cursor: "pointer",
+                                fontFamily: FONT, borderRadius: "16px",
+                                bgcolor: primary ? COLORS.plum : COLORS.white,
+                                color: primary ? COLORS.white : COLORS.ink,
+                                border: primary ? 0 : `1.5px solid ${COLORS.line}`,
+                                "&:active": { bgcolor: primary ? COLORS.plumDark : COLORS.wash },
+                                ...focusRing,
                             }}
                         >
-                            <AddRoundedIcon
+                            <Box
+                                aria-hidden="true"
                                 sx={{
-                                    color: "#fff",
-                                    fontSize: {
-                                        xs: 38,
-                                        sm: 44,
-                                    },
+                                    flexShrink: 0, width: 44, height: 44, borderRadius: "12px", display: "grid", placeItems: "center",
+                                    bgcolor: primary ? "rgba(255,255,255,0.18)" : COLORS.wash,
+                                    color: primary ? COLORS.white : COLORS.plum,
                                 }}
-                            />
-                        </Box>
-                    </Box>
-
-                    <Typography
-                        onClick={() => handleNavigation("/Home")}
-                        sx={{
-                            mt: {
-                                xs: 1.5,
-                                sm: 2,
-                            },
-                            fontSize: {
-                                xs: "0.85rem",
-                                sm: "0.9rem",
-                            },
-                            fontWeight: 900,
-                            letterSpacing: "0.08em",
-                            color: "#101010",
-                            cursor: "pointer",
-                        }}
-                    >
-                        NEW ORDER
-                    </Typography>
-                </Box>
-
-              
-                <Box
-                    sx={{
-                        borderTop: "1px solid #DEDEDC",
-                        borderBottom: "1px solid #DEDEDC",
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                        }}
-                    >
-                     
-                        <Box
-                            onClick={() =>
-                                handleNavigation("/delivery")
-                            }
-                            sx={{
-                                minHeight: {
-                                    xs: 76,
-                                    sm: 84,
-                                },
-                                px: {
-                                    xs: 1,
-                                    sm: 1.5,
-                                },
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: {
-                                    xs: 1,
-                                    sm: 1.2,
-                                },
-                                cursor: "pointer",
-                                borderRight: "1px solid #DEDEDC",
-
-                                "&:active": {
-                                    background: "#EEEEEC",
-                                },
-                            }}
-                        >
-                            <LocalShippingRoundedIcon
-                                sx={{
-                                    fontSize: {
-                                        xs: 22,
-                                        sm: 25,
-                                    },
-                                    color: "#9b1ea9",
-                                }}
-                            />
-
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: {
-                                            xs: "0.7rem",
-                                            sm: "0.75rem",
-                                        },
-                                        fontWeight: 900,
-                                        color: "#202020",
-                                    }}
-                                >
-                                    DELIVERY
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.58rem",
-                                        color: "#999",
-                                        mt: 0.2,
-                                    }}
-                                >
-                                    Mark orders
-                                </Typography>
+                            >
+                                <Icon />
                             </Box>
-                        </Box>
 
-                       
-                        <Box
-                            onClick={() =>
-                                handleNavigation("/cash-collection")
-                            }
-                            sx={{
-                                minHeight: {
-                                    xs: 76,
-                                    sm: 84,
-                                },
-                                px: {
-                                    xs: 1,
-                                    sm: 1.5,
-                                },
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: {
-                                    xs: 1,
-                                    sm: 1.2,
-                                },
-                                cursor: "pointer",
-
-                                "&:active": {
-                                    background: "#9b1ea9",
-                                },
-                            }}
-                        >
-                            <PaymentsRoundedIcon
-                                sx={{
-                                    fontSize: {
-                                        xs: 22,
-                                        sm: 25,
-                                    },
-                                    color: "#9b1ea9",
-                                }}
-                            />
-
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: {
-                                            xs: "0.7rem",
-                                            sm: "0.75rem",
-                                        },
-                                        fontWeight: 900,
-                                        color: "#202020",
-                                    }}
-                                >
-                                    COLLECTION
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.58rem",
-                                        color: "#999",
-                                        mt: 0.2,
-                                    }}
-                                >
-                                    Cash collection
-                                </Typography>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Box sx={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>{title}</Box>
+                                <Box sx={{ mt: 0.25, fontSize: 14, lineHeight: 1.4, color: primary ? "rgba(255,255,255,0.88)" : COLORS.muted }}>
+                                    {hint}
+                                </Box>
                             </Box>
+
+                            <ChevronRightRoundedIcon
+                                aria-hidden="true"
+                                sx={{ flexShrink: 0, color: primary ? COLORS.white : COLORS.muted }}
+                            />
                         </Box>
-                    </Box>
-                </Box>
-
-          
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 0.7,
-                        pt: {
-                            xs: 1.2,
-                            sm: 1.5,
-                        },
-                    }}
-                >
-                    <CircleRoundedIcon
-                        sx={{
-                            fontSize: 7,
-                            color: "#28A745",
-                        }}
-                    />
-
-                    <Typography
-                        sx={{
-                            fontSize: {
-                                xs: "0.58rem",
-                                sm: "0.62rem",
-                            },
-                            fontWeight: 800,
-                            color: "#999",
-                            letterSpacing: "0.12em",
-                        }}
-                    >
-                        SYSTEM ONLINE
-                    </Typography>
+                    ))}
                 </Box>
             </Box>
         </Box>

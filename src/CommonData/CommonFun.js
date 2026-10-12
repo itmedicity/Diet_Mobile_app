@@ -709,10 +709,12 @@ export const getPatientDietRemarkDetails = async (plan_id) => {
         });
         const { success, data } = res.data;
         if (success === 2) {
-            return data ? data?.[0] : [];
+            // a plan without a remark has no row: answer an empty object, never undefined
+            // (React Query treats an undefined result as a failed query)
+            return data?.[0] ?? {};
         }
         // fallback for any other success code
-        return [];
+        return {};
     } catch (error) {
         console.error("Error Fetching Diet Plan Remark Details:", error?.message || error);
         return [];

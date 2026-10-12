@@ -1,11 +1,14 @@
-import { Box, Input, IconButton } from "@mui/joy";
+import { Box } from "@mui/joy";
 import SearchIcon from "@mui/icons-material/Search";
 import DoneAllRoundedIcon from "@mui/icons-material/DoneAllRounded";
 import React, { memo } from "react";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
+import { HEADER_HEIGHT } from "./LoginEmployeeHeader";
 
 const SearchComponent = ({
     onChange,
     value,
+    placeholder = "Search",
     selectionMode = false,
     allSelected = false,
     onToggleSelectAll
@@ -14,72 +17,61 @@ const SearchComponent = ({
         <Box
             sx={{
                 position: "fixed",
-                top: 50,
+                top: HEADER_HEIGHT,
                 left: 0,
                 width: "100%",
-                display: "flex",
-                justifyContent: "center",
+                boxSizing: "border-box",
+                px: 2,
                 py: 1,
-                bgcolor: "#fff",
+                bgcolor: COLORS.white,
+                borderBottom: `1px solid ${COLORS.line}`,
                 zIndex: 1000,
-                borderTop: "1px solid #f7f7f7"
             }}
         >
-            <Box
-                sx={{
-                    width: "92%",
-                    display: "flex",
-                    gap: 1,
-                    alignItems: "center"
-                }}
-            >
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                 {selectionMode && (
-                    <IconButton
-                        size="sm"
+                    <Box
+                        component="button"
+                        type="button"
                         onClick={onToggleSelectAll}
+                        aria-pressed={allSelected}
                         sx={{
-                            borderRadius: "20px",
-                            px: 2,
-                            minWidth: 95,
-                            bgcolor: allSelected ? "#7B1FA2" : "#F3E5F5",
-                            color: allSelected ? "#fff" : "#7B1FA2",
-                            border: "1px solid #CE93D8",
-                            fontWeight: 700,
-                            "&:hover": {
-                                bgcolor: allSelected
-                                    ? "#6A1B9A"
-                                    : "#E1BEE7"
-                            }
+                            flexShrink: 0, height: 44, px: 1.75, borderRadius: "12px", cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 0.5,
+                            fontFamily: FONT, fontSize: 15, fontWeight: 700,
+                            bgcolor: allSelected ? COLORS.plum : COLORS.wash,
+                            color: allSelected ? COLORS.white : COLORS.plum,
+                            border: `1.5px solid ${COLORS.plum}`,
+                            ...focusRing,
                         }}
                     >
-                        <DoneAllRoundedIcon sx={{ mr: .5 }} />
-                        {allSelected ? "Clear" : "All"}
-                    </IconButton>
+                        <DoneAllRoundedIcon sx={{ fontSize: 20 }} />
+                        {allSelected ? "Clear" : "Select all"}
+                    </Box>
                 )}
-                <Input
-                    size="sm"
-                    placeholder="Search"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    startDecorator={
-                        <SearchIcon
-                            sx={{
-                                fontSize: 18,
-                                color: "#B126EC"
-                            }}
-                        />
-                    }
-                    sx={{
-                        flex: 1,
-                        fontFamily: "Bahnschrift",
-                        fontSize: 12,
-                        borderRadius: "20px",
-                        borderColor: "#B126EC",
-                        px: 1.5
-                    }}
-                />
 
-
+                <Box sx={{ position: "relative", flex: 1 }}>
+                    <SearchIcon
+                        aria-hidden="true"
+                        sx={{ position: "absolute", left: 12, top: 12, fontSize: 20, color: COLORS.muted }}
+                    />
+                    <Box
+                        component="input"
+                        type="search"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        aria-label={placeholder}
+                        autoComplete="off"
+                        sx={{
+                            boxSizing: "border-box", width: "100%", height: 44, pl: 5, pr: 1.5,
+                            fontFamily: FONT, fontSize: 16, color: COLORS.ink,
+                            bgcolor: COLORS.surface, border: `1.5px solid ${COLORS.fieldBorder}`,
+                            borderRadius: "12px", outline: "none",
+                            "&:focus": { borderColor: COLORS.plum, boxShadow: `0 0 0 3px ${COLORS.orchid}` },
+                        }}
+                    />
+                </Box>
             </Box>
         </Box>
     );

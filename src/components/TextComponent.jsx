@@ -1,11 +1,12 @@
 import { Typography } from '@mui/joy';
 import React, { memo } from 'react'
+import { FONT } from '../Style/designTokens';
 
 const TextComponent = ({
     size = 16,
     weight = 500,
     value,
-    fam = 'Bahnschrift',
+    fam = FONT, // system font stack (Bahnschrift only exists on Windows)
     color = 'black',
     noWrap,
     wrap = false

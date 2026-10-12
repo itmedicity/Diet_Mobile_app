@@ -1,45 +1,16 @@
 import React, { memo } from "react";
 import { Box } from "@mui/joy";
-import TextComponent from "../../../components/TextComponent";
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown';
+import { COLORS, FONT } from "../../../Style/designTokens";
+import { SummaryRow } from "./BillDetailList";
 
-const Row = ({
-    label,
-    value,
-    color = "#444",
-    bold = false,
-}) => (
-    <Box
-        sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 0.5,
-        }}
-    >
-        <TextComponent
-            value={label}
-            size={12}
-            weight={bold ? 700 : 500}
-            color={color}
-        />
-
-        <TextComponent
-            value={value}
-            size={12}
-            weight={bold ? 700 : 600}
-            color={color}
-        />
-    </Box>
-);
-
-
+// The proforma (estimate) lines for this order
 const ProformaDetailList = ({
     expand = false,
     items = [],
-    setExpand,
     summary = {}
 }) => {
+
+    if (!expand) return null;
 
     // Calculate total from items if summary.total is not provided
     const total = items?.reduce(
@@ -48,168 +19,42 @@ const ProformaDetailList = ({
         0
     );
 
-
     return (
-        <Box
-            sx={{
-                maxHeight: expand ? "60vh" : 0,
-                overflow: "hidden",
-                transition: "all .35s ease",
-                opacity: expand ? 1 : 0,
-                bgcolor: "#f7f2f9",
-                mb: 2,
-                boxShadow: "0 -6px 30px rgba(0,0,0,.18)",
-                border: "1px dashed #636161",
-                mx: 1,
-                position: 'relative',
-                zIndex:999
-            }} >
-            <Box
-                onClick={() => setExpand(false)}
-                sx={{
-                    position: 'absolute',
-                    width: 100,
-                    height: 20,
-                    bgcolor: '#a240f1',
-                    borderBottomRightRadius: 5,
-                    borderBottomLeftRadius: 5,
-                    right: 2,
-                    boxShadow: 'md',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                }}>
-                <KeyboardDoubleArrowDownIcon sx={{
-                    fontSize: 14,
-                    color: '#fff'
-                }} />
+        <Box sx={{ bgcolor: COLORS.white, fontFamily: FONT, borderBottom: `1px solid ${COLORS.line}` }}>
+            <Box sx={{ px: 2.5, pt: 1.5, fontSize: 16, fontWeight: 700, color: COLORS.plum }}>Proforma invoice</Box>
 
-            </Box>
-            {/* ITEMS */}
-            <Box
-                sx={{
-                    px: 2,
-                    pt: 2,
-
-                    overflowY: "auto",
-                    maxHeight: "45vh",
-
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-
-                    "&::-webkit-scrollbar": {
-                        display: "none",
-                    },
-                }}
-            >
-
-                {items?.map((item) => (
-
+            <Box sx={{ px: 2.5, overflowY: "auto", maxHeight: "34dvh" }}>
+                {items?.map((item, index) => (
                     <Box
                         key={item?.proforma_detail_id}
                         sx={{
-                            py: 1.5,
-
-                            borderBottom:
-                                "1px dashed #ddd",
-
-                            display: "flex",
-
-                            justifyContent:
-                                "space-between",
-
-                            alignItems:
-                                "center",
-
-                            gap: 1,
+                            py: 1.25, display: "flex", alignItems: "center", gap: 1,
+                            borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}`,
                         }}
                     >
-
-                        {/* ITEM NAME + QTY */}
-
-                        <Box flex={1}>
-
-                            <TextComponent
-                                value={
-                                    item?.item_name ||
-                                    item?.description ||
-                                    "-"
-                                }
-                                weight={600}
-                                size={13}
-                            />
-
-                            <TextComponent
-                                value={`Qty ${item?.quantity ?? 0} × ₹${Number(
-                                    item?.rate ?? 0
-                                ).toFixed(2)}`}
-                                size={10}
-                                color="#666"
-                            />
-
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>
+                                {item?.item_name || item?.description || "-"}
+                            </Box>
+                            <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                {`Qty ${item?.quantity ?? 0} × ₹${Number(item?.rate ?? 0).toFixed(2)}`}
+                            </Box>
                         </Box>
-
-
-                        {/* ITEM AMOUNT */}
-
-                        <TextComponent
-                            value={`₹${Number(
-                                item?.amount ?? 0
-                            ).toFixed(2)}`}
-                            weight={700}
-                            size={13}
-                        />
-
+                        <Box sx={{ fontSize: 16, fontWeight: 700, color: COLORS.ink }}>
+                            {`₹${Number(item?.amount ?? 0).toFixed(2)}`}
+                        </Box>
                     </Box>
-
                 ))}
-
             </Box>
 
-
-            {/* SUMMARY */}
-
-            <Box sx={{ p: 2 }}>
-
-                <Row
-                    label="Item Total"
-                    value={`₹${Number(
-                        summary?.gross ?? total
-                    ).toFixed(2)}`}
-                />
-
-
-                <Row
-                    label="Discount"
-                    value={`-₹${Number(
-                        summary?.discount ?? 0
-                    ).toFixed(2)}`}
-                    color="#2E7D32"
-                />
-
-
-                <Row
-                    label="GST"
-                    value={`₹${Number(
-                        summary?.gst ?? 0
-                    ).toFixed(2)}`}
-                />
-
-
-                <Row
-                    label="Total"
-                    value={`₹${Number(
-                        summary?.total ?? total
-                    ).toFixed(2)}`}
-                    bold
-                />
-
+            <Box sx={{ px: 2.5, py: 1.5 }}>
+                <SummaryRow label="Item total" value={`₹${Number(summary?.gross ?? total).toFixed(2)}`} />
+                <SummaryRow label="Discount" value={`-₹${Number(summary?.discount ?? 0).toFixed(2)}`} color={COLORS.success} />
+                <SummaryRow label="GST" value={`₹${Number(summary?.gst ?? 0).toFixed(2)}`} />
+                <SummaryRow label="Total" value={`₹${Number(summary?.total ?? total).toFixed(2)}`} bold />
             </Box>
-
         </Box>
     );
 };
-
 
 export default memo(ProformaDetailList);

@@ -3,12 +3,12 @@ import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
 import { Box } from "@mui/joy";
 import SearchComponent from "../../components/SearchComponent";
 import DeliveryPatientCardList from "../PatientDeliveryMarking/DeliveryPatientCardList";
-import { groupByPatient } from "../../CommonData/Common";
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../Constant/Constant";
-import { useAllAssingedDeliveryItem, useAllDietDeliveryDetails } from "../../CommonData/UseQuery";
+import { useAllAssingedDeliveryItem } from "../../CommonData/UseQuery";
 import DeliveryStatusFilter from "./DeliveryStatusFilter";
 import DeliveryBulkAction from "./DeliveryMarkingComponent/DeliveryBulkAction";
 import { axioslogin } from "../../Axios/axios";
+import { COLORS, FONT } from "../../Style/designTokens";
 
 const Delivery = () => {
 
@@ -18,24 +18,27 @@ const Delivery = () => {
         refetch: FetchDeliveryDetails
     } = useAllAssingedDeliveryItem(id);
 
-
-
     const [seachVal, setSearchVal] = useState("");
-    const [selectionMode, setSelectionMode] = useState(true);
+    const [selectionMode] = useState(true);
     const [selectedItems, setSelectedItems] = useState([]);
-
+    const [picking, setPicking] = useState(false);
 
     // LOAD INITIAL VALUE FROM LOCAL STORAGE
     const [deliveryStatus, setDeliveryStatus] = useState(() => {
-        return localStorage.getItem("delivery_filter") || "";
+        try {
+            return localStorage.getItem("delivery_filter") || "";
+        } catch (e) {
+            return "";
+        }
     });
 
     // SAVE WHEN STATUS CHANGES
     useEffect(() => {
-        localStorage.setItem(
-            "delivery_filter",
-            deliveryStatus
-        );
+        try {
+            localStorage.setItem("delivery_filter", deliveryStatus);
+        } catch (e) {
+            // private window / blocked storage: the filter just is not remembered
+        }
     }, [deliveryStatus]);
 
 
@@ -61,23 +64,28 @@ const Delivery = () => {
         });
     };
 
-
-
-    const filteredData = DeliveryDetail?.filter(item => {
-        const matchesStatus =
-            !deliveryStatus ||
-            item.ItemStatus === deliveryStatus;
-
+    // orders that match the search (the status chips count within these)
+    const searched = useMemo(() => {
         const search = seachVal.toLowerCase();
-
-        const matchesSearch =
+        return (DeliveryDetail || []).filter(item =>
             !search ||
             item?.fb_ptc_name?.toLowerCase().includes(search) ||
             item?.fb_pt_no?.toString().toLowerCase().includes(search) ||
-            item?.fb_bdc_no?.toString().toLowerCase().includes(search);
+            item?.fb_bdc_no?.toString().toLowerCase().includes(search)
+        );
+    }, [DeliveryDetail, seachVal]);
 
-        return matchesStatus && matchesSearch;
-    });
+    const counts = useMemo(() => {
+        return searched.reduce((all, item) => {
+            all[item?.ItemStatus] = (all[item?.ItemStatus] || 0) + 1;
+            return all;
+        }, {});
+    }, [searched]);
+
+    const filteredData = useMemo(
+        () => searched.filter(item => !deliveryStatus || item.ItemStatus === deliveryStatus),
+        [searched, deliveryStatus]
+    );
 
     const pendingItems = filteredData?.filter(
         item => item?.ItemStatus === "PENDING"
@@ -97,7 +105,10 @@ const Delivery = () => {
 
 
     const handlePickupOrders = useCallback(async () => {
+        // ignore extra taps while the request is running
+        if (picking) return;
         try {
+            setPicking(true);
             const response = await axioslogin.post('/dietdelivery/update-bulk-pickup', {
                 Items: selectedItems
             });
@@ -105,47 +116,55 @@ const Delivery = () => {
             if (success !== 1) return warningNofity(message || "Error in Picking Up Details");
             succesNofity(message || "SuccessFully PickedUp Details!!")
             FetchDeliveryDetails()
-            setSelectedItems()
+            // an empty list, not undefined (later selecting an order did prev.some on undefined)
+            setSelectedItems([])
         } catch (error) {
             errorNofity("Error in PickingUp Details!")
+        } finally {
+            setPicking(false);
         }
-    }, [selectedItems]);
+    }, [selectedItems, picking, FetchDeliveryDetails]);
 
     return (
-        <Box sx={{ width: "100%" }}>
+        <Box sx={{ width: "100%", minHeight: "100dvh", bgcolor: COLORS.surface }}>
             <LoginEmployeeHeader />
             <SearchComponent
                 value={seachVal}
                 onChange={setSearchVal}
+                placeholder="Search patient, UHID or bed"
                 selectionMode={selectionMode}
                 allSelected={allSelected}
                 onToggleSelectAll={handleToggleSelectAll}
             />
-            <DeliveryStatusFilter
-                value={deliveryStatus}
-                onChange={setDeliveryStatus}
-            />
-            <Box
-                sx={{
-                    width: "100%",
-                    mt: 8,
-                    minHeight: 400,
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    pb: 1,
-                }}
-            >
+
+            <Box sx={{ width: "100%", maxWidth: 560, mx: "auto", mt: 8, pb: selectedItems?.length ? 14 : 3 }}>
+                <DeliveryStatusFilter
+                    value={deliveryStatus}
+                    onChange={setDeliveryStatus}
+                    counts={counts}
+                    total={searched.length}
+                />
+
                 <DeliveryPatientCardList
                     filterdData={filteredData}
                     selectionMode={selectionMode}
                     selectedItems={selectedItems}
                     onToggleSelect={handleToggleSelect}
                 />
+
+                {!filteredData.length && (
+                    <Box sx={{ px: 3, py: 6, fontFamily: FONT, fontSize: 16, lineHeight: 1.5, color: COLORS.muted }}>
+                        {DeliveryDetail.length
+                            ? "No orders match this search or status. Clear the search or choose All."
+                            : "No orders are assigned to you yet."}
+                    </Box>
+                )}
             </Box>
+
             <DeliveryBulkAction
                 selectedCount={selectedItems?.length}
                 onAction={handlePickupOrders}
+                loading={picking}
             />
         </Box>
     );

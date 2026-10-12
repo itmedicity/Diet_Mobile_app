@@ -1,32 +1,16 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo } from "react";
 import { Box } from "@mui/joy";
-import TextComponent from "../../../components/TextComponent";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-const Row = ({ label, value, color = "#444", bold = false }) => (
-    <Box
-        sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 0.5,
-        }}
-    >
-        <TextComponent
-            value={label}
-            size={12}
-            weight={bold ? 700 : 500}
-            color={color}
-        />
-
-        <TextComponent
-            value={value}
-            size={12}
-            weight={bold ? 700 : 600}
-            color={color}
-        />
+export const SummaryRow = ({ label, value, color = COLORS.ink, bold = false }) => (
+    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.5, fontFamily: FONT }}>
+        <Box sx={{ fontSize: 15, fontWeight: bold ? 700 : 500, color }}>{label}</Box>
+        <Box sx={{ fontSize: 15, fontWeight: bold ? 700 : 600, color }}>{value}</Box>
     </Box>
 );
 
+// The bill lines of this order: tick the ones to pay, paid ones are marked
 const BillDetailList = ({
     expand = false,
     items = [],
@@ -35,8 +19,6 @@ const BillDetailList = ({
     selectedItems
 }) => {
 
-
-  
     const unpaidItems = useMemo(
         () => items?.filter((item) => item?.bill_item_status !== "PAID"),
         [items]
@@ -60,113 +42,80 @@ const BillDetailList = ({
         );
     };
 
-
+    // stays mounted while closed: the default selection above is needed for the payment button
     return (
         <Box
             sx={{
-                maxHeight: expand ? "60vh" : 0,
-                overflow: "hidden",
-                transition: "all .35s ease",
-                opacity: expand ? 1 : 0,
-                bgcolor: "#f7f2f9",
-                mb: 2,
-                boxShadow: "0 -6px 30px rgba(0,0,0,.18)",
-                border: "1px dashed #636161",
-                mx: 1,
-                zIndex:999
+                display: expand ? "block" : "none", bgcolor: COLORS.white, fontFamily: FONT,
+                borderBottom: `1px solid ${COLORS.line}`,
             }}
         >
-            <Box
-                sx={{
-                    px: 2,
-                    pt: 2,
-                    overflowY: "auto",
-                    maxHeight: "45vh",
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                    "&::-webkit-scrollbar": {
-                        display: "none",
-                    },
-                }}
-            >
-                {items?.map((item, index) => {       
+            <Box sx={{ px: 2.5, pt: 1.5, fontSize: 16, fontWeight: 700, color: COLORS.plum }}>Bill</Box>
+
+            <Box sx={{ px: 2.5, overflowY: "auto", maxHeight: "34dvh" }}>
+                {items?.map((item, index) => {
                     const checked = selectedItems.includes(item?.id);
                     const isPayed = item?.billing_status === 'PAID';
                     return (
                         <Box
-                            key={index}
+                            key={item?.id ?? index}
                             sx={{
-                                py: 1.5,
-                                borderBottom: "1px dashed #ddd",
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                gap: 1,
-                            }}>
-                            {/* Checkbox */}
-                            <Box
-                                onClick={isPayed ? undefined : () => handleToggle(item.id)}
-                                sx={{
-                                    cursor: "pointer",
-                                    width: isPayed ? 15 : 10,
-                                    height: isPayed ? 15 : 10,
-                                    borderRadius: "50%",
-                                    bgcolor: isPayed ? "#91cd24" : checked ? "#7933ea" : "#fff",
-                                    border: isPayed ? "2px solid #91cd24" : "2px solid #7933ea",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#fff",
-                                    fontSize: isPayed ? 14 : 12,
-                                    fontWeight: 700,
-                                    flexShrink: 0,
-                                    transition: ".2s",
-                                }}
-                            >
-                                {isPayed ? "₹" : checked && "✓"}
+                                py: 1, display: "flex", alignItems: "center", gap: 1,
+                                borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}`,
+                            }}
+                        >
+                            {isPayed ? (
+                                <Box
+                                    sx={{
+                                        flexShrink: 0, minWidth: 44, textAlign: "center", fontSize: 13, fontWeight: 700,
+                                        color: COLORS.success,
+                                    }}
+                                >
+                                    Paid
+                                </Box>
+                            ) : (
+                                <Box
+                                    component="button"
+                                    type="button"
+                                    role="checkbox"
+                                    aria-checked={checked}
+                                    aria-label={`Pay for ${item?.name}`}
+                                    onClick={() => handleToggle(item.id)}
+                                    sx={{
+                                        flexShrink: 0, width: 44, height: 44, border: 0, bgcolor: "transparent", cursor: "pointer",
+                                        display: "grid", placeItems: "center", ...focusRing,
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 26, height: 26, borderRadius: "8px", display: "grid", placeItems: "center",
+                                            bgcolor: checked ? COLORS.plum : COLORS.white, border: `2px solid ${COLORS.plum}`,
+                                            color: COLORS.white,
+                                        }}
+                                    >
+                                        {checked && <CheckRoundedIcon sx={{ fontSize: 18 }} />}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>{item.name}</Box>
+                                <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                    {`Qty ${item.quantity} × ₹${item.rate.toFixed(2)}`}
+                                </Box>
                             </Box>
 
-                            <Box flex={1}>
-                                <TextComponent
-                                    value={item.name}
-                                    weight={600}
-                                    size={13}
-                                />
-
-                                <TextComponent
-                                    value={`Qty ${item.quantity} × ₹${item.rate.toFixed(2)}`}
-                                    size={10}
-                                    color="#666"
-                                />
-                            </Box>
-
-                            <TextComponent
-                                value={`₹${item.rate.toFixed(2)}`}
-                                weight={700}
-                                size={13}
-                            />
+                            <Box sx={{ fontSize: 16, fontWeight: 700, color: COLORS.ink }}>{`₹${item.rate.toFixed(2)}`}</Box>
                         </Box>
                     );
                 })}
             </Box>
-            {/* {
-                isBilledItemExist && */}
-            <Box sx={{ p: 2 }}>
-                <Row
-                    label="Item Total"
-                    value={`₹${summary.gross.toFixed(2)}`}
-                />
-                <Row
-                    label="Discount"
-                    value={`-₹${summary.discount.toFixed(2)}`}
-                    color="#2E7D32"
-                />
-                <Row
-                    label="GST"
-                    value={`₹${summary.gst.toFixed(2)}`}
-                />
+
+            <Box sx={{ px: 2.5, py: 1.5 }}>
+                <SummaryRow label="Item total" value={`₹${summary.gross.toFixed(2)}`} />
+                <SummaryRow label="Discount" value={`-₹${summary.discount.toFixed(2)}`} color={COLORS.success} />
+                <SummaryRow label="GST" value={`₹${summary.gst.toFixed(2)}`} />
             </Box>
-            {/* } */}
         </Box>
     );
 };

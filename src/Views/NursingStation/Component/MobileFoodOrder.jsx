@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { Box, Input, Button } from "@mui/joy";
-import TextComponent from "../../../components/TextComponent";
+import { Box } from "@mui/joy";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
     useAllFoodAndBeverage,
     useAllPatientPreviousOrders,
@@ -11,6 +11,7 @@ import { getFoodPrice } from "../../Constant/Common";
 import { infoNofity, warningNofity } from "../../Constant/Constant";
 import { groupPreviousOrder } from "../../../CommonData/Common";
 import ChooseDietType from "../../../SelectComponents/ChooseDietType";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
 const MobileFoodOrder = ({
     personType,
@@ -24,17 +25,17 @@ const MobileFoodOrder = ({
 
 
     const [query, setQuery] = useState("");
-    const [activeIndex, setActiveIndex] = useState(-1);
+    const [activeIndex] = useState(-1);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [qty, setQty] = useState(1);
     const [type_slno, setDietType] = useState(0);
-    const [typename, setTypeName] = useState("")
+    const [, setTypeName] = useState("")
 
     const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(query.length > 0);
 
 
     const { data: DietOrders = [],
-        // refetch: RefetchDietOrders 
+        // refetch: RefetchDietOrders
     } =
         useAllPatientPreviousOrders(fullDetail?.dietpt_slno);
 
@@ -137,106 +138,75 @@ const MobileFoodOrder = ({
         setQty(1);
         setSelectedFood({})
 
-    }, [selectedFood, qty, personType, setItems]);
+    // type_slno and PendingOrderItems are used above, so they must be dependencies - otherwise
+    // choosing the meal AFTER the food kept the old meal (0) and cleared the selected food
+    }, [selectedFood, qty, personType, setItems, setSelectedFood, type_slno, PendingOrderItems]);
 
+    const hasSelection = selectedFood && Object.keys(selectedFood).length > 0;
 
     return (
-        <Box>
+        <Box sx={{ fontFamily: FONT }}>
 
-            <TextComponent
-                value={`Search Food Here`}
-                size={13}
-                weight={600}
-            // color={ }
-            />
             <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
-            <Box
-                sx={{
-                    position: "relative",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    p: 1,
-                    borderRadius: 30,
-                    bgcolor: "#fff",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-                    border: "1px solid #eee"
-                }}
-            >
-                {/*  SEARCH SECTION */}
 
-
-                <Box sx={{ flex: 1 }}>
-
-                    <input
-                        placeholder="Search food or code..."
-                        value={query}
-                        onChange={(e) => {
-                            setQuery(e.target.value);
-                            setShowSuggestions(true);
-                        }}
-                        onFocus={() => setShowSuggestions(true)}
-                        className="qty-input"
-                        style={{
-                            width: "95%",
-                            border: "none",
-                            outline: "none",
-                            fontSize: "14px",
-                            padding: "8px 12px",
-                            borderRadius: "20px",
-                            background: "#f7f7f9"
-                        }}
-                    />
-
-                    {/*  SUGGESTIONS DROPDOWN */}
-                    {showSuggestions && (
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                top: "110%",
-                                left: 0,
-                                right: 0,
-                                zIndex: 9999,
-
-                            }}
-                        >
-                            <FoodSuggestionItem
-                                suggestions={filteredSuggestions}
-                                onSelect={handleSelectFood}
-                                activeIndex={activeIndex}
-                                personType={personType}
-                            />
-                        </Box>
-                    )}
-                </Box>
-
-                {/*  ADD BUTTON */}
-                {(selectedFood && Object.keys(selectedFood).length > 0) && (
-                    <Button
-                        onClick={handleAddToCart}
-                        sx={{
-                            borderRadius: 25,
-                            px: 2,
-                            height: 36,
-                            fontSize: 13,
-                            fontWeight: 600,
-                            whiteSpace: "nowrap",
-                            bgcolor: "#9d25b8",
-                            boxShadow: "0 4px 12px rgba(157,37,184,0.25)",
-                            transition: "0.2s",
-
-                            "&:hover": {
-                                bgcolor: "#7b1fa2",
-                                transform: "translateY(-1px)",
-                                boxShadow: "0 6px 16px rgba(157,37,184,0.35)"
-                            }
-                        }}
-                    >
-                        Add • ₹{selectedFood?.price || 0}
-                    </Button>
-                )}
-
+            <Box component="label" htmlFor="extra-food-search"
+                sx={{ display: "block", mt: 2, mb: 0.75, fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
+                Food
             </Box>
+
+            <Box sx={{ position: "relative" }}>
+                <SearchRoundedIcon
+                    aria-hidden="true"
+                    sx={{ position: "absolute", left: 12, top: 14, fontSize: 20, color: COLORS.muted }}
+                />
+                <Box
+                    component="input"
+                    id="extra-food-search"
+                    type="search"
+                    placeholder="Search food name or code"
+                    value={query}
+                    autoComplete="off"
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    sx={{
+                        boxSizing: "border-box", width: "100%", height: 48, pl: 5, pr: 1.5,
+                        fontFamily: FONT, fontSize: 16, color: COLORS.ink,
+                        bgcolor: COLORS.surface, border: `1.5px solid ${COLORS.fieldBorder}`,
+                        borderRadius: "12px", outline: "none",
+                        "&:focus": { borderColor: COLORS.plum, boxShadow: `0 0 0 3px ${COLORS.orchid}` },
+                    }}
+                />
+            </Box>
+
+            {/* matching foods */}
+            {showSuggestions && (
+                <FoodSuggestionItem
+                    suggestions={filteredSuggestions}
+                    onSelect={handleSelectFood}
+                    activeIndex={activeIndex}
+                    personType={personType}
+                />
+            )}
+
+            {/* add the chosen food to the basket */}
+            {hasSelection && (
+                <Box
+                    component="button"
+                    type="button"
+                    onClick={handleAddToCart}
+                    sx={{
+                        mt: 2, width: "100%", height: 52, border: 0, borderRadius: "14px", cursor: "pointer",
+                        bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 17, fontWeight: 700,
+                        "&:active": { bgcolor: COLORS.plumDark },
+                        ...focusRing,
+                    }}
+                >
+                    {`Add to order  ·  ₹${selectedFood?.price || 0}`}
+                </Box>
+            )}
         </Box>
     );
 };

@@ -1,13 +1,16 @@
-import { Box, Drawer, Typography, Button } from "@mui/joy";
+import { Box, Drawer } from "@mui/joy";
 import React, { memo, useState, useCallback, useMemo } from "react";
 import EmployeeInfo from "./EmployeeInfo";
 import LiveClock from "./LiveClock";
 import { useNavigate } from "react-router-dom";
 import { axioslogin } from "../Axios/axios";
-import { toast } from 'react-toastify';
 import { getLoggedEmpDetail } from "../CommonData/CommonFun";
-import { EmpauthId } from "../Views/Constant/Constant";
+import { EmpauthId, succesNofity } from "../Views/Constant/Constant";
 import { useQuery } from "@tanstack/react-query";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
+
+// height of the sticky header; the fixed search bar sits right under it (SearchComponent)
+export const HEADER_HEIGHT = 56;
 
 const LoginEmployeeHeader = () => {
 
@@ -38,180 +41,102 @@ const LoginEmployeeHeader = () => {
 
 
     const handleLogout = useCallback(async () => {
-        const userSlno = localStorage.getItem("app_auth");
+        const stored = localStorage.getItem("app_auth");
 
-        if (userSlno) {
-            const userId = atob(JSON.parse(userSlno)?.authNo);
+        try {
+            const userId = stored ? atob(JSON.parse(stored)?.authNo) : null;
             if (userId) {
-                const res = await axioslogin.get(`/user/logout/${userId}`);
-                if (res) {
-                    localStorage.removeItem("app_auth");
-                    toast.success(
-                        <div className='flex h-20 flex-col'>You have been successfully logged out</div>,
-                        {
-                            position: "top-center", // Centers toast horizontally at the top
-                            autoClose: 3000,
-                            hideProgressBar: false,
-                            closeOnClick: true,
-                            pauseOnHover: true,
-                            draggable: true,
-                            progress: undefined,
-                            theme: "light",
-                        }
-                    );
-                    setTimeout(() => {
-                        navigate('/')
-                    }, 1000); // Wait 3 seconds before redirecting
-                }
+                await axioslogin.get(`/user/logout/${userId}`);
             }
+        } catch (error) {
+            // the server could not be reached: the phone is still logged out below
         }
+
+        localStorage.removeItem("app_auth");
+        succesNofity("You have been logged out");
+        setTimeout(() => navigate('/'), 600);
     }, [navigate])
 
 
     return (
         <>
             <Box
+                component="header"
                 sx={{
                     width: "100%",
-                    height: 50,
-                    bgcolor: "white",
-                    boxShadow: "sm",
+                    height: HEADER_HEIGHT,
+                    boxSizing: "border-box",
+                    px: 2,
+                    bgcolor: COLORS.white,
+                    borderBottom: `1px solid ${COLORS.line}`,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: 'space-around',
-                    gap: 3,
+                    justifyContent: "space-between",
+                    gap: 2,
                     position: "sticky",
                     top: 0,
                     zIndex: 1000,
                 }}
             >
-                <Box sx={{ width: '40%' }}>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
                     <EmployeeInfo
                         name={em_name}
                         designation={desg_name}
-                        onAvatarClick={toggleDrawer} //  CLICK HERE
+                        onAvatarClick={toggleDrawer}
                     />
                 </Box>
 
-                <Box sx={{ width: '40%' }}>
-                    <LiveClock />
-                </Box>
+                <LiveClock />
             </Box>
 
-            {/*  DRAWER */}
-            <Drawer
-                anchor="right"
-                open={open}
-                onClose={toggleDrawer}
-                size="sm"
-            >
+            <Drawer anchor="right" open={open} onClose={toggleDrawer} size="sm">
                 <Box
                     sx={{
                         height: "100%",
+                        boxSizing: "border-box",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
-                        background: "linear-gradient(180deg, #e5bbff 0%, #f9f4ff 100%)"
+                        bgcolor: COLORS.wash,
+                        fontFamily: FONT,
+                        px: 3,
+                        pt: 5,
+                        pb: "calc(24px + env(safe-area-inset-bottom))",
                     }}
                 >
+                    <Box>
+                        <Box
+                            aria-hidden="true"
+                            sx={{
+                                width: 64, height: 64, borderRadius: "50%", bgcolor: COLORS.plum, color: COLORS.white,
+                                display: "grid", placeItems: "center", fontSize: 26, fontWeight: 700,
+                            }}
+                        >
+                            {em_name ? em_name.charAt(0).toUpperCase() : "?"}
+                        </Box>
+                        <Box sx={{ mt: 2, fontSize: 20, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25 }}>
+                            {em_name}
+                        </Box>
+                        <Box sx={{ mt: 0.5, fontSize: 15, color: COLORS.muted }}>
+                            {desg_name}
+                        </Box>
+                    </Box>
 
-                    {/* PROFILE SECTION */}
                     <Box
+                        component="button"
+                        type="button"
+                        onClick={handleLogout}
                         sx={{
-                            px: 3,
-                            pt: 4,
-                            pb: 3,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            position: "relative"
+                            width: "100%", height: 48, border: 0, borderRadius: "12px", cursor: "pointer",
+                            bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 16, fontWeight: 700,
+                            "&:hover, &:active": { bgcolor: COLORS.plumDark },
+                            ...focusRing,
                         }}
                     >
-                        {/* Glow Effect */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                top: 20,
-                                width: 120,
-                                height: 120,
-                                borderRadius: "50%",
-                                background: "rgba(190,85,255,0.25)",
-                                filter: "blur(40px)",
-                                zIndex: 0
-                            }}
-                        />
-
-                        {/* Avatar */}
-                        <Box
-                            sx={{
-                                width: 80,
-                                height: 80,
-                                borderRadius: "50%",
-                                background: "#be55ff",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                color: "#fff",
-                                fontSize: 26,
-                                fontWeight: 700,
-                                zIndex: 1,
-                                boxShadow: "0 10px 30px rgba(190,85,255,0.5)"
-                            }}
-                        >
-                            {em_name ? em_name.charAt(0) : "E"}
-                        </Box>
-
-                        {/* Name */}
-                        <Typography
-                            sx={{
-                                mt: 2,
-                                fontWeight: 700,
-                                fontSize: 18
-                            }}
-                        >
-                            {em_name || "Employee Name"}
-                        </Typography>
-
-                        {/* Role */}
-                        <Typography
-                            sx={{
-                                fontSize: 13,
-                                color: "#6b7280"
-                            }}
-                        >
-                            {desg_name || "Designation"}
-                        </Typography>
+                        Log out
                     </Box>
-
-
-                    {/* LOGOUT */}
-                    <Box sx={{ px: 2, pb: 2 }}>
-                        <Button
-                            fullWidth
-                            onClick={handleLogout}
-                            sx={{
-                                py: 1.3,
-                                fontWeight: 700,
-                                borderRadius: 14,
-                                background: "linear-gradient(135deg, #be55ff, #9333ea)",
-                                color: "#fff",
-                                boxShadow: "0 8px 20px rgba(190,85,255,0.4)",
-                                transition: "all 0.25s ease",
-                                '&:hover': {
-                                    background: "linear-gradient(135deg, #a93df0, #7e22ce)",
-                                    transform: "translateY(-2px)"
-                                }
-                            }}
-                        >
-                            Logout
-                        </Button>
-                    </Box>
-
                 </Box>
             </Drawer>
-
-
-
         </>
     );
 };

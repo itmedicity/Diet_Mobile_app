@@ -1,11 +1,21 @@
 import React, { memo } from "react";
-import { Box, IconButton } from "@mui/joy";
+import { Box } from "@mui/joy";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { getBgColor, getItemType } from "../../../CommonData/Common";
-import TextComponent from "../../../components/TextComponent";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import { getItemType } from "../../../CommonData/Common";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
+const stepButton = (danger) => ({
+    width: 44, height: 44, p: 0, border: 0, borderRadius: "12px", cursor: "pointer",
+    display: "grid", placeItems: "center",
+    bgcolor: danger ? "#FBE9E7" : COLORS.wash,
+    color: danger ? COLORS.error : COLORS.plum,
+    "&:active": { bgcolor: danger ? "#F5CFC9" : COLORS.orchid },
+    ...focusRing,
+});
+
+// One food line of a placed order; in edit mode it gets the quantity stepper and a remove button
 const OrderItemRow = ({
     item,
     index,
@@ -20,109 +30,50 @@ const OrderItemRow = ({
     const itemType = getItemType(item);
 
     return (
-        <Box sx={{ mb: 1 }}>
-            <Box
-                sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    py: 0.5,
-                }}
-            >
-                {/* LEFT SIDE */}
-                <Box sx={{ display: 'flex', gap: 0.2 }}>
-
-                    <TextComponent
-                        value={`${index + 1} .`}
-                        size={10}
-                        color="#555"
-                    />
-
-                    <TextComponent
-                        value={item?.item_name}
-                        size={10}
-                        color="#555"
-                    />
-                    {
-                        selectedStatus === "PENDING" &&
-                        <Box
-                            sx={{
-                                bgcolor: getBgColor(itemType),
-                                color: "#fff",
-                                fontSize: 8,
-                                px: 1,
-                                py: 0.5,
-                                borderRadius: 5,
-                                fontWeight: 600,
-                                textAlign: 'center',
-                                height: 10,
-                                ml: 1
-                            }}
-                        >
-                            {selected !== "BYSTANDER" ? itemType : "CANTEEN"}
-                        </Box>
-
-                    }
-                </Box>
-
-                {/* RIGHT SIDE */}
-                {editingOrder ? (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-
-                        <IconButton
-                            size="sm"
-                            color="primary"
-                            variant="soft"
-                            onClick={() => updateQuantity(item.item_id, "dec")}
-                        >
-                            <RemoveIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
-
-                        <TextComponent
-                            value={`${item?.quantity}`}
-                            size={10}
-                            weight={600}
-                            color="#2e7d32"
-                        />
-
-                        <IconButton
-                            size="sm"
-                            color="success"
-                            variant="soft"
-                            onClick={() => updateQuantity(item.item_id, "inc")}
-                        >
-                            <AddIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
-
-
-                        {order?.items?.length > 1 && (
-                            <IconButton
-                                size="sm"
-                                color="danger"
-                                variant="soft"
-                                onClick={() => handleCancelItem(order, item)}
-                            >
-                                <CancelIcon sx={{ fontSize: 15 }} />
-                            </IconButton>
-                        )}
-                        {/* <IconButton
-                            size="sm"
-                            color="danger"
-                            variant="soft"
-                            onClick={() => handleCancelItem(order, item)}
-                        >
-                            <CancelIcon sx={{ fontSize: 15 }} />
-                        </IconButton> */}
-
+        <Box
+            sx={{
+                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1,
+                py: 1, minHeight: 44, fontFamily: FONT,
+                borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}`,
+            }}
+        >
+            <Box sx={{ minWidth: 0 }}>
+                <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>{item?.item_name}</Box>
+                {selectedStatus === "PENDING" && (
+                    <Box sx={{ fontSize: 13, color: COLORS.muted }}>
+                        {selected !== "BYSTANDER" ? itemType : "Canteen"}
                     </Box>
-                ) : (
-                    <TextComponent
-                        value={`${item?.quantity}`}
-                        size={10}
-                        weight={600}
-                        color="#2e7d32"
-                    />
                 )}
             </Box>
+
+            {editingOrder ? (
+                <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Box component="button" type="button" aria-label={`Fewer ${item?.item_name}`}
+                        onClick={() => updateQuantity(item.item_id, "dec")} sx={stepButton(false)}>
+                        <RemoveIcon />
+                    </Box>
+
+                    <Box aria-live="polite" sx={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 700, color: COLORS.ink }}>
+                        {item?.quantity}
+                    </Box>
+
+                    <Box component="button" type="button" aria-label={`More ${item?.item_name}`}
+                        onClick={() => updateQuantity(item.item_id, "inc")} sx={stepButton(false)}>
+                        <AddIcon />
+                    </Box>
+
+                    {order?.items?.length > 1 && (
+                        <Box component="button" type="button" aria-label={`Remove ${item?.item_name} from this order`}
+                            onClick={() => handleCancelItem(order, item)} sx={{ ...stepButton(true), ml: 0.5 }}>
+                            <DeleteOutlineRoundedIcon />
+                        </Box>
+                    )}
+                </Box>
+            ) : (
+                <Box sx={{ flexShrink: 0, fontSize: 18, fontWeight: 700, color: COLORS.ink }}>
+                    {`× ${item?.quantity}`}
+                </Box>
+            )}
         </Box>
     );
 };

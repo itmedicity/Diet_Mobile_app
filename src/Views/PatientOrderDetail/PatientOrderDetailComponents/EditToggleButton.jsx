@@ -1,16 +1,9 @@
 import React, { memo } from "react";
-import EditIcon from "@mui/icons-material/Edit";
-import EditOffIcon from "@mui/icons-material/EditOff";
+import { Box } from "@mui/joy";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-const baseStyle = {
-    px: 1.5,
-    py: 0.5,
-    fontSize: 18,
-    backgroundColor: "#cfeaff",
-    borderRadius: 20,
-    cursor: "pointer"
-};
-
+// "Edit" opens quantity editing on a pending order; "Done" leaves it without saving
 const EditToggleButton = ({
     isEditing,
     onEdit,
@@ -20,19 +13,23 @@ const EditToggleButton = ({
 
     if (!visible) return null;
 
-    return isEditing ? (
-        <EditOffIcon
-            onClick={onCancel}
+    return (
+        <Box
+            component="button"
+            type="button"
+            onClick={isEditing ? onCancel : onEdit}
             sx={{
-                ...baseStyle,
-                color: "#11083a"
+                height: 40, px: 1.5, borderRadius: "10px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 0.5,
+                border: `1.5px solid ${COLORS.plum}`, bgcolor: isEditing ? COLORS.plum : COLORS.white,
+                color: isEditing ? COLORS.white : COLORS.plum,
+                fontFamily: FONT, fontSize: 15, fontWeight: 700,
+                ...focusRing,
             }}
-        />
-    ) : (
-        <EditIcon
-            onClick={onEdit}
-            sx={baseStyle}
-        />
+        >
+            {!isEditing && <EditRoundedIcon sx={{ fontSize: 18 }} />}
+            {isEditing ? "Stop editing" : "Edit"}
+        </Box>
     );
 };
 
