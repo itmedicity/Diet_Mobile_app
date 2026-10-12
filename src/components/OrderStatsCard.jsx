@@ -1,26 +1,24 @@
-
 import React, { memo, useMemo, useState } from "react";
-import { Box, Typography, IconButton } from "@mui/joy";
-import TextComponent from "./TextComponent";
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import { getBgColor, getItemType, groupPreviousOrder } from "../CommonData/Common";
+import { Box } from "@mui/joy";
+import { groupPreviousOrder } from "../CommonData/Common";
 import EmptyOrders from "../Views/NursingStation/Component/EmptyOrders";
-import EditIcon from '@mui/icons-material/Edit';
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../Views/Constant/Constant";
 import { axioslogin } from "../Axios/axios";
-import CancelIcon from "@mui/icons-material/Cancel";
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import EditOffIcon from '@mui/icons-material/EditOff';
-import NoMealsIcon from '@mui/icons-material/NoMeals';
-import DietButton from "./DietButton";
 import ActionButton from "./ActionButton";
-import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import { useQueryClient } from "@tanstack/react-query";
 import { usePatientExtraOrders } from "../CommonData/UseQuery";
 import OrderItemRow from "../Views/PatientOrderDetail/PatientOrderDetailComponents/OrderItemRow";
 import EditToggleButton from "../Views/PatientOrderDetail/PatientOrderDetailComponents/EditToggleButton";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
+// status -> label shown on the tab and the order badge
+const STATUS_LABEL = { PENDING: "Pending", CONFIRMED: "Confirmed", CANCELLED: "Cancelled" };
+
+const STATUS_BADGE = {
+    PENDING: { bg: "#FFF3D6", fg: "#7A4B00" },
+    CONFIRMED: { bg: "#DDF0E4", fg: "#1F5E3A" },
+    CANCELLED: { bg: "#F7DEDA", fg: "#8E1F16" },
+};
 
 const PatientOrdersDashboard = ({
     selected,
@@ -146,21 +144,19 @@ const PatientOrdersDashboard = ({
         );
     }, [orders]);
 
+    // the status being shown: the tapped tab, else pending, else confirmed, else cancelled
+    const activeStatus = selectedStatus || (
+        statusCounts.PENDING > 0
+            ? "PENDING"
+            : statusCounts.CONFIRMED > 0
+                ? "CONFIRMED"
+                : "CANCELLED"
+    );
+
     const filteredOrders = useMemo(() => {
         if (!orders?.length) return [];
-
-        if (selectedStatus) {
-            return orders?.filter(o => o?.order_status === selectedStatus);
-        }
-        const priorityStatus =
-            statusCounts.PENDING > 0
-                ? "PENDING"
-                : statusCounts.CONFIRMED > 0
-                    ? "CONFIRMED"
-                    : "CANCELLED";
-
-        return orders?.filter(o => o?.order_status === priorityStatus);
-    }, [orders, statusCounts, selectedStatus]);
+        return orders?.filter(o => o?.order_status === activeStatus);
+    }, [orders, activeStatus]);
 
     const displayOrders = editingOrder ? [editingOrder] : filteredOrders;
 
@@ -184,6 +180,9 @@ const PatientOrdersDashboard = ({
         try {
             // BASIC VALIDATION
             if (!item) return warningNofity("Invalid item data");
+
+            // removing an item cannot be undone from the app
+            if (!window.confirm(`Remove ${item.item_name || "this item"} from the order?`)) return;
 
             const isExtra = item?.extra_order_id != null;
             // EXTRA ORDER FLOW
@@ -270,7 +269,7 @@ const PatientOrdersDashboard = ({
     };
 
 
-    // Funciton to cancel the Total Order 
+    // Funciton to cancel the Total Order
     const handleCancelFullOrder = async (order) => {
 
         const PendingOrderItem = order?.items ?? [];
@@ -288,6 +287,9 @@ const PatientOrdersDashboard = ({
         if (!canteen_order_id) {
             return warningNofity("Order Id is Missing Kindly Refresh!");
         }
+
+        // cancelling a whole order cannot be undone from the app
+        if (!window.confirm(`Cancel the whole order ${canteen_order_id}?`)) return;
 
         try {
             const canteenPayload = {
@@ -314,8 +316,8 @@ const PatientOrdersDashboard = ({
             // Step 1: update main order
             const mainRes = await axioslogin.patch("/canteenorder/status", canteenPayload);
 
-            if (mainRes?.data?.success === 0) {
-                return warningNofity(mainRes?.data?.message);
+            if (mainRes?.data?.success !== 1) {
+                return warningNofity(mainRes?.data?.message || "Unable to cancel the order");
             }
 
             //  Step 2: parallel secondary updates
@@ -333,14 +335,32 @@ const PatientOrdersDashboard = ({
                 );
             }
 
-            const responses = await Promise.all(requests);
+            // allSettled: one failing request must not hide the result of the others
+            const settled = await Promise.allSettled(requests);
 
-            for (const res of responses) {
+            let failed = 0;
+            for (const result of settled) {
+                const res = result.status === "fulfilled" ? result.value : null;
                 if (!res || res?.data?.success !== 1) {
-                    errorNofity(res?.data?.message || "Update failed");
+                    failed += 1;
+                    errorNofity(
+                        res?.data?.message ||
+                        result?.reason?.response?.data?.message ||
+                        "Update failed"
+                    );
                 }
             }
-            succesNofity("Order Cancelled Successfully");
+
+            // The main order is already cancelled at this point, so always refresh the lists.
+            // Only claim success when every part was cancelled (it used to say "Cancelled
+            // Successfully" right after reporting a failure).
+            if (failed === 0) {
+                succesNofity("Order Cancelled Successfully");
+            } else {
+                warningNofity(
+                    "The order was cancelled, but part of it could not be updated. Please inform the supervisor"
+                );
+            }
             await invalidateQueries();
             setEditingOrder(null);
 
@@ -354,63 +374,59 @@ const PatientOrdersDashboard = ({
         <Box
             sx={{
                 flex: 1,
-                overflow: "hidden",
-                px: 2,
-                py: 2,
-                bgcolor: "#f9f9fb",
-                borderTopRightRadius: 16,
-                borderTopLeftRadius: 16,
-                position: "relative",
-                borderBottomRightRadius: 16,
-                borderBottomLeftRadius: 16,
-                pb: 15
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                fontFamily: FONT,
             }}
         >
 
+            {/* Which status to show */}
             <Box
-                sx={{
-                    borderRadius: 16,
-                    p: 2,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 1,
-                    borderRadius: 10
-                }}>
-
-                <StatBlock label="PENDING" value={statusCounts.PENDING} onClick={setSelectedStatus} />
-                <StatBlock label="CONFIRMED" value={statusCounts.CONFIRMED} onClick={setSelectedStatus} />
-                <StatBlock label="CANCELLED" value={statusCounts.CANCELLED} onClick={setSelectedStatus} />
+                role="tablist"
+                aria-label="Order status"
+                sx={{ display: "flex", gap: 0.75, px: 2.5, pt: 2, pb: 1.5 }}
+            >
+                {Object.keys(STATUS_LABEL).map((status) => (
+                    <StatusTab
+                        key={status}
+                        label={STATUS_LABEL[status]}
+                        count={statusCounts[status]}
+                        active={status === activeStatus}
+                        onClick={() => {
+                            setEditingOrder(null);
+                            setSelectedStatus(status);
+                        }}
+                    />
+                ))}
             </Box>
 
             <Box
                 sx={{
                     flex: 1,
+                    minHeight: 0,
                     overflowY: "auto",
-                    height: "100%",
-                    "&::-webkit-scrollbar": {
-                        display: "none",
-                    },
+                    px: 2.5,
+                    pb: "calc(24px + env(safe-area-inset-bottom))",
+                    "&::-webkit-scrollbar": { display: "none" },
                     scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                    mt: 1
                 }} >
 
                 {filteredOrders?.length === 0 ? (
                     <EmptyOrders
-                        message="No Orders Found"
-                        subMessage="There are no orders for this status"
+                        message="No orders here"
+                        subMessage={`There are no ${STATUS_LABEL[activeStatus].toLowerCase()} orders for this patient.`}
                     />
                 ) : (
                     displayOrders?.map((order) => (
                         <Box
                             key={order.canteen_order_id}
                             sx={{
-                                bgcolor: "#ffffff",
-                                borderRadius: 14,
                                 p: 1.5,
                                 mb: 2,
-                                boxShadow: "0 4px 15px rgba(0,0,0,0.04)",
+                                borderRadius: "16px",
+                                bgcolor: COLORS.surface,
+                                border: `1px solid ${COLORS.line}`,
                             }}
                         >
 
@@ -419,56 +435,37 @@ const PatientOrdersDashboard = ({
                                 sx={{
                                     display: "flex",
                                     justifyContent: "space-between",
-                                    alignItems: "center",
+                                    alignItems: "flex-start",
+                                    gap: 1,
                                     mb: 1
                                 }}
                             >
-                                <Box>
-                                    <TextComponent
-                                        value={`Order ID: ${order?.canteen_order_id}`}
-                                        size={12}
-                                        weight={800}
-                                    />
-                                    <TextComponent
-                                        value={`${order?.order_time}`}
-                                        size={11}
-                                        weight={500}
-                                        color="#666"
-                                    />
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, cursor: "pointer" }}>
-                                    <Typography
-                                        level="body-sm"
+                                <Box sx={{ minWidth: 0 }}>
+                                    <Box sx={{ fontSize: 16, fontWeight: 700, color: COLORS.ink }}>
+                                        {`Order ${order?.canteen_order_id}`}
+                                    </Box>
+                                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                        {order?.order_time}
+                                    </Box>
+                                    <Box
+                                        component="span"
                                         sx={{
-                                            px: 1.5,
-                                            py: 0.5,
-                                            borderRadius: 20,
-                                            fontWeight: 600,
-                                            fontSize: 10,
-                                            color:
-                                                order.order_status === "PENDING"
-                                                    ? "#ff9800"
-                                                    : order.order_status === "CONFIRMED"
-                                                        ? "#2196f3"
-                                                        : "#100e0f",
-                                            backgroundColor:
-                                                order.order_status === "PENDING"
-                                                    ? "#fff3e0"
-                                                    : order.order_status === "CONFIRMED"
-                                                        ? "#e3f2fd"
-                                                        : "#ff9292",
-                                        }}>
-                                        {order?.order_status}
-                                    </Typography>
-
-                                    <EditToggleButton
-                                        visible={order?.order_status === "PENDING"}
-                                        isEditing={editingOrder === order}
-                                        onEdit={() => setEditingOrder(order)}
-                                        onCancel={() => setEditingOrder(null)}
-                                    />
+                                            display: "inline-block", mt: 0.75, px: 1, py: 0.25, borderRadius: "8px",
+                                            fontSize: 13, fontWeight: 700,
+                                            bgcolor: STATUS_BADGE[order.order_status]?.bg || COLORS.wash,
+                                            color: STATUS_BADGE[order.order_status]?.fg || COLORS.ink,
+                                        }}
+                                    >
+                                        {STATUS_LABEL[order.order_status] || order?.order_status}
+                                    </Box>
                                 </Box>
 
+                                <EditToggleButton
+                                    visible={order?.order_status === "PENDING"}
+                                    isEditing={editingOrder === order}
+                                    onEdit={() => setEditingOrder(order)}
+                                    onCancel={() => setEditingOrder(null)}
+                                />
                             </Box>
 
                             {/*  Foods */}
@@ -489,19 +486,18 @@ const PatientOrdersDashboard = ({
 
                             {/*  ACTION BUTTONS */}
                             {editingOrder && (
-                                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                                <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
                                     <ActionButton
-                                        icon={<NoMealsIcon sx={{ fontSize: 14 }} />}
-                                        label="Cancel full Order"
+                                        danger
+                                        label="Cancel order"
                                         onClick={() => handleCancelFullOrder(order)}
                                     />
 
                                     <ActionButton
-                                        icon={<RamenDiningIcon sx={{ fontSize: 14 }} />}
-                                        label="Save Changes"
+                                        primary
+                                        label="Save changes"
                                         onClick={handleSaveExtraQuantityChanges}
                                     />
-
                                 </Box>
                             )}
 
@@ -515,63 +511,23 @@ const PatientOrdersDashboard = ({
 
 export default memo(PatientOrdersDashboard);
 
-const StatBlock = ({ label, value, onClick }) => {
-    // Updated gradient mapping for new statuses
-    const bgColors = {
-        PENDING: "linear-gradient(135deg, #FFD54F 0%, #FFB74D 100%)",
-        CONFIRMED: "linear-gradient(135deg, #64B5F6 0%, #42A5F5 100%)",
-        CANCELLED: "linear-gradient(135deg, #fc6868 0%, #9a1414 100%)",
-    };
-
-    const textColors = {
-        PENDING: "#5D4037",
-        CONFIRMED: "#0D47A1",
-        CANCELLED: "#ffffff",
-    };
-
-    return (
-        <Box
-            onClick={() => onClick(label)}
-            sx={{
-                flex: 1,
-                textAlign: "center",
-                p: 1,
-                borderRadius: 10,
-                boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
-                background: bgColors[label] || "#eee",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                transition: "transform 0.2s ease",
-                "&:hover": {
-                    transform: "scale(1.05)",
-                    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-                },
-                cursor: 'pointer'
-
-            }}
-        >
-            <TextComponent
-                value={label}
-                size={10}
-                weight={700}
-                color={textColors[label] || "#111"}
-                style={{ marginBottom: 6 }}
-            />
-            <Box
-                sx={{
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 20,
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                }}
-            >
-                <TextComponent value={value} size={18} weight={800} color="#000" />
-            </Box>
-        </Box>
-    );
-};
-
-
-
+const StatusTab = ({ label, count, active, onClick }) => (
+    <Box
+        component="button"
+        type="button"
+        role="tab"
+        aria-selected={active}
+        onClick={onClick}
+        sx={{
+            flex: 1, minHeight: 56, px: 0.5, borderRadius: "12px", cursor: "pointer", fontFamily: FONT,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            border: `1.5px solid ${active ? COLORS.plum : COLORS.line}`,
+            bgcolor: active ? COLORS.plum : COLORS.white,
+            color: active ? COLORS.white : COLORS.ink,
+            ...focusRing,
+        }}
+    >
+        <Box sx={{ fontSize: 20, fontWeight: 700, lineHeight: 1.1 }}>{count}</Box>
+        <Box sx={{ fontSize: 13, fontWeight: 600 }}>{label}</Box>
+    </Box>
+);

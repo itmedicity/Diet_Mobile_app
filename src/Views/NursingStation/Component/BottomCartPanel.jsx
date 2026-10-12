@@ -1,13 +1,36 @@
-import React, { memo, useMemo } from "react";
-import { Box, Button } from "@mui/joy";
-import TextComponent from "../../../components/TextComponent";
-import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import React, { memo, useMemo, useState } from "react";
+import { Box } from "@mui/joy";
+import RemoveIcon from "@mui/icons-material/Remove";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../../Constant/Constant";
 import { axioslogin } from "../../../Axios/axios";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, personType, onClose, selectedFood }) => {
+const stepButton = (danger) => ({
+    width: 44, height: 44, p: 0, border: 0, borderRadius: "12px", cursor: "pointer",
+    display: "grid", placeItems: "center",
+    bgcolor: danger ? "#FBE9E7" : COLORS.wash,
+    color: danger ? COLORS.error : COLORS.plum,
+    "&:active": { bgcolor: danger ? "#F5CFC9" : COLORS.orchid },
+    ...focusRing,
+});
+
+// The basket of the extra order: quantities, remove, total, and "Place order"
+const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, personType, onClose }) => {
 
     const id = EmpauthId()
+
+    // blocks double taps on "Place order"
+    const [loading, setLoading] = useState(false);
+
+    // gst_amount is stored per line, so it has to follow the quantity (it used to keep the
+    // value from the moment the item was added)
+    const withQty = (item, qty) => ({
+        ...item,
+        qty,
+        gst_amount: (Number(item.price || 0) * qty * Number(item.gst || 0)) / 100
+    });
 
     /* TOTAL CALCULATION */
     const totalAmount = useMemo(() => {
@@ -26,7 +49,7 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
     const handleIncrement = (id) => {
         setItems(prev =>
             prev.map(i =>
-                i.item_id === id ? { ...i, qty: i.qty + 1 } : i
+                i.item_id === id ? withQty(i, i.qty + 1) : i
             )
         );
     };
@@ -35,7 +58,7 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
         setItems(prev =>
             prev.map(i =>
                 i.item_id === id
-                    ? { ...i, qty: Math.max(1, i.qty - 1) }
+                    ? withQty(i, Math.max(1, i.qty - 1))
                     : i
             )
         );
@@ -46,6 +69,9 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
     };
 
     const handleConfirmOrder = async () => {
+
+        // ignore extra taps while the order is being placed
+        if (loading) return;
 
         if (!items || items.length === 0) {
             return warningNofity("No items added");
@@ -58,6 +84,8 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
 
 
         try {
+            setLoading(true);
+
             if (existingOrderId) {
                 const payload = {
                     itemDetail: items,
@@ -72,10 +100,11 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     payload
                 );
                 const { success, message } = res.data || {};
-                if (success === 0) return warningNofity(message);
+                // anything other than success:1 is a failure (was only success === 0)
+                if (success !== 1) return warningNofity(message || "Unable to add items to the order");
                 succesNofity("Order created successfully");
                 refetch()
-                setItems()
+                setItems([])
                 onClose()
                 return;
             }
@@ -105,16 +134,18 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
 
             const { success, message } = res.data || {};
 
-            if (success !== 1) return errorNofity(message);
+            if (success !== 1) return errorNofity(message || "Unable to create the order");
 
             succesNofity("Order created successfully");
             refetch();
-            setItems();
+            setItems([]);
             onClose();
 
         } catch (err) {
             console.error(err);
-            errorNofity("Something went wrong");
+            errorNofity(err?.response?.data?.message || "Something went wrong");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -123,86 +154,63 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
     return (
         <Box
             sx={{
-                mt: "auto",   // pushes it to bottom
-                bgcolor: "#fff",
-                borderTop: "1px solid #eee",
-                p: 1.5,
-                boxShadow: "0 -5px 20px rgba(0,0,0,0.08)",
-                borderRadius: 12,
-
-                /* KEY PART */
-                maxHeight: !selectedFood || Object.keys(selectedFood).length === 0
-                    ? '75%' : "50%",
+                flexShrink: 0,
+                maxHeight: "50%",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
+                borderTop: `1px solid ${COLORS.line}`,
+                bgcolor: COLORS.white,
+                fontFamily: FONT,
             }}
         >
+            <Box sx={{ px: 2.5, pt: 1.5, fontSize: 15, fontWeight: 700, color: COLORS.plum }}>
+                {`Basket (${items.length} ${items.length === 1 ? "item" : "items"})`}
+            </Box>
 
             {/* ITEMS */}
             <Box
                 sx={{
                     flex: 1,
+                    minHeight: 0,
                     overflowY: "auto",
-                    mb: 1,
+                    px: 2.5,
                     scrollbarWidth: "none",
                     "&::-webkit-scrollbar": { display: "none" }
                 }}
             >
-                {items?.map(item => (
+                {items?.map((item, index) => (
                     <Box
                         key={item.item_id}
                         sx={{
-                            width: '100%',
-                            boxShadow: 'sm',
-                            borderRadius: 5,
-                            bgcolor: '#fff',
-                            p: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            mb: 1,
-                            border: '1px solid #e282e5',
-                            boxSizing: "border-box",
+                            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, py: 1,
+                            borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}`,
                         }}
                     >
-                        <Box sx={{ maxWidth: "50%" }}>
-                            <TextComponent
-                                value={item.item_name}
-                                size={13}
-                                weight={600}
-                            />
-                            <TextComponent
-                                value={`₹${item.price} × ${item.qty}`}
-                                size={11}
-                                color="#777"
-                            />
+                        <Box sx={{ minWidth: 0 }}>
+                            <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>{item.item_name}</Box>
+                            <Box sx={{ fontSize: 14, color: COLORS.muted }}>{`₹${item.price} × ${item.qty}`}</Box>
                         </Box>
 
                         {/* CONTROLS */}
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Button size="sm" variant="soft" onClick={() => handleDecrement(item.item_id)}>
-                                -
-                            </Button>
+                        <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 0.5 }}>
+                            <Box component="button" type="button" aria-label={`Fewer ${item.item_name}`}
+                                onClick={() => handleDecrement(item.item_id)} sx={stepButton(false)}>
+                                <RemoveIcon />
+                            </Box>
 
-                            <TextComponent
-                                value={item.qty}
-                                size={13}
-                                sx={{ minWidth: 20, textAlign: "center" }}
-                            />
+                            <Box aria-live="polite" sx={{ minWidth: 28, textAlign: "center", fontSize: 18, fontWeight: 700, color: COLORS.ink }}>
+                                {item.qty}
+                            </Box>
 
-                            <Button size="sm" variant="soft" onClick={() => handleIncrement(item.item_id)}>
-                                +
-                            </Button>
+                            <Box component="button" type="button" aria-label={`More ${item.item_name}`}
+                                onClick={() => handleIncrement(item.item_id)} sx={stepButton(false)}>
+                                <AddIcon />
+                            </Box>
 
-                            {/* REMOVE */}
-                            <Button
-                                size="sm"
-                                variant="plain"
-                                color="danger"
-                                onClick={() => handleRemove(item.item_id)}
-                            >
-                                ✕
-                            </Button>
+                            <Box component="button" type="button" aria-label={`Remove ${item.item_name}`}
+                                onClick={() => handleRemove(item.item_id)} sx={{ ...stepButton(true), ml: 0.5 }}>
+                                <DeleteOutlineRoundedIcon />
+                            </Box>
                         </Box>
                     </Box>
                 ))}
@@ -214,35 +222,35 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    borderTop: "1px dashed #ddd",
-                    pt: 1
+                    gap: 2,
+                    px: 2.5,
+                    pt: 1.5,
+                    pb: "calc(12px + env(safe-area-inset-bottom))",
+                    borderTop: `1px solid ${COLORS.line}`,
                 }}
             >
-                <TextComponent
-                    value={`₹ ${totalAmount.toFixed(2)}`}
-                    size={14}
-                    weight={700}
-                />
-                <Button
+                <Box>
+                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>Total with GST</Box>
+                    <Box sx={{ fontSize: 24, fontWeight: 700, color: COLORS.ink, lineHeight: 1.1 }}>
+                        {`₹${totalAmount.toFixed(2)}`}
+                    </Box>
+                </Box>
+
+                <Box
+                    component="button"
+                    type="button"
                     onClick={handleConfirmOrder}
-                    size="sm"
-                    startDecorator={
-                        <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
-                    }
-                    disabled={totalAmount === 0}
+                    disabled={totalAmount === 0 || loading}
                     sx={{
-                        px: 2,
-                        height: 34,
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        bgcolor: "#9d25b8",
-                        "&:hover": { bgcolor: "#7b1fa2" },
+                        flex: 1, maxWidth: 240, height: 52, border: 0, borderRadius: "14px", cursor: "pointer",
+                        bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 17, fontWeight: 700,
+                        "&:active": { bgcolor: COLORS.plumDark },
+                        "&:disabled": { bgcolor: COLORS.orchid, color: COLORS.muted, cursor: "not-allowed" },
+                        ...focusRing,
                     }}
                 >
-                    Confirm Order
-                </Button>
-
+                    {loading ? "Placing order…" : "Place order"}
+                </Box>
             </Box>
 
         </Box>

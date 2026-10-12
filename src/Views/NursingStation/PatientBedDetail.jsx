@@ -7,7 +7,7 @@ import PatientInfoCard from "../../components/PatientInfoCard";
 import TextComponent from "../../components/TextComponent";
 import FoodItemAddCard from "../../components/FoodItemAddCard";
 import SpecialMealSelectScollBox from "../../components/SpecialMealSelectScollBox";
-import { buildBystanderCategories, filterFoodsByType, infoNofity, warningNofity } from "../Constant/Constant";
+import { buildBystanderCategories, filterFoodsByType, warningNofity } from "../Constant/Constant";
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
@@ -26,6 +26,7 @@ import { IconMap } from "./Component/TrendingIcons";
 import CategoryIcon from '@mui/icons-material/Category';
 import DietPlanRemark from "./Component/DietPlanRemark";
 import BystanderItemSearch from "./Component/BystanderItemSearch";
+import { COLORS } from "../../Style/designTokens";
 
 const PatientBedDetail = () => {
 
@@ -56,7 +57,7 @@ const PatientBedDetail = () => {
 
   const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
 
-  const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
+  const { data: PreviousOrders = [] } =
     useCustomerPreviousCanteenOrder(fullDetail?.ip_no, selected?.party_type_id);
 
   const typeIds = useMemo(() => {
@@ -244,11 +245,11 @@ const PatientBedDetail = () => {
 
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#fff" }}>
+    <Box sx={{ height: "100dvh", display: "flex", flexDirection: "column", bgcolor: "#fff" }}>
 
       <NursingStaionHeader stationname={stationname} bed={BedName} />
 
-      <Box sx={{ flex: 1, px: 2, overflowY: "auto", pb: "120px", transition: "0.3s ease", filter: activeTab ? "blur(4px) brightness(0.95)" : "none" }}>
+      <Box sx={{ flex: 1, px: 2, overflowY: "auto", pb: "calc(130px + env(safe-area-inset-bottom))" }}>
         <Box sx={{ position: "sticky", top: 0, zIndex: 10, bgcolor: "#ffffff", pt: 2, pb: 2 }}>
           <PatientBystanderToggle selected={selected} setSelected={setSelected} />
           {
@@ -323,10 +324,10 @@ const PatientBedDetail = () => {
 
                       {/* PROCESS DATE */}
                       <TextComponent
-                        color="#0b0b0b"
+                        color={COLORS.ink}
                         value={processDate}
-                        size={17}
-                        weight={800}
+                        size={18}
+                        weight={700}
                       />
 
                       <Divider sx={{ my: 1.5 }} />
@@ -336,10 +337,10 @@ const PatientBedDetail = () => {
                         <Box key={time.type} sx={{ mb: 3 }}>
 
                           <TextComponent
-                            color="#0b0b0b"
+                            color={COLORS.muted}
                             value={time.type}
-                            size={16}
-                            weight={800}
+                            size={15}
+                            weight={700}
                           />
 
                           <Divider sx={{ my: 1 }} />

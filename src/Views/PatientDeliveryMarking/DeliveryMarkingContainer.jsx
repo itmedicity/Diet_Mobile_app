@@ -3,13 +3,12 @@ import React, { useMemo, useState, useCallback, memo } from "react";
 import { useLocation } from "react-router-dom";
 import NursingStaionHeader from "../NursingStation/NursingStaionHeader";
 import DeliveryFoodItemCard from "./DeliveryFoodItemCard";
-import TextComponent from "../../components/TextComponent";
+import { COLORS, FONT } from "../../Style/designTokens";
 import { useAllAssignedItemStatus, useAllItemDeliveryStatus, useBystanderBillingDetails, useDeliveryBillDetails, useOrderItemDetail, usePatientExtraOrders, useProformaDetails } from "../../CommonData/UseQuery";
 import { EmpauthId, infoNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
 import MissingOrderItemCard from "./MissingOrderItemCard";
 import ActionCardButton from "./DeliveryMarkingComponent/ActionCardButton";
-import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import { format } from "date-fns";
 import GenerateBillModal from "./DeliveryMarkingComponent/GenerateBillModal";
 
@@ -102,7 +101,7 @@ const DeliveryMarkingContainer = () => {
 
     //Bill and it Item Details
     // const bills = BystanderBillingDetails?.bills || [];
-    const billItems = BystanderBillingDetails?.bill_items || [];
+    const billItems = useMemo(() => BystanderBillingDetails?.bill_items || [], [BystanderBillingDetails]);
 
 
 
@@ -352,6 +351,10 @@ const DeliveryMarkingContainer = () => {
 
     // Generating the Bill Details for the Order
     const HandleGenerateBill = useCallback(async (paymentType) => {
+        // ignore a second tap while the bill is being generated (the server also refuses billing the same
+        // ledger rows twice, but the user used to get a confusing error for the second request)
+        if (loading) return;
+
         // If details could not be fetched, stop
         if (!Array.isArray(FetchedBillDetail)) {
             return;
@@ -420,7 +423,7 @@ const DeliveryMarkingContainer = () => {
         try {
             setLoading(true);
             const response = await axioslogin.post("/dietdelivery/create-bystander-billing", payload);
-            const { success, message, data } = response?.data || {};
+            const { success, message } = response?.data || {};
             if (success !== 1) return warningNofity(message || "Failed to generate bill");
             succesNofity(message || "Bill generated successfully");
             refetchBystanderBilling()
@@ -434,6 +437,7 @@ const DeliveryMarkingContainer = () => {
         }
 
     }, [
+        loading,
         assignment_detail_id,
         patientData,
         id,
@@ -448,62 +452,40 @@ const DeliveryMarkingContainer = () => {
     return (
         <Box
             sx={{
-                height: "100vh",
+                minHeight: "100dvh",
                 display: "flex",
                 flexDirection: "column",
+                bgcolor: COLORS.surface,
             }}>
             <NursingStaionHeader
                 stationname={fb_ns_name}
                 bed={fb_bdc_no}
             />
-            {/* 
-            {
-                deliveryStatus === "PENDING" && FinalFilteredData?.length > 0 && (
-                    <FloatingPickupButton
-                        count={FinalFilteredData?.length || 0}
-                        onClick={() => setOpenPickupModal(true)}
-                    />
-                )
-            } */}
 
-            {/* <PickupConfirmationModal
-                open={openPickupModal}
-                onClose={handleCloseModal}
-                onConfirm={handleConfirmPickup}
-                patientData={patientData}
-            /> */}
             <Box
                 sx={{
                     flex: 1,
+                    width: "100%",
+                    maxWidth: 560,
+                    mx: "auto",
+                    boxSizing: "border-box",
                     px: 2,
-                    overflowY: "auto",
-                    pb: "120px",
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'column'
+                    pt: 2,
+                    pb: "180px",
                 }}
             >
+                <Box sx={{ mb: 1.5, fontFamily: FONT }}>
+                    <Box sx={{ fontSize: 22, fontWeight: 700, color: COLORS.ink }}>{patientData?.fb_ptc_name}</Box>
+                    <Box sx={{ fontSize: 15, color: COLORS.muted }}>
+                        {[patientData?.type_desc, isBystander ? "Bystander" : null].filter(Boolean).join("  ·  ")}
+                    </Box>
+                </Box>
 
                 {
                     isPageLoading ? (
-
-                        <Box
-                            sx={{
-                                flex: 1,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: "100%"
-                            }}
-                        >
-                            <TextComponent
-                                value="Loading items..."
-                                size={18}
-                                weight={600}
-                                color="#666"
-                            />
+                        <Box role="status" sx={{ py: 6, textAlign: "center", fontFamily: FONT, fontSize: 17, color: COLORS.muted }}>
+                            Loading items…
                         </Box>
-
                     ) : FinalFilteredData?.length > 0 ? (
 
                         FinalFilteredData?.map((food) => {
@@ -521,9 +503,7 @@ const DeliveryMarkingContainer = () => {
                         })
 
                     ) : (
-
                         <MissingOrderItemCard />
-
                     )
                 }
             </Box>
@@ -536,10 +516,8 @@ const DeliveryMarkingContainer = () => {
                         billdetail={FinalBillItemDetails}
                         patientData={patientData}
                         floating
-                        title="Bill Details"
-                        subtitle="View bill"
-                        buttonText="View"
-                        icon={ReceiptLongRoundedIcon}
+                        title="Bill details"
+                        subtitle="Delivered items"
                         isBystander={isBystander}
                         setOpenBillDialog={setOpenBillDialog}
                         OnGenerateBill={handleOpenPaymentType}
@@ -550,6 +528,7 @@ const DeliveryMarkingContainer = () => {
 
             <GenerateBillModal
                 open={openPaymentTypeModal}
+                loading={loading}
                 onClose={() => setOpenPaymentTypeModal(false)}
                 onContinue={(paymentType) => {
                     HandleGenerateBill(paymentType);

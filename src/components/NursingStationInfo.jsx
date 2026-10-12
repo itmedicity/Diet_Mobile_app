@@ -1,20 +1,19 @@
-
-// EmployeeInfo.jsx
 import React, { memo } from "react";
 import { Box } from "@mui/joy";
-import TextComponent from "./TextComponent";
-import ApartmentIcon from '@mui/icons-material/Apartment';
+import { COLORS, FONT } from "../Style/designTokens";
 
-const NursingStationInfo = ({ station = "Ward A", bed }) => {
+// station name, and the bed under it when a patient's bed is open
+const NursingStationInfo = ({ station = "", bed }) => {
     return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <ApartmentIcon sx={{
-                color: '#9d25b8',
-            }} />
-            <Box>
-                {bed && <TextComponent color={'#000000'} value={bed} size={12} weight={800} />}
-                <TextComponent color={!bed ? '#000000' : '#a39c9c'} value={station} size={bed ? 8 : 12} weight={800} />
+        <Box sx={{ minWidth: 0, fontFamily: FONT }}>
+            <Box sx={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {bed || station}
             </Box>
+            {bed && (
+                <Box sx={{ fontSize: 12, color: COLORS.muted, lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {station}
+                </Box>
+            )}
         </Box>
     );
 };

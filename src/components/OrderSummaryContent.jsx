@@ -1,13 +1,11 @@
 import React from "react";
 import { Box } from "@mui/joy";
-import TextComponent from "./TextComponent";
-import FastfoodIcon from "@mui/icons-material/Fastfood";
-import RenderFoodList from "./RenderFoodList"; // your memoized component
+import RenderFoodList from "./RenderFoodList";
+import { COLORS, FONT } from "../Style/designTokens";
 
-
+// The order about to be placed: patient orders are grouped by meal, a bystander's is one flat list
 const OrderSummaryContent = ({ assignedFoods, selected }) => {
     const hasItems = Object.keys(assignedFoods || {}).length > 0;
-
 
     // Flatten foods for bystanders
     const bystanderFoods =
@@ -17,105 +15,46 @@ const OrderSummaryContent = ({ assignedFoods, selected }) => {
                 .map((food) => ({ ...food, qty: food.qty || 1 }))
             : [];
 
+    const sectionSx = { mb: 2.5 };
+    const headingSx = { fontSize: 15, fontWeight: 700, color: COLORS.plum, mb: 0.5 };
+
     return (
         <Box
             sx={{
                 flex: 1,
-                overflow: "hidden",
-                px: 2,
+                minHeight: 0,
+                overflowY: "auto",
+                px: 2.5,
                 py: 2,
-                bgcolor: "#f9f9fb",
-                borderTopRightRadius: 16,
-                borderTopLeftRadius: 16,
-                position: "relative",
+                fontFamily: FONT,
+                "&::-webkit-scrollbar": { display: "none" },
+                scrollbarWidth: "none",
             }}
         >
-
-
-            <Box
-                sx={{
-                    height: "100%",
-                    overflowY: "auto",
-                    "&::-webkit-scrollbar": { display: "none" },
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                }}
-            >
-                {!hasItems && (
-                    <Box
-                        sx={{
-                            mt: 6,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            opacity: 0.6,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                width: 70,
-                                height: 70,
-                                borderRadius: "50%",
-                                bgcolor: "#dedcdc",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                mb: 2,
-                                fontSize: 28,
-                            }}
-                        >
-                            🍽️
-                        </Box>
-
-                        <TextComponent
-                            value="No items selected"
-                            size={15}
-                            weight={600}
-                            color="#666"
-                        />
+            {!hasItems && (
+                <Box sx={{ mt: 4 }}>
+                    <Box sx={{ fontSize: 18, fontWeight: 700, color: COLORS.ink }}>No items selected</Box>
+                    <Box sx={{ mt: 0.5, fontSize: 15, lineHeight: 1.5, color: COLORS.muted }}>
+                        Close this sheet and tap "Add" on the foods to order.
                     </Box>
-                )}
+                </Box>
+            )}
 
-                {selected === "PATIENT" ? (
-                    // Patient view: grouped by time
-                    Object.entries(assignedFoods || {})?.map(([timeId, time]) => (
-                        <Box
-                            key={timeId}
-                            sx={{
-                                mb: 3,
-                                bgcolor: "#ffffff",
-                                borderRadius: 14,
-                                p: 2,
-                                boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                            }}
-                        >
-                            <Box sx={{ mb: 1.5 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                    <FastfoodIcon sx={{ fontSize: 15, color: "#7b1fa2" }} />
-                                    <TextComponent value={time.time_name} size={13} weight={700} />
-                                </Box>
-                            </Box>
-                            <RenderFoodList foods={time?.foods} selected={selected} />
-                        </Box>
-                    ))
-                ) : (
-                    // Bystander view: flat list
-                    bystanderFoods?.length > 0 && (
-                        <Box
-                            sx={{
-                                mb: 3,
-                                bgcolor: "#ffffff",
-                                borderRadius: 14,
-                                p: 2,
-                                boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-                            }}
-                        >
-                            <TextComponent value="Food Item" size={14} weight={700} sx={{ mb: 1 }} />
-                            <RenderFoodList foods={bystanderFoods} selected={selected} />
-                        </Box>
-                    )
-                )}
-            </Box>
+            {selected === "PATIENT" ? (
+                Object.entries(assignedFoods || {})?.map(([timeId, time]) => (
+                    <Box key={timeId} sx={sectionSx}>
+                        <Box sx={headingSx}>{time.time_name}</Box>
+                        <RenderFoodList foods={time?.foods} selected={selected} />
+                    </Box>
+                ))
+            ) : (
+                bystanderFoods?.length > 0 && (
+                    <Box sx={sectionSx}>
+                        <Box sx={headingSx}>Food items</Box>
+                        <RenderFoodList foods={bystanderFoods} selected={selected} />
+                    </Box>
+                )
+            )}
         </Box>
     );
 };

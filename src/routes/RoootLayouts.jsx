@@ -1,14 +1,8 @@
 // @ts-nocheck
-import React, { lazy, memo, Suspense, useCallback, useMemo, useState } from 'react'
-import { Box, Grid, Typography } from '@mui/joy'
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Link from '@mui/material/Link';
+import React, { memo, useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { succesNofity, errorNofity, sanitizeInput, warningNofity } from '../Views/Constant/Constant';
 // import { axiosApi } from '../Axios/axios';
-import { Skeleton } from '@mui/material';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Login from '../Views/UserAuthentication/Login';
 import { axioslogin } from '../Axios/axios';
 
@@ -16,7 +10,6 @@ import { axioslogin } from '../Axios/axios';
 // const LoginlogoHeader = lazy(() => import("../Components/LoginlogoHeader"))
 
 const RoootLayouts = () => {
-  const isSmallHeight = useMediaQuery('(max-height: 700px)');
   const navigate = useNavigate();
 
   // const userDetl = localStorage.getItem('app_auth');
@@ -33,7 +26,9 @@ const RoootLayouts = () => {
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    const sanitizedValue = sanitizeInput(value);
+    // never sanitise the password: DOMPurify would HTML-encode characters like & and <
+    // and the user could then never log in with it. It is sent as JSON, not rendered.
+    const sanitizedValue = name === "password" ? value : sanitizeInput(value);
     handleError(name, sanitizedValue);
     setUserInput((prev) => {
       return { ...prev, [name]: sanitizedValue }
@@ -86,6 +81,7 @@ const RoootLayouts = () => {
           ...prev,
           empidError: "Employee Id Field is required"
         }))
+        return;
       }
 
       if (userInput?.password === null || userInput?.password === undefined || userInput?.password === "") {
@@ -104,57 +100,34 @@ const RoootLayouts = () => {
         warningNofity(message); // incorrected credientials
       } else if (success === 2) {
         succesNofity(message); // credential verified
-        const { empdtl_slno, login_method_allowed, emp_id, token } = JSON.parse(userInfo);
+        // The access token lives in the httpOnly cookie (withCredentials), so it is
+        // no longer copied into localStorage. btoa is only Base64 encoding, not encryption.
+        const { empdtl_slno, login_method_allowed, emp_id } = JSON.parse(userInfo);
         const authData = {
-          authNo: btoa(empdtl_slno),//btoa() encodes a string into Base64 format.
+          authNo: btoa(empdtl_slno),
           authType: btoa(login_method_allowed),
-          authId: btoa(emp_id),
-          token: btoa(token)
+          authId: btoa(emp_id)
         };
         localStorage.setItem("app_auth", JSON.stringify(authData));
-        setTimeout(() => {
-          navigate("/dashboard", { replace: true });
-        }, 2000);
+        navigate("/dashboard", { replace: true });
       } else {
         errorNofity(message);
       }
     } catch (error) {
-      warningNofity(error)
+      warningNofity(error?.response?.data?.message || error?.message || "Unable to login")
     }
   }, [postData, userInput, navigate]);
 
 
 
+  // the login page lays itself out (full height, centred column), so it is rendered directly
   return (
-    <Grid
-      container
-      alignItems="stretch"
-      justifyContent="center"
-      sx={{
-        width: '100vw',
-        height: '100vh',
-      }}>
-      <Grid>
-        <Box sx={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          textAlign: 'center',
-          // paddingTop: { xs: isSmallHeight ? 10 : 0 },
-          alignItems: 'center',
-          justifyContent: { xs: isSmallHeight ? "none" : 'center', sm: 'center', md: 'center', lg: 'center' },
-          width: '100vw',
-
-        }}>
-          <Login
-            handlelogin={handleloginform}
-            onChange={handleChange}
-            value={userInput}
-            errors={errors}
-          />
-        </Box>
-      </Grid>
-    </Grid>
+    <Login
+      handlelogin={handleloginform}
+      onChange={handleChange}
+      value={userInput}
+      errors={errors}
+    />
   );
 };
 export default memo(RoootLayouts);

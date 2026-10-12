@@ -1,9 +1,9 @@
 import React from "react";
 import { Box } from "@mui/joy";
-import KeyboardDoubleArrowLeftRoundedIcon from "@mui/icons-material/KeyboardDoubleArrowLeftRounded";
 import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
-import TextComponent from "./TextComponent";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
+// The main button of the order bar: what is in the basket, and the way to review it
 const SwipeUpOrderBar = ({
     hasItems,
     totalItems,
@@ -13,150 +13,48 @@ const SwipeUpOrderBar = ({
 }) => {
     return (
         <Box
+            component="button"
+            type="button"
+            disabled={!hasItems}
             onClick={() => hasItems && onOpen("list")}
             sx={{
-                // flex: 1,
-                 width:hasOrders?'60%':'100%',
-                position: "relative",
-                overflow: "hidden",
+                flex: 1,
+                minWidth: 0,
+                height: 56,
+                px: 2,
+                border: 0,
+                borderRadius: "16px",
+                fontFamily: FONT,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                px: 1.5,
+                gap: 1,
                 cursor: hasItems ? "pointer" : "default",
-                bgcolor: hasItems ? "#9d25b8" : "#f5f5f5",
-                transition: "all .25s ease",
-
-                "&:active": hasItems
-                    ? {
-                        transform: "scale(0.985)"
-                    }
-                    : {},
-
-                // swipe animation overlay
-                "&::before": hasItems
-                    ? {
-                        content: '""',
-                        position: "absolute",
-                        top: 0,
-                        right: "-40%",
-                        width: "35%",
-                        height: "100%",
-                        background:
-                            "linear-gradient(270deg, rgba(255,255,255,0.28), transparent)",
-                        transform: "skewX(-20deg)",
-                        animation: "swipeRightLeft 1.8s infinite"
-                    }
-                    : {}
+                bgcolor: hasItems ? COLORS.plum : COLORS.wash,
+                color: hasItems ? COLORS.white : COLORS.muted,
+                "&:active": hasItems ? { bgcolor: COLORS.plumDark } : {},
+                ...focusRing,
             }}
         >
-            {/* LEFT */}
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    zIndex: 2
-                }}
-            >
-                <Box
-                    sx={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: hasItems
-                            ? "rgba(255,255,255,0.14)"
-                            : "#e0e0e0"
-                    }}
-                >
-                    <ShoppingBagRoundedIcon
-                        sx={{
-                            fontSize: 16,
-                            color: hasItems ? "#fff" : "#777"
-                        }}
-                    />
-                </Box>
-
-                <Box>
-                    <TextComponent
-                        value={
-                            hasItems
-                                ? `${totalItems} Items Added`
-                                : "No Items Selected"
-                        }
-                        size={10}
-                        weight={700}
-                        color={hasItems ? "#fff" : "#666"}
-                    />
-
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                <ShoppingBagRoundedIcon aria-hidden="true" sx={{ fontSize: 22 }} />
+                <Box sx={{ minWidth: 0, textAlign: "left" }}>
+                    <Box sx={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                        {hasItems
+                            ? `${totalItems} ${totalItems === 1 ? "item" : "items"}`
+                            : "No items selected"}
+                    </Box>
                     {hasItems && (
-                        <TextComponent
-                            value="click to review"
-                            size={8}
-                            weight={500}
-                            color="rgba(255,255,255,0.7)"
-                        />
+                        <Box sx={{ fontSize: 13, lineHeight: 1.3, opacity: 0.88 }}>Review order</Box>
                     )}
                 </Box>
             </Box>
 
-            {/* RIGHT */}
             {hasItems && (
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        zIndex: 2
-                    }}
-                >
-                    <TextComponent
-                        value={`₹ ${totalAmount}`}
-                        size={15}
-                        weight={800}
-                        color="#fff"
-                    />
-
-                    <KeyboardDoubleArrowLeftRoundedIcon
-                        sx={{
-                            color: "#fff",
-                            fontSize: 22,
-                            animation: "leftSwipe 1s infinite"
-                        }}
-                    />
+                <Box sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>
+                    {`₹ ${totalAmount}`}
                 </Box>
             )}
-
-            <style>
-                {`
-                    @keyframes leftSwipe {
-                        0% {
-                            transform: translateX(0px);
-                            opacity: 0.5;
-                        }
-                        50% {
-                            transform: translateX(-6px);
-                            opacity: 1;
-                        }
-                        100% {
-                            transform: translateX(0px);
-                            opacity: 0.5;
-                        }
-                    }
-
-                    @keyframes swipeRightLeft {
-                        0% {
-                            right: -40%;
-                        }
-                        100% {
-                            right: 120%;
-                        }
-                    }
-                `}
-            </style>
         </Box>
     );
 };

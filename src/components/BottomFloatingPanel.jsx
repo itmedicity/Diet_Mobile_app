@@ -1,8 +1,8 @@
 import React, { memo, useMemo, useState } from "react";
-import { Box, Button } from "@mui/joy";
-import TextComponent from "./TextComponent";
+import { Box } from "@mui/joy";
 import OrderSummaryContent from "./OrderSummaryContent";
-import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 import { EmpauthId, errorNofity, infoNofity, warningNofity } from "../Views/Constant/Constant";
 import OrderStatsCard from "./OrderStatsCard";
 import OrderConfirmationPage from "./OrderConfirmationPage";
@@ -17,10 +17,6 @@ import {
 import PizzaLoader from "./PizzaLoader";
 import ChooseDietType from "../SelectComponents/ChooseDietType";
 
-
-const HEADER_HEIGHT = 60;
-const BOTTOM_NAV_HEIGHT = 60;
-const PANEL_MARGIN = 20;
 
 const BottomFloatingPanel = ({
     activeTab,
@@ -40,7 +36,7 @@ const BottomFloatingPanel = ({
     const [showConfetti, setShowConfetti] = useState(false);
     const [loading, setLoading] = useState(false);
     const [type_slno, setDietType] = useState(0);
-    const [typename, setTypeName] = useState("")
+    const [, setTypeName] = useState("")
     const queryClient = useQueryClient()
     const id = EmpauthId()
 
@@ -138,6 +134,13 @@ const BottomFloatingPanel = ({
                     p => p.party_name?.toUpperCase() === selected?.party_name?.toUpperCase()
                 );
 
+                // an item without a price for this party type used to be sent with price
+                // undefined and gst_amount NaN as long as the total of the other items was > 0
+                if (priceObj?.price === undefined || priceObj?.price === null || Number.isNaN(Number(priceObj.price))) {
+                    hasInvalidItem = true;
+                    return;
+                }
+
                 orderDetails.push({
                     diet_type_id: finalTimeId,
                     item_id: food.item_id,
@@ -182,13 +185,16 @@ const BottomFloatingPanel = ({
 
 
 
+    // Returns { ok, data }. The caller MUST check `ok`: this used to return nothing on a failed
+    // request and the screen then showed "order placed" and emptied the cart anyway.
     const safeApiCall = async (apiFn, payload) => {
         try {
             const res = await apiFn(payload);
-            if (res?.data?.success === 0) {
+            if (res?.data?.success !== 1) {
                 warningNofity(res?.data?.message || "Operation failed");
+                return { ok: false, data: res?.data };
             }
-            return res.data;
+            return { ok: true, data: res.data };
         } catch (err) {
             if (handleAuthError(err)) throw err;
             errorNofity(
@@ -196,6 +202,7 @@ const BottomFloatingPanel = ({
                 err.message ||
                 "Something went wrong"
             );
+            return { ok: false };
         }
     };
 
@@ -253,7 +260,7 @@ const BottomFloatingPanel = ({
         if (!isPatient && type_slno === 0) return infoNofity("Please select Meal Type!");
 
         if (hasInvalidItem)
-            return warningNofity("Some items are invalid");
+            return warningNofity("Some items are invalid or have no price for this order type");
 
         if (!orderDetails.length)
             return warningNofity("No valid food items");
@@ -281,14 +288,19 @@ const BottomFloatingPanel = ({
             collected_by: id
         };
 
+        // ignore extra taps while an order is being placed
+        if (loading) return;
+
         try {
 
 
             setLoading(true)
             //  NON-PATIENT FLOW
             if (!isPatient) {
+                let canteenResult;
+
                 if (existingCanteenOrderId) {
-                    await safeApiCall(addCanteenItems, {
+                    canteenResult = await safeApiCall(addCanteenItems, {
                         itemDetail: canteenDetails,
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
@@ -299,12 +311,15 @@ const BottomFloatingPanel = ({
                     });
 
                 } else {
-                    await safeApiCall(createCanteenOrder, {
+                    canteenResult = await safeApiCall(createCanteenOrder, {
                         order: canteenPayload,
                         items: canteenDetails
                     });
 
                 }
+
+                // failed: keep the cart so the nurse can retry (the reason was already shown)
+                if (!canteenResult.ok) return;
 
                 setShowConfirmation(true);
                 setShowConfetti(true);
@@ -317,14 +332,16 @@ const BottomFloatingPanel = ({
             //  PATIENT FLOW
             if (existingDietOrderId) {
 
-                await safeApiCall(addDietItems, {
+                const dietResult = await safeApiCall(addDietItems, {
                     order_id: existingDietOrderId,
                     details: orderDetails
                 });
 
+                // nothing was saved: keep the cart
+                if (!dietResult.ok) return;
 
                 if (existingCanteenOrderId) {
-                    await safeApiCall(addCanteenItems, {
+                    const canteenResult = await safeApiCall(addCanteenItems, {
                         itemDetail: canteenDetails,
                         canteen_order_id: existingCanteenOrderId,
                         isExtra: false,
@@ -334,16 +351,29 @@ const BottomFloatingPanel = ({
                         order_status: 'PENDING'
                     });
 
+                    if (!canteenResult.ok) {
+                        // the diet part is already saved and cannot be undone from here;
+                        // refresh the lists so the nurse sees what exists, and do not re-send it
+                        errorNofity(
+                            "Diet items were saved but the billing items failed. Please do not order again - inform the supervisor"
+                        );
+                        RefetchDietOrders();
+                        RefetchPreviousOrder();
+                        return;
+                    }
+
                 }
 
             } else {
-                await safeApiCall(createDietOrder, {
+                const createResult = await safeApiCall(createDietOrder, {
                     order: dietPayload,
                     details: orderDetails,
                     canteenorder: canteenPayload,
                     canteenorderdetail: canteenDetails,
                     isPending: existingCanteenOrderId ? true : false
                 });
+
+                if (!createResult.ok) return;
 
             }
 
@@ -368,64 +398,67 @@ const BottomFloatingPanel = ({
     if (!activeTab) return null;
 
     return (
+        // bottom sheet: the order being placed (list) or the orders already placed (view)
         <Box
+            role="dialog"
+            aria-modal="true"
+            aria-label={activeTab === "list" ? "Order summary" : "Previous orders"}
             sx={{
                 position: "fixed",
-                top: HEADER_HEIGHT + 10,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "90%",
-                height: `calc(90vh - ${HEADER_HEIGHT + BOTTOM_NAV_HEIGHT + PANEL_MARGIN}px)`,
-                bgcolor: "#fff",
-                borderRadius: 16,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                mx: "auto",
+                width: "100%",
+                maxWidth: 560,
+                height: "88dvh",
+                bgcolor: COLORS.white,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
                 display: "flex",
                 flexDirection: "column",
-                boxShadow: "0 20px 45px rgba(0,0,0,0.18)",
-                border: "1px solid #9d25b8",
+                boxShadow: "0 -12px 32px rgba(42,16,56,0.22)",
                 zIndex: 1800,
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                fontFamily: FONT,
+                overflow: "hidden"
             }}
         >
 
             <Box
                 sx={{
-                    px: 2,
-                    py: 1.2,
+                    pl: 2.5,
+                    pr: 1,
+                    py: 1,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    borderBottom: "1px solid #f3f3f3",
+                    borderBottom: `1px solid ${COLORS.line}`,
                 }}
             >
-                <Box>
-                    <TextComponent
-                        value={selected?.party_name === 'PATIENT' ? PatientDetail?.ptc_ptname : "Bystander"}
-                        size={13}
-                        weight={700}
-                        color="#000"
-                    />
-                    <TextComponent
-                        value="Order Summary"
-                        size={11}
-                        weight={500}
-                        color="#777"
-                    />
+                <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ fontSize: 18, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {selected?.party_name === 'PATIENT' ? PatientDetail?.ptc_ptname : "Bystander"}
+                    </Box>
+                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                        {activeTab === "list" ? "Order summary" : "Orders placed"}
+                    </Box>
                 </Box>
 
-                <Button
-                    size="sm"
-                    variant="soft"
+                <Box
+                    component="button"
+                    type="button"
                     onClick={onClose}
+                    aria-label="Close"
                     sx={{
-                        minHeight: 28,
-                        px: 1.5,
-                        fontSize: 11,
-                        borderRadius: 20,
-                        fontWeight: 600,
+                        flexShrink: 0, width: 48, height: 48, border: 0, borderRadius: "50%", cursor: "pointer",
+                        bgcolor: "transparent", color: COLORS.ink, display: "grid", placeItems: "center",
+                        "&:active": { bgcolor: COLORS.wash },
+                        ...focusRing,
                     }}
                 >
-                    Close
-                </Button>
+                    <CloseRoundedIcon />
+                </Box>
             </Box>
 
             {loading && <PizzaLoader />}
@@ -442,7 +475,9 @@ const BottomFloatingPanel = ({
                     <>
                         {
                             selected?.party_name !== 'PATIENT' &&
-                            <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+                            <Box sx={{ px: 2.5, pt: 2 }}>
+                                <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+                            </Box>
                         }
                         <OrderSummaryContent
                             assignedFoods={assignedFoods}
@@ -463,43 +498,38 @@ const BottomFloatingPanel = ({
                 (activeTab === "list" && !showConfirmation) &&
                 <Box
                     sx={{
-                        px: 2,
-                        py: 1.5,
-                        borderTop: "1px solid #f0f0f0",
+                        px: 2.5,
+                        pt: 1.5,
+                        pb: "calc(12px + env(safe-area-inset-bottom))",
+                        borderTop: `1px solid ${COLORS.line}`,
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
+                        gap: 2,
                     }}
                 >
                     <Box>
-                        <TextComponent value="Total" size={12} weight={500} color="#777" />
-                        <TextComponent
-                            value={`₹${totalAmount}`}
-                            size={18}
-                            weight={800}
-                            color="#070707"
-                        />
+                        <Box sx={{ fontSize: 14, color: COLORS.muted }}>Total</Box>
+                        <Box sx={{ fontSize: 24, fontWeight: 700, color: COLORS.ink, lineHeight: 1.1 }}>
+                            {`₹${totalAmount}`}
+                        </Box>
                     </Box>
 
-                    <Button
+                    <Box
+                        component="button"
+                        type="button"
                         onClick={handleConfirmOrder}
-                        size="sm"
-                        startDecorator={
-                            <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
-                        }
                         disabled={totalAmount === 0 || loading}
                         sx={{
-                            px: 2,
-                            height: 34,
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            bgcolor: "#9d25b8",
-                            "&:hover": { bgcolor: "#7b1fa2" },
+                            flex: 1, maxWidth: 240, height: 52, border: 0, borderRadius: "14px", cursor: "pointer",
+                            bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 17, fontWeight: 700,
+                            "&:active": { bgcolor: COLORS.plumDark },
+                            "&:disabled": { bgcolor: COLORS.orchid, color: COLORS.muted, cursor: "not-allowed" },
+                            ...focusRing,
                         }}
                     >
-                        Confirm Order
-                    </Button>
+                        {loading ? "Placing order…" : "Place order"}
+                    </Box>
                 </Box>
             }
         </Box>

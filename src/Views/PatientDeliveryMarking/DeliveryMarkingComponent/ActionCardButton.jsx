@@ -1,29 +1,29 @@
 import React, {
     memo,
     useCallback,
-    useEffect,
     useMemo,
     useState
 } from "react";
 
-import {
-    Box,
-    Button,
-} from "@mui/joy";
+import { Box } from "@mui/joy";
 
-import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import ExpandLessRoundedIcon from "@mui/icons-material/ExpandLessRounded";
-import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import ReceiptIcon from "@mui/icons-material/Receipt";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import TextComponent from "../../../components/TextComponent";
 import PaymentSummaryCard from "./PaymentSummaryCard";
 import BillDetailList from "./BillDetailList";
 import { useNavigate } from "react-router-dom";
 import ProformaDetailList from "./ProformaDetailList";
-import FloatingProformaInvoiceButton from "../../../components/FloatingProformaInvoiceButton";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-
+const footerButton = (filled) => ({
+    height: 48, px: 2, whiteSpace: "nowrap", borderRadius: "12px", cursor: "pointer", fontFamily: FONT, fontSize: 16, fontWeight: 700,
+    display: "flex", alignItems: "center", gap: 0.5,
+    bgcolor: filled ? COLORS.plum : COLORS.wash, color: filled ? COLORS.white : COLORS.plum,
+    border: `1.5px solid ${COLORS.plum}`,
+    "&:disabled": { opacity: 0.6, cursor: "not-allowed" },
+    ...focusRing,
+});
 
 const ActionCardButton = ({
     title = "Bill Details",
@@ -428,26 +428,26 @@ const ActionCardButton = ({
             sx={{
                 ...(floating && {
                     position: "fixed",
-                    bottom: 16,
-                    left: 16,
-                    right: 16,
-                    zIndex: 999999,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 1600,
                     maxWidth: 700,
-                    mx: "auto"
+                    mx: "auto",
                 }),
-
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-end",
-
-                borderRadius: 4,
-                overflow: "hidden"
+                bgcolor: COLORS.white,
+                borderTop: `1px solid ${COLORS.line}`,
+                borderRadius: "20px 20px 0 0",
+                boxShadow: "0 -6px 20px rgba(42,16,56,0.12)",
+                overflow: "hidden",
             }}
         >
 
             <ProformaDetailList
                 expand={expandProforma}
-                setExpand={setExpandProforma}
                 items={porformainvoice}
             />
             <BillDetailList
@@ -466,120 +466,59 @@ const ActionCardButton = ({
                 totalPayedAmount={billedItemSummary.total}
                 onClick={handleNavigate}
             />
-            <FloatingProformaInvoiceButton
-                onClick={() => setExpandProforma(prev => !prev)} />
 
             <Box
                 sx={{
-                    p: 2,
-                    bgcolor: "#fff",
-                    borderTop:
-                        "1px solid #eee",
-                    display: "flex",
-                    justifyContent:
-                        "space-between",
-                    alignItems: "center"
-                }} >
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1
-                    }}
-                >
-
-                    <ReceiptLongRoundedIcon
-                        sx={{
-                            color: "#582e7d"
-                        }}
-                    />
-
-                    <Box>
-
-                        <TextComponent
-                            value={title}
-                            size={14}
-                            weight={700}
-                        />
-
-                        <TextComponent
-                            value={subtitle}
-                            size={10}
-                            color="#777"
-                        />
-                    </Box>
+                    px: 2.5, pt: 1.5, pb: "calc(12px + env(safe-area-inset-bottom))",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1,
+                    fontFamily: FONT,
+                }}
+            >
+                <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.ink }}>{title}</Box>
+                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>{subtitle}</Box>
                 </Box>
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 1,
-                        alignItems: "center"
-                    }}
-                >
-                    {
-                        isBillItemExist && isBystander && (
-                            <Button
-                                loading={loading}
 
-                                sx={{
-                                    bgcolor: "#8629d1",
-                                    cursor: "pointer",
-                                    fontSize: 10
-                                }}
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {porformainvoice?.length > 0 && (
+                        <Box
+                            component="button"
+                            type="button"
+                            aria-expanded={expandProforma}
+                            onClick={() => setExpandProforma(prev => !prev)}
+                            sx={footerButton(false)}
+                        >
+                            Proforma
+                        </Box>
+                    )}
 
-                                endDecorator={
-                                    <ReceiptIcon
-                                        sx={{
-                                            fontSize: 16
-                                        }}
-                                    />
-                                }
+                    {isBillItemExist && isBystander && (
+                        <Box
+                            component="button"
+                            type="button"
+                            onClick={OnGenerateBill}
+                            disabled={loading}
+                            sx={footerButton(true)}
+                        >
+                            <ReceiptIcon aria-hidden="true" sx={{ fontSize: 20 }} />
+                            {loading ? "Generating…" : "Generate bill"}
+                        </Box>
+                    )}
 
-                                onClick={
-                                    OnGenerateBill
-                                }
-                            >
-                                Generate Bill
-                            </Button>
-                        )}
-                    {
-                        canView && (
-                            <Button
-                                loading={loading}
-
-                                sx={{
-                                    bgcolor: "#8629d1",
-                                    cursor: "pointer",
-                                    fontSize: 10
-                                }}
-
-                                endDecorator={
-
-                                    expand
-                                        ? (
-                                            <ExpandLessRoundedIcon />
-                                        )
-                                        : (
-                                            <ChevronRightRoundedIcon />
-                                        )
-
-                                }
-
-                                onClick={
-                                    () => setOpenBillDialog(prev => !prev)
-                                }
-                            >
-
-                                {
-
-                                    expand
-                                        ? "Hide"
-                                        : "View"
-                                }
-
-                            </Button>
-                        )}
+                    {canView && (
+                        <Box
+                            component="button"
+                            type="button"
+                            aria-expanded={expand}
+                            onClick={() => setOpenBillDialog(prev => !prev)}
+                            sx={footerButton(true)}
+                        >
+                            {expand ? "Hide" : "View"}
+                            {expand
+                                ? <ExpandMoreRoundedIcon aria-hidden="true" />
+                                : <ExpandLessRoundedIcon aria-hidden="true" />}
+                        </Box>
+                    )}
                 </Box>
             </Box>
 

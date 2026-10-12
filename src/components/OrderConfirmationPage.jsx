@@ -1,20 +1,20 @@
 import React from "react";
-import { Box, Button } from "@mui/joy";
+import { Box } from "@mui/joy";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import TextComponent from "./TextComponent";
 import Pride from "react-canvas-confetti/dist/presets/pride";
 import randomInRange from "react-canvas-confetti/dist/helpers/randomInRange";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
 const OrderConfirmationPage = ({
     orderId,
-    message = "Your order has been placed successfully.",
+    message = "The kitchen can see it now.",
     onBack,
     showCelebration
 }) => {
 
     const decorateOptions = (defaultOptions) => ({
         ...defaultOptions,
-        colors: ["#FF69B4", "#00FF00", "#FFA500"],
+        colors: [COLORS.plum, COLORS.orchid, COLORS.success],
         scalar: randomInRange(0.6, 1.2),
         particleCount: randomInRange(2, 8),
     });
@@ -22,117 +22,55 @@ const OrderConfirmationPage = ({
     return (
         <Box
             sx={{
-                height: "100vh",
+                flex: 1,
+                minHeight: 0,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
-                alignItems: "center",
-                bgcolor: "#f4f6fb",
+                alignItems: "flex-start",
                 px: 3,
-                textAlign: "center",
                 position: "relative",
-                borderBottomLeftRadius: 16,
-                borderBottomRightRadius: 16
+                fontFamily: FONT,
             }}
         >
-            {/* Confetti */}
+            {/* Confetti: only right after the order was placed */}
             {showCelebration && (
                 <Pride
                     autorun={{ speed: 20 }}
                     decorateOptions={decorateOptions}
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        width: "100%",
-                        height: "100%",
-                        pointerEvents: "none",
-                        borderTopRightRadius: 16,
-                        borderTopLeftRadius: 16,
-                    }}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
                 />
             )}
-            {/* Animated Tick */}
-            <Box
-                sx={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: "50%",
-                    bgcolor: "#feeef9",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mb: 3,
-                    animation: "pop 0.4s ease",
-                    "@keyframes pop": {
-                        "0%": { transform: "scale(0.5)", opacity: 0 },
-                        "100%": { transform: "scale(1)", opacity: 1 },
-                    },
-                }}
-            >
-                <CheckCircleRoundedIcon
-                    sx={{
-                        fontSize: 70,
-                        color: "#b52683",
-                    }}
-                />
+
+            <CheckCircleRoundedIcon aria-hidden="true" sx={{ fontSize: 64, color: COLORS.success }} />
+
+            <Box component="h2" role="status" sx={{ m: 0, mt: 2, fontSize: 28, fontWeight: 700, color: COLORS.ink, letterSpacing: "-0.01em" }}>
+                Order placed
             </Box>
 
-            {/* Title */}
-            <TextComponent
-                value="Order Confirmed!"
-                size={22}
-                weight={800}
-                color="#b52683"
-            />
-
-            {/* Description */}
-            <Box sx={{ mt: 1, mb: 2 }}>
-                <TextComponent
-                    value={message}
-                    size={14}
-                    weight={500}
-                    color="#555"
-                />
+            <Box sx={{ mt: 1, fontSize: 16, lineHeight: 1.5, color: COLORS.muted }}>
+                {message}
             </Box>
 
-            {/* Order ID */}
             {orderId && (
-                <Box
-                    sx={{
-                        px: 2,
-                        py: 1,
-                        borderRadius: 20,
-                        bgcolor: "#ffffff",
-                        boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
-                        mb: 3,
-                    }}
-                >
-                    <TextComponent
-                        value={`Order ID: ${orderId}`}
-                        size={13}
-                        weight={700}
-                        color="#000"
-                    />
+                <Box sx={{ mt: 2, fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
+                    {`Order ID: ${orderId}`}
                 </Box>
             )}
 
-            {/* Button */}
-            <Button
+            <Box
+                component="button"
+                type="button"
                 onClick={onBack}
                 sx={{
-                    px: 4,
-                    py: 1.2,
-                    borderRadius: 30,
-                    fontWeight: 600,
-                    background: "linear-gradient(135deg, #c22ea4, #d331ba)",
-                    boxShadow: "0 4px 12px rgba(185, 34, 183, 0.4)",
-                    "&:hover": {
-                        background: "linear-gradient(135deg, #c22ea4, #d331ba)",
-                    },
+                    mt: 4, height: 52, px: 3, border: 0, borderRadius: "14px", cursor: "pointer",
+                    bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 17, fontWeight: 700,
+                    "&:active": { bgcolor: COLORS.plumDark },
+                    ...focusRing,
                 }}
             >
-                Back to View List
-            </Button>
+                View placed orders
+            </Box>
         </Box>
     );
 };

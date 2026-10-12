@@ -2,50 +2,44 @@ import React from "react";
 import { Box } from "@mui/joy";
 import { useLocation, useNavigate } from "react-router-dom";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { COLORS, focusRing } from "../Style/designTokens";
 
 
 const FloatingBackButton = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Hide button on login page ("/")
-    if (location.pathname === "/" || location.pathname === "/dashboard") return null;
+    // Hidden on the login page and the dashboard, and where the header already has its own back arrow
+    const HIDE_ON = ["/", "/dashboard", "/Home", "/delivery", "/cash-collection", "/nsstaion", "/bedId", "/diet/payment", "/diet/payment/success"];
+    if (HIDE_ON.includes(location.pathname) || location.pathname.startsWith("/cash-collection/")) return null;
 
     return (
         <Box
+            component="button"
+            type="button"
             onClick={() => navigate(-1)}
+            aria-label="Go back"
             sx={{
                 position: "fixed",
-                bottom: 100,
+                bottom: "calc(100px + env(safe-area-inset-bottom))",
                 right: 20,
                 width: 52,
                 height: 52,
+                p: 0,
+                border: 0,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #9943ef, #dea0ff)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                bgcolor: COLORS.plum,
+                color: COLORS.white,
+                display: "grid",
+                placeItems: "center",
                 cursor: "pointer",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
-                zIndex: 9999,
-                transition: "all 0.3s ease",
-                "&:hover": {
-                    transform: "scale(1.1)",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.35)",
-                },
-                "&:active": {
-                    transform: "scale(0.95)",
-                },
-                border: '1px solid #dbd9dc'
+                boxShadow: "0 6px 16px rgba(42,16,56,0.28)",
+                zIndex: 1500, // below the dimmed background of the bottom sheet (1700)
+                "&:active": { bgcolor: COLORS.plumDark },
+                ...focusRing,
             }}
         >
-            <ArrowBackIcon
-                sx={{
-                    color: "#ffffff",
-                    fontSize: 23,
-                    // ml: "3px", // small adjustment to center arrow visually
-                }}
-            />
+            <ArrowBackIcon sx={{ fontSize: 24 }} />
         </Box>
     );
 };

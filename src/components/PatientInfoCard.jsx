@@ -1,9 +1,7 @@
-import { Avatar, Box } from '@mui/joy'
-import TextComponent from './TextComponent'
+import { Box } from '@mui/joy'
 import React, { memo } from 'react'
-import { format } from 'date-fns';
 import { PatientstatusConfig } from '../CommonData/Common';
-import { Chip } from '@mui/material';
+import { COLORS, FONT } from '../Style/designTokens';
 
 const PatientInfoCard = ({ PatientDetail }) => {
 
@@ -18,91 +16,40 @@ const PatientInfoCard = ({ PatientDetail }) => {
     return (
         <Box
             sx={{
-                width: "100%",
-                height: 50,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: 'center',
-                mt: 2
+                mt: 1.5, p: 1.5, borderRadius: "16px", fontFamily: FONT,
+                bgcolor: COLORS.surface, border: `1px solid ${COLORS.line}`,
+                display: "flex", alignItems: "center", gap: 1.5,
             }}
         >
             <Box
+                aria-hidden="true"
                 sx={{
-                    width: '90%',
-                    bgcolor: '#ffffff',
-                    boxShadow: "sm",
-                    height: '90%',
-                    borderRadius: 5,
-                    p: 1,
-                    display: "flex",
-                    gap: 1,
-                    borderLeft: "2px solid #9d25b8",
-                    borderRight: '2px solid #9d25b8',
-                    justifyContent: 'space-between'
+                    flexShrink: 0, width: 44, height: 44, borderRadius: "50%", display: "grid", placeItems: "center",
+                    bgcolor: COLORS.plum, color: COLORS.white, fontSize: 18, fontWeight: 700,
                 }}
             >
+                {getInitial(PatientDetail?.ptc_ptname)}
+            </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Avatar
-                        sx={{
-                            bgcolor: "#9d25b8",
-                            width: 35,
-                            height: 35,
-                            fontWeight: 600,
-                            color: 'white',
-                        }}
-                    >
-                        {getInitial(PatientDetail?.ptc_ptname)}
-                    </Avatar>
-
-                    <Box>
-                        <TextComponent
-                            value={PatientDetail?.ptc_ptname}
-                            color='black'
-                            size={12}
-                            weight={800}
-                        />
-                        <TextComponent
-                            value={PatientDetail?.pt_no}
-                            color='black'
-                            size={10}
-                            weight={600}
-                        />
-                    </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ fontSize: 16, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {PatientDetail?.ptc_ptname}
                 </Box>
-
-                <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={0.5}
-                    sx={{
-                        cursor: 'pointer'
-                    }}
-                >
-                    <Chip
-                        icon={AdmissiongStatus?.icon && (
-                            React.cloneElement(AdmissiongStatus.icon, {
-                                size: 14,
-                                color: AdmissiongStatus?.color,
-                            })
-                        )}
-                        label={AdmissiongStatus?.label || "-"}
-                        size="small"
-                        sx={{
-                            height: 24,
-                            borderRadius: "6px",
-                            fontSize: 10,
-                            fontWeight: 800,
-                            backgroundColor:
-                                AdmissiongStatus?.bgColor ||
-                                "rgba(37, 99, 235, 0.08)",
-                            color: AdmissiongStatus?.color || "inherit",
-                            border: `1px solid ${AdmissiongStatus?.borderColor || "transparent"
-                                }`,
-                        }}
-                    />
-
+                <Box sx={{ mt: 0.25, fontSize: 13, color: COLORS.muted }}>
+                    {PatientDetail?.pt_no}
                 </Box>
+            </Box>
+
+            <Box
+                component="span"
+                sx={{
+                    flexShrink: 0, px: 1, py: 0.5, borderRadius: "8px", fontSize: 13, fontWeight: 700,
+                    bgcolor: AdmissiongStatus?.bgColor || COLORS.wash,
+                    color: AdmissiongStatus?.color || COLORS.plum,
+                    border: `1px solid ${AdmissiongStatus?.borderColor || COLORS.line}`,
+                }}
+            >
+                {AdmissiongStatus?.label || "-"}
             </Box>
         </Box>
     )

@@ -3,7 +3,9 @@ import { Box } from '@mui/joy';
 
 import nofoodfound from '../../../assets/images/nofood.jpg'
 import { useFetchItemFiles } from '../../../CommonData/UseQuery';
-import TextComponent from '../../../components/TextComponent';
+import { COLORS, FONT, focusRing } from '../../../Style/designTokens';
+
+// The food chosen in the extra-order search: photo, name, details and price
 const FoodDetailShowCard = ({ selectedFood = {} }) => {
 
     const {
@@ -32,164 +34,72 @@ const FoodDetailShowCard = ({ selectedFood = {} }) => {
         }
     }, [ItemFiles, selectedFood?.item_id]);
 
-    const stockLeft = 12;
-
     if (!selectedFood?.item_id) return null;
 
     return (
-        <Box sx={{ width: '100%', mt: 1 }}>
+        <Box sx={{ width: '100%', mt: 2, fontFamily: FONT }}>
 
-            {/*  MAIN CARD */}
             <Box
                 sx={{
-                    display: 'flex',
-                    gap: 3,
-                    p: 1,
-                    borderRadius: 10,
-                    bgcolor: '#fff',
-                    boxShadow: 'sm',
-                    height: 70
+                    display: 'flex', gap: 1.5, p: 1.25, borderRadius: '16px',
+                    bgcolor: COLORS.surface, border: `1px solid ${COLORS.line}`,
                 }}
             >
+                <Box sx={{ flexShrink: 0, width: 88, height: 88, borderRadius: '12px', overflow: 'hidden', bgcolor: COLORS.wash }}>
+                    {selectedImage && (
+                        <img
+                            src={selectedImage}
+                            alt={item_name || "food"}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    )}
+                </Box>
 
-                {/* LEFT IMAGE */}
-                <Box sx={{ width: '40%' }}>
-                    <Box
-                        sx={{
-                            height: '100%',
-                            borderRadius: 8,
-                            overflow: 'hidden',
-                            border: '1px solid #eee'
-                        }}
-                    >
-                        {selectedImage && (
-                            <img
-                                src={selectedImage}
-                                alt="food"
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                }}
-                            />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25 }}>{item_name}</Box>
+
+                    {(category_name || group_name) && (
+                        <Box sx={{ mt: 0.25, fontSize: 14, color: COLORS.muted }}>
+                            {[category_name, group_name].filter(Boolean).join('  ·  ')}
+                        </Box>
+                    )}
+
+                    {description && (
+                        <Box sx={{ mt: 0.5, fontSize: 14, lineHeight: 1.4, color: COLORS.muted, wordBreak: 'break-word' }}>
+                            {description}
+                        </Box>
+                    )}
+
+                    <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                        <Box sx={{ fontSize: 20, fontWeight: 700, color: COLORS.ink }}>{`₹${price ?? 0}`}</Box>
+                        {discount > 0 && (
+                            <Box sx={{ fontSize: 14, fontWeight: 600, color: COLORS.success }}>{`${discount}% off`}</Box>
                         )}
                     </Box>
                 </Box>
+            </Box>
 
-                {/* RIGHT DETAILS */}
-                <Box
-                    sx={{
-                        width: '60%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        // gap: 1
-                    }}
-                >
-
-                    {/* Title */}
-                    <TextComponent
-                        value={item_name}
-                        size={12}
-                        weight={700}
-                    />
-
-                    {/* Category + Group */}
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <TextComponent
-                            value={category_name}
-                            size={9}
-                            color="#555"
-                        />
-                        <TextComponent
-                            value={group_name}
-                            size={10}
-                            color="#555"
-                        />
-                    </Box>
-
-                    {/* Description */}
-                    <TextComponent
-                        value={description}
-                        size={9}
-                        color="#777"
-                        sx={{
-                            display: "block",
-                            whiteSpace: "normal",
-                            wordBreak: "break-word",
-                            overflowWrap: "anywhere"
-                        }}
-                    />
-
-                    {/* Price */}
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                        <Box>
-                            <TextComponent
-                                value={`₹ ${price ?? 0}`}
-                                size={16}
-                                weight={700}
-                                color="#d32f2f"
-                            />
-                            {discount > 0 && (
-                                <TextComponent
-                                    value={`${discount}% OFF`}
-                                    size={12}
-                                    color="green"
-                                />
-                            )}
+            {/* more photos of the item */}
+            {ItemFiles?.length > 1 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {ItemFiles.map(file => (
+                        <Box
+                            key={file.name}
+                            component="button"
+                            type="button"
+                            onClick={() => setSelectedImage(file.url)}
+                            aria-label={`Show photo ${file.name}`}
+                            sx={{
+                                width: 48, height: 48, p: 0, borderRadius: '10px', overflow: 'hidden', cursor: 'pointer',
+                                border: `2px solid ${selectedImage === file.url ? COLORS.plum : COLORS.line}`,
+                                ...focusRing,
+                            }}
+                        >
+                            <img src={file.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </Box>
-
-                        <Box >
-                            <TextComponent
-                                value={`Stock Left: ${stockLeft}`}
-                                size={13}
-                                weight={600}
-                                color={stockLeft > 5 ? "green" : "red"}
-                            />
-                        </Box>
-                    </Box>
+                    ))}
                 </Box>
-            </Box>
-
-            {/*  THUMBNAILS BELOW (FIXED ISSUE) */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',   // prevents breaking
-                    gap: 1,
-                    mt: 1
-                }}
-            >
-                {ItemFiles?.length > 0 && (
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 1,
-                            mt: 0.2
-                        }}
-                    >
-                        {ItemFiles.map(file => (
-                            <img
-                                key={file.name}
-                                src={file.url}
-                                alt={file.name}
-                                onClick={() => setSelectedImage(file.url)}
-                                style={{
-                                    width: 45,
-                                    height: 45,
-                                    borderRadius: 6,
-                                    cursor: 'pointer',
-                                    objectFit: 'cover',
-                                    border:
-                                        selectedImage === file.url
-                                            ? '2px solid #1976d2'
-                                            : '1px solid #ccc'
-                                }}
-                            />
-                        ))}
-                    </Box>
-                )}
-            </Box>
+            )}
 
         </Box>
     );

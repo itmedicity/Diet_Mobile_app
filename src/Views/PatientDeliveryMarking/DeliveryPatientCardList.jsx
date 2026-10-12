@@ -1,68 +1,19 @@
 import React, { memo, useCallback, useMemo, useState } from "react";
 import { Box } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
-import TextComponent from "../../components/TextComponent";
 import DeliveryStatusModal from "./DeliveryStatusModal";
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
-import DoneAllRoundedIcon from "@mui/icons-material/DoneAllRounded";
-import PendingRoundedIcon from "@mui/icons-material/PendingRounded";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import DeliveryDiningRoundedIcon from "@mui/icons-material/DeliveryDiningRounded";
-import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import KingBedIcon from "@mui/icons-material/KingBed";
+import GroupIcon from "@mui/icons-material/Group";
 import { EmpauthId, errorNofity, infoNofity, succesNofity, warningNofity } from "../Constant/Constant";
 import { axioslogin } from "../../Axios/axios";
 import { useQueryClient } from "@tanstack/react-query";
-import { Checkbox } from "@mui/material";
-import KingBedIcon from '@mui/icons-material/KingBed';
-import GroupIcon from "@mui/icons-material/Group";
 import { useAllItemDeliveryStatus, useOrderItemDetail, usePatientExtraOrders } from "../../CommonData/UseQuery";
 import InstantOrderItemList from "./DeliveryMarkingComponent/InstantOrderItemList";
-
-const statusStyles = {
-    PENDING: {
-        label: "Pending",
-        color: "#9c42f0",
-        bg: "rgba(156,66,240,0.12)",
-        border: "rgba(156,66,240,0.35)",
-        icon: <PendingRoundedIcon sx={{ fontSize: 14 }} />
-    },
-    PICKEDUP: {
-        label: "Picked Up",
-        color: "#ff9800",
-        bg: "rgba(255,152,0,0.12)",
-        border: "rgba(255,152,0,0.35)",
-        icon: <LocalShippingRoundedIcon sx={{ fontSize: 14 }} />
-    },
-    DELIVERED: {
-        label: "Delivered",
-        color: "#4caf50",
-        bg: "rgba(76,175,80,0.12)",
-        border: "rgba(76,175,80,0.35)",
-        icon: <DoneAllRoundedIcon sx={{ fontSize: 14 }} />
-    },
-    UNDELIVERED: {
-        label: "Undelivered",
-        color: "#03a9f4",
-        bg: "rgba(3,169,244,0.12)",
-        border: "rgba(3,169,244,0.35)",
-        icon: <DeliveryDiningRoundedIcon sx={{ fontSize: 14 }} />
-    },
-    RETURNED: {
-        label: "Returned",
-        color: "#ff5722",
-        bg: "rgba(255,87,34,0.12)",
-        border: "rgba(255,87,34,0.35)",
-        icon: <ReplayRoundedIcon sx={{ fontSize: 14 }} />
-    },
-    CANCELLED: {
-        label: "Cancelled",
-        color: "#f44336",
-        bg: "rgba(244,67,54,0.12)",
-        border: "rgba(244,67,54,0.35)",
-        icon: <CancelRoundedIcon sx={{ fontSize: 14 }} />
-    }
-};
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
+import { statusOf } from "../../CommonData/deliveryStatus";
 
 const DeliveryPatientCardList = ({ filterdData = [],
     selectionMode,
@@ -366,10 +317,9 @@ const DeliveryPatientCardList = ({ filterdData = [],
 
     const handleStatusClick = (e, item) => {
         e.stopPropagation();
-        const status = statusStyles[item?.ItemStatus];
 
-
-        if (status?.label === "Pending") return;
+        // a pending order has nothing to change yet
+        if (!item?.ItemStatus || item.ItemStatus === "PENDING") return;
 
         setSelectedItem(item);
         setOpenStatusModal(true);
@@ -400,7 +350,7 @@ const DeliveryPatientCardList = ({ filterdData = [],
             await queryClient.invalidateQueries(["ptextraorder", selectedItem?.fb_ipad_slno, 'COMPLETED']);
             setOpenStatusModal(false);
         } catch (error) {
-            console.log(error);
+            console.error(error);
             errorNofity("Something went wrong");
         }
     };
@@ -410,11 +360,9 @@ const DeliveryPatientCardList = ({ filterdData = [],
 
     return (
         <>
-            <Box sx={{ width: "92%" }}>
-                {filterdData?.map((item, index) => {
-                    const status =
-                        statusStyles[item?.ItemStatus] ||
-                        statusStyles.PENDING;
+            <Box component="ul" sx={{ listStyle: "none", m: 0, px: 2, py: 0, fontFamily: FONT }}>
+                {filterdData?.map((item) => {
+                    const status = statusOf(item?.ItemStatus);
 
                     const isSelected = selectedItems?.some(
                         x =>
@@ -422,229 +370,119 @@ const DeliveryPatientCardList = ({ filterdData = [],
                             x.type_slno === item.type_slno
                     );
                     const isBystander = item?.party_name?.toUpperCase() === "BYSTANDER";
-
+                    const canPick = selectionMode && item.ItemStatus === "PENDING";
+                    const isOpen = expandedOrderId === item?.assignment_detail_id;
 
                     return (
                         <Box
-                            key={index}
-
+                            component="li"
+                            key={`${item?.assignment_detail_id}-${item?.canteen_order_id}-${item?.type_slno}`}
                             sx={{
-                                position: "relative",
-                                width: "100%",
-                                mb: 1.5,
-                                cursor: "pointer",
-                                borderRadius: "18px",
-                                overflow: "hidden",
-                                bgcolor: isSelected ? "#f3ecfe" : "#fff",
-                                border: isSelected
-                                    ? "1px solid #7933ea"
-                                    : `1px solid ${status.border}`,
-                                boxShadow: isSelected
-                                    ? "0 0 0 3px rgba(25,118,210,.12)"
-                                    : "0 6px 20px rgba(0,0,0,.06)",
-                                transition: "all .25s ease",
-                                // "&:hover": {
-                                //     transform: "translateY(-3px)"
-                                // }
+                                mb: 1.5, borderRadius: "16px", overflow: "hidden", bgcolor: COLORS.white,
+                                border: `${isSelected ? 2 : 1}px solid ${isSelected ? COLORS.plum : COLORS.line}`,
                             }}
                         >
-                            {selectionMode && item.ItemStatus === "PENDING" && (
-                                <Box
-                                    onClick={() => handleCardClick(item)}
-                                    sx={{
-                                        position: "absolute",
-                                        top: 12,
-                                        left: 12,
-                                        width: 16,
-                                        height: 16,
-                                        borderRadius: "50%",
-                                        bgcolor: isSelected ? "#7933ead4" : "#fff",
-                                        border: "2px solid #7933ea",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        color: "#fff",
-                                        fontSize: 13,
-                                        fontWeight: 800,
-                                        zIndex: 20
-                                    }}
-                                >
-                                    {isSelected && "✓"}
-                                </Box>
-                            )}
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    p: 1.5,
-                                    pl: selectionMode ? 5 : 0,
-                                    borderBottom: "1px solid #f3f3f3"
-                                }}
-                            >
-                                <Box sx={{ display: "flex", gap: 1 }}>
-                                    <Box>
-                                        <Box sx={{
-                                            display: 'flex',
-                                            gap: 1
-                                        }}>
-                                            {
-                                                isBystander &&
-
-                                                <GroupIcon sx={{
-                                                    fontSize: 16,
-                                                    color: '#300d7c'
-                                                }} />
-                                            }
-                                            <TextComponent
-                                                value={item?.fb_ptc_name}
-                                                size={14}
-                                                weight={800}
-                                            />
-
-
-                                        </Box>
-                                        <TextComponent
-                                            value={item?.fb_ns_name}
-                                            size={8}
-                                            weight={700}
-                                            color="#444"
-                                        />
-                                    </Box>
-                                </Box>
-                                <Box sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1
-                                }}>
-
+                            {/* who: tick box, name, station */}
+                            <Box sx={{ display: "flex", alignItems: "stretch" }}>
+                                {canPick && (
                                     <Box
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStatusClick(e, item);
-                                        }}
+                                        component="button"
+                                        type="button"
+                                        role="checkbox"
+                                        aria-checked={!!isSelected}
+                                        aria-label={`Select ${item?.fb_ptc_name}`}
+                                        onClick={() => handleCardClick(item)}
                                         sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            height: 30,
-                                            gap: 0.5,
-                                            px: 1.2,
-                                            borderRadius: "20px",
-                                            bgcolor: status.bg,
-                                            border: `1px solid ${status.border}`,
-                                            color: status.color,
-                                            cursor: "pointer",
+                                            flexShrink: 0, width: 56, border: 0, bgcolor: "transparent", cursor: "pointer",
+                                            display: "grid", placeItems: "center", ...focusRing,
                                         }}
                                     >
-                                        {status.icon}
-                                        <TextComponent
-                                            value={status.label}
-                                            size={8}
-                                            weight={800}
-                                            color={status.color}
-                                        />
-                                    </Box>
-                                    {
-                                        selectionMode &&
                                         <Box
-                                            onClick={(e) => handleViewClick(e, item)}
                                             sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                height: 30,
-                                                gap: 0.5,
-                                                px: 1.2,
-                                                borderRadius: "20px",
-                                                bgcolor: status.bg,
-                                                border: `1px solid ${status.border}`,
-                                                color: status.color,
-                                                cursor: "pointer",
+                                                width: 28, height: 28, borderRadius: "8px", display: "grid", placeItems: "center",
+                                                bgcolor: isSelected ? COLORS.plum : COLORS.white,
+                                                border: `2px solid ${COLORS.plum}`, color: COLORS.white,
                                             }}
                                         >
-                                            <VisibilityIcon sx={{
-                                                fontSize: 14
-                                            }} />
-                                            <TextComponent
-                                                value={"View"}
-                                                size={8}
-                                                weight={800}
-                                                color={status.color}
-                                            />
+                                            {isSelected && <CheckRoundedIcon sx={{ fontSize: 20 }} />}
                                         </Box>
-                                    }
-                                </Box>
-                            </Box>
+                                    </Box>
+                                )}
 
-                            <Box
-                                onClick={() => handleInstantItemView(item)}
-                                sx={{
-                                    p: 1.5,
-                                    display: "flex",
-                                    justifyContent: "space-between"
-                                }}
-                            >
-                                <Box sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5
-                                }}>
-                                    <KingBedIcon sx={{
-                                        color: status.color,
-                                        fontSize: 19
-                                    }} />
-                                    <TextComponent
-                                        value={item?.fb_bdc_no}
-                                        size={14}
-                                        weight={900}
-                                        color={status.color}
-                                    />
+                                <Box sx={{ flex: 1, minWidth: 0, py: 1.5, pl: canPick ? 0 : 2, pr: 1.5 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                                        {isBystander && <GroupIcon aria-label="Bystander" sx={{ fontSize: 18, color: COLORS.plum }} />}
+                                        <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.ink, lineHeight: 1.25, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                                            {item?.fb_ptc_name}
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ mt: 0.25, fontSize: 14, color: COLORS.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {item?.fb_ns_name}
+                                    </Box>
                                 </Box>
-                                <Box
-                                    sx={{
-                                        px: 1.5,
-                                        py: 0.6,
-                                        borderRadius: "12px",
-                                        bgcolor: "#f7f7f7"
-                                    }}
-                                >
-                                    <TextComponent
-                                        value={item?.type_desc}
-                                        size={10}
-                                        weight={800}
-                                    />
-                                </Box>
-                            </Box>
 
-                            {expandedOrderId === item?.assignment_detail_id && (
-                                <Box
-                                    sx={{
-                                        px: 1.5,
-                                        pb: 1.5,
-                                        borderTop: "1px solid #f0f0f0",
-                                        bgcolor: "#fafafa",
-                                    }}
-                                >
+                                <Box sx={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 0.75, pr: 1.5 }}>
+                                    {/* status: opens the change-status sheet (not for Pending) */}
                                     <Box
+                                        component="button"
+                                        type="button"
+                                        onClick={(e) => handleStatusClick(e, item)}
+                                        disabled={item?.ItemStatus === "PENDING" || !item?.ItemStatus}
+                                        aria-label={`Status ${status.label}. Change status`}
                                         sx={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            py: 1,
+                                            minHeight: 36, px: 1.5, borderRadius: "999px", fontFamily: FONT, fontSize: 14, fontWeight: 700,
+                                            bgcolor: status.tint, color: status.color, border: `1.5px solid ${status.line}`,
+                                            cursor: "pointer", "&:disabled": { cursor: "default" }, ...focusRing,
                                         }}
                                     >
-                                        <TextComponent
-                                            value="ORDER ITEMS"
-                                            size={9}
-                                            weight={900}
-                                            color="#666"
-                                        />
+                                        {status.label}
+                                    </Box>
 
-                                        <TextComponent
-                                            value={`${FinalFilteredData?.length || 0} Items`}
-                                            size={8}
-                                            weight={700}
-                                            color="#888"
-                                        />
+                                    {selectionMode && (
+                                        <Box
+                                            component="button"
+                                            type="button"
+                                            aria-label={`View details of ${item?.fb_ptc_name}`}
+                                            onClick={(e) => handleViewClick(e, item)}
+                                            sx={{
+                                                width: 44, height: 44, border: 0, borderRadius: "50%", cursor: "pointer",
+                                                display: "grid", placeItems: "center", bgcolor: COLORS.wash, color: COLORS.plum, ...focusRing,
+                                            }}
+                                        >
+                                            <VisibilityIcon sx={{ fontSize: 22 }} />
+                                        </Box>
+                                    )}
+                                </Box>
+                            </Box>
+
+                            {/* where and which meal; tap to show the items */}
+                            <Box
+                                component="button"
+                                type="button"
+                                aria-expanded={isOpen}
+                                onClick={() => handleInstantItemView(item)}
+                                sx={{
+                                    width: "100%", minHeight: 52, px: 2, border: 0, borderTop: `1px solid ${COLORS.line}`,
+                                    bgcolor: COLORS.surface, cursor: "pointer", fontFamily: FONT,
+                                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1,
+                                    "&:active": { bgcolor: COLORS.wash }, ...focusRing,
+                                }}
+                            >
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: COLORS.ink }}>
+                                    <KingBedIcon aria-hidden="true" sx={{ fontSize: 22, color: COLORS.plum }} />
+                                    <Box component="span" sx={{ fontSize: 18, fontWeight: 700 }}>{item?.fb_bdc_no}</Box>
+                                    <Box component="span" sx={{ fontSize: 15, color: COLORS.muted }}>{`·  ${item?.type_desc || ""}`}</Box>
+                                </Box>
+                                <ExpandMoreRoundedIcon
+                                    aria-hidden="true"
+                                    sx={{ color: COLORS.muted, transform: isOpen ? "rotate(180deg)" : "none" }}
+                                />
+                            </Box>
+
+                            {isOpen && (
+                                <Box sx={{ px: 1.5, pb: 1.5, borderTop: `1px solid ${COLORS.line}`, bgcolor: COLORS.surface }}>
+                                    <Box sx={{ py: 1.25, fontSize: 15, fontWeight: 700, color: COLORS.muted }}>
+                                        {`Order items (${FinalFilteredData?.length || 0})`}
                                     </Box>
 
                                     <InstantOrderItemList
@@ -655,9 +493,6 @@ const DeliveryPatientCardList = ({ filterdData = [],
                                         PackageDetails={packagedetail}
                                         setExpandedOrderId={setExpandedOrderId}
                                         handlePrintDetails={handlePrintDetails}
-                                        onPacketsChange={(packets) => {
-                                            console.log("PACKETS:", packets);
-                                        }}
                                     />
                                 </Box>
                             )}
@@ -667,7 +502,7 @@ const DeliveryPatientCardList = ({ filterdData = [],
                 })}
             </Box>
 
-            {/* MODAL */}
+            {/* STATUS SHEET */}
             <DeliveryStatusModal
                 open={openStatusModal}
                 onClose={() => setOpenStatusModal(false)}

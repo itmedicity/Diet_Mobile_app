@@ -24,7 +24,6 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 
 // fallback
-import CategoryIcon from '@mui/icons-material/Category';
 
 
 export const IconMap = {

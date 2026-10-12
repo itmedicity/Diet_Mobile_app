@@ -1,327 +1,61 @@
-import React, { useState } from "react";
-import {
-    Box,
-    Typography,
-    Avatar,
-    Badge,
-    IconButton
-} from "@mui/joy";
+import React, { memo } from "react";
+import { Box } from "@mui/joy";
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
+import { DELIVERY_STATUS, FILTER_KEYS } from "../../CommonData/deliveryStatus";
 
-import PendingRoundedIcon from "@mui/icons-material/PendingRounded";
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
-import DoneAllRoundedIcon from "@mui/icons-material/DoneAllRounded";
-import DeliveryDiningRoundedIcon from "@mui/icons-material/DeliveryDiningRounded";
-import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+// A row of status chips you can scroll sideways. Each shows how many orders it holds.
+const DeliveryStatusFilter = ({ value, onChange, counts = {}, total = 0 }) => {
 
-const STATUS_LIST = [
-    {
-        key: "",
-        label: "All",
-        color: "#6366f1",
-        icon: <TuneRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "PENDING",
-        label: "Pending",
-        color: "#9c42f0",
-        icon: <PendingRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "PICKEDUP",
-        label: "Picked",
-        color: "#ff9800",
-        icon: <LocalShippingRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "DELIVERED",
-        label: "Delivered",
-        color: "#4caf50",
-        icon: <DoneAllRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "UNDELIVERED",
-        label: "Missed",
-        color: "#03a9f4",
-        icon: <DeliveryDiningRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "RETURNED",
-        label: "Returned",
-        color: "#ff5722",
-        icon: <ReplayRoundedIcon sx={{ fontSize: 15 }} />
-    },
-
-    {
-        key: "CANCELLED",
-        label: "Cancelled",
-        color: "#f44336",
-        icon: <CancelRoundedIcon sx={{ fontSize: 15 }} />
-    }
-];
-
-const DeliveryStatusFilter = ({
-    value,
-    onChange
-}) => {
-
-    const [open, setOpen] = useState(false);
+    const chips = [
+        { key: "", label: "All", color: COLORS.plum, tint: COLORS.wash, line: COLORS.plum, count: total },
+        ...FILTER_KEYS.map((key) => ({ key, ...DELIVERY_STATUS[key], label: DELIVERY_STATUS[key].short, count: counts[key] || 0 })),
+    ];
 
     return (
         <Box
+            role="group"
+            aria-label="Filter by delivery status"
             sx={{
-                position: "fixed",
-                top: 78,
-                right: 14,
-                zIndex: 9999,
-
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-
-                gap: 1
+                display: "flex", gap: 1, px: 2, py: 1.25, overflowX: "auto", fontFamily: FONT,
+                scrollbarWidth: "none", "&::-webkit-scrollbar": { display: "none" },
             }}
         >
-
-            {/* Floating Toggle Button */}
-            <IconButton
-                onClick={() => setOpen(prev => !prev)}
-
-                sx={{
-
-                    width: 52,
-                    height: 52,
-
-                    borderRadius: "50%",
-
-                    bgcolor: open
-                        ? "#111827"
-                        : "#fff",
-
-                    color: open
-                        ? "#fff"
-                        : "#111827",
-
-                    border: "1px solid #e5e7eb",
-
-                    boxShadow:
-                        "0 10px 25px rgba(0,0,0,0.15)",
-
-                    backdropFilter: "blur(14px)",
-
-                    transition: "all 0.22s ease",
-
-                    "&:hover": {
-                        transform: "translateY(-2px)"
-                    },
-
-                    "&:active": {
-                        transform: "scale(0.92)"
-                    }
-                }}
-            >
-
-                {
-                    open
-                        ? <CloseRoundedIcon />
-                        : <TuneRoundedIcon />
-                }
-
-            </IconButton>
-
-            {/* Floating Filter Panel */}
-            {
-                open &&
-                <Box
-                    sx={{
-
-                        width: 290,
-
-                        display: "grid",
-
-                        gridTemplateColumns:
-                            "repeat(4,1fr)",
-
-                        gap: 1,
-
-                        p: 1,
-
-                        borderRadius: "24px",
-
-                        bgcolor:
-                            "rgba(255,255,255,0.72)",
-
-                        backdropFilter: "blur(16px)",
-
-                        border:
-                            "1px solid rgba(255,255,255,0.45)",
-
-                        boxShadow:
-                            "0 16px 40px rgba(0,0,0,0.12)",
-
-                        animation:
-                            "fadeIn 0.22s ease"
-                    }}
-                >
-
-                    {
-                        STATUS_LIST?.map((item) => {
-                            const active =
-                                value === item.key;
-
-                            return (
-                                <Box
-                                    key={item.key}
-
-                                    onClick={() =>{
-                                        onChange(item.key)
-                                        setOpen(false)
-                                    }
-                                        
-                                    }
-
-                                    sx={{
-
-                                        position: "relative",
-
-                                        height: 66,
-
-                                        borderRadius: "18px",
-
-                                        display: "flex",
-
-                                        flexDirection: "column",
-
-                                        alignItems: "center",
-
-                                        justifyContent: "center",
-
-                                        gap: 0.5,
-
-                                        cursor: "pointer",
-
-                                        overflow: "hidden",
-
-                                        transition:
-                                            "all 0.2s ease",
-
-                                        bgcolor: active
-                                            ? item.color
-                                            : "#fff",
-
-                                        border: active
-                                            ? `1.5px solid ${item.color}`
-                                            : "1px solid #eef2f7",
-
-                                        boxShadow: active
-                                            ? `0 8px 20px ${item.color}30`
-                                            : "0 2px 8px rgba(0,0,0,0.05)",
-
-                                        transform: active
-                                            ? "translateY(-1px)"
-                                            : "scale(1)",
-
-                                        "&:active": {
-                                            transform:
-                                                "scale(0.95)"
-                                        }
-                                    }}
-                                >
-
-                                    {/* Glow */}
-                                    {
-                                        active &&
-                                        <Box
-                                            sx={{
-                                                position: "absolute",
-                                                inset: 0,
-
-                                                background:
-                                                    `linear-gradient(
-                                                180deg,
-                                                rgba(255,255,255,0.15),
-                                                transparent
-                                            )`
-                                            }}
-                                        />
-                                    }
-
-                                    {/* Icon */}
-                                    <Avatar
-                                        size="sm"
-
-                                        sx={{
-                                            width: 28,
-                                            height: 28,
-
-                                            bgcolor: active
-                                                ? "rgba(255,255,255,0.20)"
-                                                : `${item.color}15`,
-
-                                            color: active
-                                                ? "#fff"
-                                                : item.color,
-
-                                            border: active
-                                                ? "1px solid rgba(255,255,255,0.25)"
-                                                : "none"
-                                        }}
-                                    >
-                                        {item.icon}
-                                    </Avatar>
-
-                                    {/* Label */}
-                                    <Typography
-                                        level="body-xs"
-
-                                        sx={{
-                                            fontSize: 10,
-
-                                            fontWeight: 800,
-
-                                            letterSpacing: 0.2,
-
-                                            color: active
-                                                ? "#fff"
-                                                : "#111827",
-
-                                            textAlign: "center"
-                                        }}
-                                    >
-                                        {item.label}
-                                    </Typography>
-
-                                    {/* Active Dot */}
-                                    {
-                                        active &&
-                                        <Badge
-                                            size="sm"
-
-                                            sx={{
-                                                position: "absolute",
-                                                top: 6,
-                                                right: 6
-                                            }}
-                                        />
-                                    }
-
-                                </Box>
-                            );
-                        })
-                    }
-
-                </Box>
-            }
-
+            {chips.map((chip) => {
+                const active = value === chip.key;
+                return (
+                    <Box
+                        key={chip.key || "all"}
+                        component="button"
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => onChange(chip.key)}
+                        sx={{
+                            flexShrink: 0, height: 44, px: 1.75, borderRadius: "999px", cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 0.75,
+                            fontFamily: FONT, fontSize: 15, fontWeight: 700,
+                            bgcolor: active ? chip.color : COLORS.white,
+                            color: active ? COLORS.white : chip.color,
+                            border: `1.5px solid ${active ? chip.color : chip.line}`,
+                            ...focusRing,
+                        }}
+                    >
+                        {chip.label}
+                        <Box
+                            component="span"
+                            sx={{
+                                minWidth: 22, height: 22, px: 0.5, borderRadius: "11px", display: "grid", placeItems: "center",
+                                fontSize: 13, fontWeight: 700,
+                                bgcolor: active ? "rgba(255,255,255,0.22)" : chip.tint,
+                                color: active ? COLORS.white : chip.color,
+                            }}
+                        >
+                            {chip.count}
+                        </Box>
+                    </Box>
+                );
+            })}
         </Box>
     );
 };
 
-export default React.memo(DeliveryStatusFilter);
+export default memo(DeliveryStatusFilter);

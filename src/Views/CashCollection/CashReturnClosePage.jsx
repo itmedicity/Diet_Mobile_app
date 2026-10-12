@@ -1,22 +1,6 @@
 import React, { memo, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-import {
-    Box,
-    Button,
-    Divider,
-    Input,
-    Textarea,
-    Typography,
-} from "@mui/joy";
-
-import {
-    ArrowBackRounded,
-    CheckCircleRounded,
-    PersonRounded,
-    ReceiptLongRounded,
-    CurrencyRupeeRounded,
-} from "@mui/icons-material";
+import { Box } from "@mui/joy";
 
 import {
     usePaymentHistoryBillDetail,
@@ -24,6 +8,7 @@ import {
 } from "../../CommonData/UseQuery";
 
 import PaymentHistorySkeleton from "./CollectionComponent/PaymentHistorySkeleton";
+import CollectionPage from "./CollectionComponent/CollectionPage";
 
 import {
     EmpauthId,
@@ -35,6 +20,27 @@ import {
 
 import { axioslogin } from "../../Axios/axios";
 import { useQueryClient } from "@tanstack/react-query";
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
+
+const fieldSx = {
+    boxSizing: "border-box", width: "100%", px: 1.5, fontFamily: FONT, fontSize: 18, color: COLORS.ink,
+    bgcolor: COLORS.white, border: `1.5px solid ${COLORS.fieldBorder}`, borderRadius: "12px", outline: "none",
+    "&:focus": { borderColor: COLORS.plum, boxShadow: `0 0 0 3px ${COLORS.orchid}` },
+};
+
+const Card = ({ title, children }) => (
+    <Box sx={{ mt: 1.5, p: 2, bgcolor: COLORS.white, border: `1px solid ${COLORS.line}`, borderRadius: "16px", fontFamily: FONT }}>
+        {title && <Box component="h2" sx={{ m: 0, mb: 1, fontSize: 17, fontWeight: 700, color: COLORS.ink }}>{title}</Box>}
+        {children}
+    </Box>
+);
+
+const SummaryRow = ({ label, value, bold = false, color = COLORS.ink }) => (
+    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", py: 0.5 }}>
+        <Box sx={{ fontSize: bold ? 17 : 15, fontWeight: bold ? 700 : 500, color: bold ? color : COLORS.muted }}>{label}</Box>
+        <Box sx={{ fontSize: bold ? 20 : 16, fontWeight: 700, color }}>{value}</Box>
+    </Box>
+);
 
 const CashReturnClosePage = () => {
     const navigate = useNavigate();
@@ -85,12 +91,15 @@ const CashReturnClosePage = () => {
      * Find the successful CASH payment for this bill.
      */
     const cashPayment = useMemo(() => {
+        // Use the payment from the URL. A bill can have several cash payments
+        // (instalments); picking the first one mixed up change and return history.
         return payments?.find(
             (payment) =>
+                Number(payment?.payment_id) === Number(paymentId) &&
                 payment?.payment_mode === "CASH" &&
                 payment?.payment_status === "SUCCESS"
         );
-    }, [payments]);
+    }, [payments, paymentId]);
 
     /*
      * Original change amount.
@@ -237,6 +246,9 @@ const CashReturnClosePage = () => {
      */
     const handleCloseReturn = async () => {
 
+        // ignore taps while a request is already running
+        if (loading) return;
+
         /*
          * Make sure payment exists.
          */
@@ -380,7 +392,11 @@ const CashReturnClosePage = () => {
      * Loading state.
      */
     if (isLoading) {
-        return <PaymentHistorySkeleton />;
+        return (
+            <CollectionPage title="Return change" subtitle="Loading…">
+                <PaymentHistorySkeleton />
+            </CollectionPage>
+        );
     }
 
     /*
@@ -388,805 +404,141 @@ const CashReturnClosePage = () => {
      */
     if (!bill) {
         return (
-            <Box
-                sx={{
-                    minHeight: "100dvh",
-                    width: "100%",
-                    background: "#F7F7F5",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    px: 2,
-                }}
-            >
-                <Typography
-                    sx={{
-                        fontSize: "0.8rem",
-                        fontWeight: 700,
-                        color: "#777",
-                    }}
-                >
-                    Bill details not found
-                </Typography>
-            </Box>
+            <CollectionPage title="Return change">
+                <Box sx={{ py: 6, textAlign: "center", fontFamily: FONT, fontSize: 16, color: COLORS.muted }}>
+                    This bill was not found. Go back and open it again from the cash return list.
+                </Box>
+            </CollectionPage>
         );
     }
 
+    const confirmReturn = () => {
+        if (window.confirm(`Hand back ${formatAmount(finalReturnAmount)} to ${bill.patient_name || "the patient"}?`)) {
+            handleCloseReturn();
+        }
+    };
+
+    const canSubmit = !loading && finalReturnAmount > 0 && remainingReturnAmount > 0;
+    const meta = [bill.patient_id, bill.party_name].filter(Boolean).join("  ·  ");
+
     return (
-        <Box
-            sx={{
-                width: "100%",
-                height: "100dvh",
-                background: "#F7F7F5",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                boxSizing: "border-box",
-            }}
-        >
+        <CollectionPage title="Return change" subtitle={`Bill ${bill.bill_no}`}>
 
-            {/* HEADER */}
-            <Box
-                sx={{
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 20,
-                    width: "100%",
-                    background: "rgba(247, 247, 245, 0.96)",
-                    backdropFilter: "blur(10px)",
-                    borderBottom: "1px solid #E2E2DD",
-                    flexShrink: 0,
-                }}
-            >
-                <Box
-                    sx={{
-                        width: "100%",
-                        maxWidth: "480px",
-                        mx: "auto",
-                        px: {
-                            xs: 1.5,
-                            sm: 2.5,
-                        },
-                        py: 1.1,
-                        boxSizing: "border-box",
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                        }}
-                    >
-                        <Box
-                            onClick={() => navigate(-1)}
-                            sx={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: "11px",
-                                background: "#FFFFFF",
-                                border: "1px solid #E2E2DD",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-
-                                "&:active": {
-                                    transform: "scale(0.94)",
-                                },
-                            }}
-                        >
-                            <ArrowBackRounded
-                                sx={{
-                                    fontSize: 19,
-                                    color: "#333",
-                                }}
-                            />
-                        </Box>
-
-                        <Box sx={{ minWidth: 0 }}>
-                            <Typography
-                                sx={{
-                                    fontSize: {
-                                        xs: "0.88rem",
-                                        sm: "1rem",
-                                    },
-                                    fontWeight: 900,
-                                    color: "#191919",
-                                    lineHeight: 1.15,
-                                }}
-                            >
-                                CASH RETURN CLOSING
-                            </Typography>
-
-                            <Typography
-                                sx={{
-                                    mt: 0.25,
-                                    fontSize: "0.58rem",
-                                    color: "#858580",
-                                    fontWeight: 700,
-                                }}
-                            >
-                                {bill.bill_no}
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Box>
+            {/* WHO */}
+            <Box sx={{ p: 2, bgcolor: COLORS.white, border: `1px solid ${COLORS.line}`, borderRadius: "16px", fontFamily: FONT }}>
+                <Box sx={{ fontSize: 20, fontWeight: 700, color: COLORS.ink }}>{bill.patient_name || "-"}</Box>
+                {meta && <Box sx={{ mt: 0.25, fontSize: 14, color: COLORS.muted }}>{meta}</Box>}
             </Box>
 
-            {/* CONTENT */}
-            <Box
-                sx={{
-                    flex: 1,
-                    overflowY: "auto",
-                    px: {
-                        xs: 1.5,
-                        sm: 2.5,
-                    },
-                    py: 1.5,
-                }}
-            >
+            {/* HOW MUCH */}
+            <Box sx={{ mt: 1.5, p: 2.5, borderRadius: "20px", bgcolor: remainingReturnAmount > 0 ? COLORS.plum : COLORS.success, color: COLORS.white, fontFamily: FONT }}>
+                <Box sx={{ fontSize: 15, opacity: 0.9 }}>{remainingReturnAmount > 0 ? "Change still to return" : "All change returned"}</Box>
+                <Box sx={{ fontSize: 40, fontWeight: 700, lineHeight: 1.15 }}>{formatAmount(remainingReturnAmount)}</Box>
+                {returnedAmount > 0 && (
+                    <Box sx={{ mt: 0.5, fontSize: 15, opacity: 0.9 }}>{`Already returned ${formatAmount(returnedAmount)}`}</Box>
+                )}
+            </Box>
+
+            <Card title="Bill and payment">
+                <SummaryRow label="Bill amount" value={formatAmount(billAmount)} />
+                <SummaryRow label="Cash received" value={formatAmount(receivedAmount)} />
+                <SummaryRow label="Paid amount" value={formatAmount(Number(cashPayment?.amount || 0))} />
+                <SummaryRow label="Change due" value={formatAmount(actualChangeAmount)} />
+            </Card>
+
+            {/* RETURN HISTORY */}
+            {ReturnLogDetails?.length > 0 && (
+                <Card title="Returned so far">
+                    {ReturnLogDetails.map((item, index) => (
+                        <Box
+                            key={item?.return_id || index}
+                            sx={{ py: 1, borderTop: index > 0 ? `1px solid ${COLORS.line}` : "none" }}
+                        >
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                                <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>{`Return ${index + 1}`}</Box>
+                                <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.success }}>{formatAmount(item?.returned_amount)}</Box>
+                            </Box>
+                            <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                {`${formatDate(item?.returned_at)} · ${item?.em_name || "-"}`}
+                            </Box>
+                            {item?.remarks && <Box sx={{ mt: 0.25, fontSize: 14, color: COLORS.ink }}>{item.remarks}</Box>}
+                        </Box>
+                    ))}
+                </Card>
+            )}
+
+            {/* RETURN NOW */}
+            <Card title="Return change now">
+                <Box component="label" htmlFor="return-amount" sx={{ display: "block", fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
+                    Amount handed back
+                </Box>
+                <Box sx={{ mt: 0.25, mb: 1, fontSize: 14, color: COLORS.muted }}>
+                    Leave it empty to return everything that is left.
+                </Box>
                 <Box
+                    component="input"
+                    id="return-amount"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={returnAmount}
+                    onChange={handleReturnAmountChange}
+                    placeholder={`₹${remainingReturnAmount.toFixed(2)}`}
+                    sx={{ ...fieldSx, height: 52 }}
+                />
+
+                <Box
+                    role="status"
                     sx={{
-                        width: "100%",
-                        maxWidth: "480px",
-                        mx: "auto",
-                        pb: 3,
+                        mt: 1.5, p: 1.5, borderRadius: "12px",
+                        bgcolor: finalReturnAmount === remainingReturnAmount ? "#E3F3E8" : "#FFF1D6",
+                        border: `1px solid ${finalReturnAmount === remainingReturnAmount ? "#A9D3B8" : "#EBCB8B"}`,
                     }}
                 >
-
-                    {/* CUSTOMER */}
-                    <Box
-                        sx={{
-                            background: "#FFFFFF",
-                            border: "1px solid #E2E2DD",
-                            borderRadius: "16px",
-                            p: 1.5,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mb: 1.3,
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: "10px",
-                                    background: "#F1F1ED",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <PersonRounded
-                                    sx={{
-                                        fontSize: 19,
-                                        color: "#555",
-                                    }}
-                                />
-                            </Box>
-
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.62rem",
-                                        fontWeight: 800,
-                                        color: "#8A8A85",
-                                    }}
-                                >
-                                    CUSTOMER
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.88rem",
-                                        fontWeight: 900,
-                                        color: "#202020",
-                                    }}
-                                >
-                                    {bill.patient_name || "-"}
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                gap: 1,
-                            }}
-                        >
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.58rem",
-                                        color: "#999",
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    PATIENT ID
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.7rem",
-                                        fontWeight: 800,
-                                        color: "#333",
-                                    }}
-                                >
-                                    {bill.patient_id || "-"}
-                                </Typography>
-                            </Box>
-
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.58rem",
-                                        color: "#999",
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    PARTY
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.7rem",
-                                        fontWeight: 800,
-                                        color: "#333",
-                                    }}
-                                >
-                                    {bill.party_name || "-"}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Box>
-
-                    {/* BILL SUMMARY */}
-                    <Box
-                        sx={{
-                            mt: 1.2,
-                            background: "#FFFFFF",
-                            border: "1px solid #E2E2DD",
-                            borderRadius: "16px",
-                            overflow: "hidden",
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                p: 1.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                            }}
-                        >
-                            <ReceiptLongRounded
-                                sx={{
-                                    fontSize: 20,
-                                    color: "#555",
-                                }}
-                            />
-
-                            <Typography
-                                sx={{
-                                    fontSize: "0.72rem",
-                                    fontWeight: 900,
-                                    color: "#222",
-                                }}
-                            >
-                                BILL SUMMARY
-                            </Typography>
-                        </Box>
-
-                        <Divider />
-
-                        <Box sx={{ p: 1.5 }}>
-
-                            <SummaryRow
-                                label="Bill Amount"
-                                value={formatAmount(
-                                    billAmount
-                                )}
-                            />
-
-                            <SummaryRow
-                                label="Cash Received"
-                                value={formatAmount(
-                                    receivedAmount
-                                )}
-                            />
-
-                            <SummaryRow
-                                label="Paid Amount"
-                                value={formatAmount(
-                                    Number(
-                                        cashPayment?.amount || 0
-                                    )
-                                )}
-                            />
-
-                            <SummaryRow
-                                label="Original Change"
-                                value={formatAmount(
-                                    actualChangeAmount
-                                )}
-                            />
-
-                            {returnedAmount > 0 && (
-                                <SummaryRow
-                                    label="Already Returned"
-                                    value={formatAmount(
-                                        returnedAmount
-                                    )}
-                                />
-                            )}
-
-                            <Divider sx={{ my: 1.2 }} />
-
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent:
-                                        "space-between",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.72rem",
-                                        fontWeight: 900,
-                                        color: "#222",
-                                    }}
-                                >
-                                    REMAINING RETURN
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "1rem",
-                                        fontWeight: 900,
-                                        color:
-                                            remainingReturnAmount > 0
-                                                ? "#B45309"
-                                                : "#16803C",
-                                    }}
-                                >
-                                    {formatAmount(
-                                        remainingReturnAmount
-                                    )}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Box>
-
-                    {/* RETURN HISTORY */}
-                    {ReturnLogDetails?.length > 0 && (
-                        <Box
-                            sx={{
-                                mt: 1.2,
-                                background: "#FFFFFF",
-                                border: "1px solid #E2E2DD",
-                                borderRadius: "16px",
-                                p: 1.5,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontSize: "0.72rem",
-                                    fontWeight: 900,
-                                    color: "#222",
-                                    mb: 1,
-                                }}
-                            >
-                                RETURN HISTORY
-                            </Typography>
-
-                            {
-                                ReturnLogDetails?.map(
-                                    (item, index) => (
-                                        <Box
-                                            key={
-                                                item?.return_id ||
-                                                index
-                                            }
-                                            sx={{
-                                                py: 0.9,
-                                                borderTop:
-                                                    index > 0
-                                                        ? "1px solid #EEEEEA"
-                                                        : "none",
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                    alignItems:
-                                                        "center",
-                                                }}
-                                            >
-                                                <Typography
-                                                    sx={{
-                                                        fontSize:
-                                                            "0.65rem",
-                                                        fontWeight: 800,
-                                                        color: "#555",
-                                                    }}
-                                                >
-                                                    Return #
-                                                    {index + 1}
-                                                </Typography>
-
-                                                <Typography
-                                                    sx={{
-                                                        fontSize:
-                                                            "0.7rem",
-                                                        fontWeight: 900,
-                                                        color:
-                                                            "#16803C",
-                                                    }}
-                                                >
-                                                    {formatAmount(
-                                                        item?.returned_amount
-                                                    )}
-                                                </Typography>
-                                            </Box>
-
-                                            <Typography
-                                                sx={{
-                                                    mt: 0.25,
-                                                    fontSize:
-                                                        "0.52rem",
-                                                    color: "#999",
-                                                    fontWeight: 600,
-                                                }}
-                                            >
-                                                {formatDate(
-                                                    item?.returned_at
-                                                )}
-                                                {" · Employee "}
-                                                {item?.em_name ||
-                                                    "-"}
-                                            </Typography>
-
-                                            {item?.remarks && (
-                                                <Typography
-                                                    sx={{
-                                                        mt: 0.35,
-                                                        fontSize:
-                                                            "0.55rem",
-                                                        color: "#777",
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    {item.remarks}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    )
-                                )}
-                        </Box>
+                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>You are returning now</Box>
+                    <Box sx={{ fontSize: 26, fontWeight: 700, color: COLORS.ink }}>{formatAmount(finalReturnAmount)}</Box>
+                    {finalReturnAmount > remainingReturnAmount && (
+                        <Box sx={{ fontSize: 14, color: COLORS.error }}>This is more than the change that is left.</Box>
                     )}
-
-                    {/* CASH RETURN */}
-                    <Box
-                        sx={{
-                            mt: 1.2,
-                            background: "#FFFFFF",
-                            border: "1px solid #E2E2DD",
-                            borderRadius: "16px",
-                            p: 1.5,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mb: 1.5,
-                            }}
-                        >
-                            <CurrencyRupeeRounded
-                                sx={{
-                                    fontSize: 20,
-                                    color: "#555",
-                                }}
-                            />
-
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.72rem",
-                                        fontWeight: 900,
-                                        color: "#222",
-                                    }}
-                                >
-                                    CASH RETURN
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        mt: 0.25,
-                                        fontSize: "0.58rem",
-                                        color: "#999",
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    Enter the amount physically
-                                    returned to the customer
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        <Typography
-                            sx={{
-                                fontSize: "0.63rem",
-                                fontWeight: 800,
-                                color: "#555",
-                                mb: 0.6,
-                            }}
-                        >
-                            AMOUNT TO RETURN
-                        </Typography>
-
-                        <Input
-                            value={returnAmount}
-                            onChange={
-                                handleReturnAmountChange
-                            }
-                            startDecorator={
-                                <Typography
-                                    sx={{
-                                        fontWeight: 900,
-                                        color: "#555",
-                                    }}
-                                >
-                                    ₹
-                                </Typography>
-                            }
-                            placeholder={remainingReturnAmount.toFixed(
-                                2
-                            )}
-                            type="text"
-                            slotProps={{
-                                input: {
-                                    inputMode: "decimal",
-                                },
-                            }}
-                            sx={{
-                                "--Input-radius": "12px",
-                                "--Input-minHeight": "48px",
-                                fontSize: "1rem",
-                                fontWeight: 900,
-                                background: "#FAFAF8",
-                            }}
-                        />
-
-                        {/* RETURN PROGRESS */}
-                        <Box
-                            sx={{
-                                mt: 1,
-                                px: 1.1,
-                                py: 0.9,
-                                borderRadius: "10px",
-                                background: "#F7F7F5",
-                                display: "flex",
-                                justifyContent:
-                                    "space-between",
-                                alignItems: "center",
-                            }}
-                        >
-                            <Box>
-                                <Typography
-                                    sx={{
-                                        fontSize: "0.6rem",
-                                        fontWeight: 700,
-                                        color: "#777",
-                                    }}
-                                >
-                                    REMAINING RETURN
-                                </Typography>
-
-                                {returnedAmount > 0 && (
-                                    <Typography
-                                        sx={{
-                                            mt: 0.2,
-                                            fontSize: "0.5rem",
-                                            color: "#999",
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        Already returned{" "}
-                                        {formatAmount(
-                                            returnedAmount
-                                        )}
-                                    </Typography>
-                                )}
-                            </Box>
-
-                            <Typography
-                                sx={{
-                                    fontSize: "0.72rem",
-                                    fontWeight: 900,
-                                    color: "#333",
-                                }}
-                            >
-                                {formatAmount(
-                                    remainingReturnAmount
-                                )}
-                            </Typography>
-                        </Box>
-
-                        {/* CURRENT RETURN */}
-                        <Box
-                            sx={{
-                                mt: 1.5,
-                                p: 1.2,
-                                borderRadius: "12px",
-                                background:
-                                    finalReturnAmount ===
-                                        remainingReturnAmount
-                                        ? "#F0F8F2"
-                                        : "#FFF8E8",
-                                border:
-                                    finalReturnAmount ===
-                                        remainingReturnAmount
-                                        ? "1px solid #D7EBD9"
-                                        : "1px solid #F0DDA8",
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontSize: "0.62rem",
-                                    fontWeight: 800,
-                                    color: "#666",
-                                }}
-                            >
-                                CURRENT RETURN
-                            </Typography>
-
-                            <Typography
-                                sx={{
-                                    mt: 0.2,
-                                    fontSize: "1.3rem",
-                                    fontWeight: 900,
-                                    color: "#222",
-                                }}
-                            >
-                                {formatAmount(
-                                    finalReturnAmount
-                                )}
-                            </Typography>
-                        </Box>
-
-                        {/* RETURN REMARK */}
-                        <Typography
-                            sx={{
-                                mt: 1.5,
-                                mb: 0.6,
-                                fontSize: "0.63rem",
-                                fontWeight: 800,
-                                color: "#555",
-                            }}
-                        >
-                            RETURN REMARK
-                        </Typography>
-
-                        <Textarea
-                            value={returnRemarks}
-                            onChange={(event) =>
-                                setReturnRemarks(
-                                    event.target.value
-                                )
-                            }
-                            placeholder="Enter a remark about the cash return..."
-                            minRows={3}
-                            maxRows={5}
-                            sx={{
-                                "--Textarea-radius": "12px",
-                                fontSize: "0.72rem",
-                                fontWeight: 600,
-                                background: "#FAFAF8",
-                            }}
-                        />
-
-                        {/* CONFIRM BUTTON */}
-                        <Button
-                            fullWidth
-                            startDecorator={
-                                <CheckCircleRounded
-                                    sx={{ fontSize: 19 }}
-                                />
-                            }
-                            loading={loading}
-                            disabled={
-                                loading ||
-                                finalReturnAmount <= 0 ||
-                                remainingReturnAmount <= 0
-                            }
-                            onClick={handleCloseReturn}
-                            sx={{
-                                mt: 1.5,
-                                minHeight: 46,
-                                borderRadius: "12px",
-                                fontSize: "0.72rem",
-                                fontWeight: 900,
-                            }}
-                        >
-                            CONFIRM CASH RETURN
-                        </Button>
-                    </Box>
-
-                    {/* PAYMENT INFO */}
-                    {cashPayment && (
-                        <Box
-                            sx={{
-                                mt: 1.2,
-                                px: 1,
-                                py: 0.8,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontSize: "0.55rem",
-                                    color: "#999",
-                                    fontWeight: 700,
-                                    textAlign: "center",
-                                }}
-                            >
-                                Cash payment collected on{" "}
-                                {formatDate(
-                                    cashPayment.payment_date
-                                )}
-                            </Typography>
-                        </Box>
-                    )}
-
                 </Box>
-            </Box>
-        </Box>
-    );
-};
 
-/*
- * Reusable summary row.
- */
-const SummaryRow = ({ label, value }) => {
-    return (
-        <Box
-            sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 1,
-            }}
-        >
-            <Typography
-                sx={{
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    color: "#888",
-                }}
-            >
-                {label}
-            </Typography>
+                <Box component="label" htmlFor="return-remarks" sx={{ display: "block", mt: 1.5, mb: 0.75, fontSize: 15, fontWeight: 600, color: COLORS.ink }}>
+                    Remark (optional)
+                </Box>
+                <Box
+                    component="textarea"
+                    id="return-remarks"
+                    rows={3}
+                    value={returnRemarks}
+                    onChange={(event) => setReturnRemarks(event.target.value)}
+                    placeholder="For example: returned to the bystander"
+                    sx={{ ...fieldSx, py: 1.25, fontSize: 16, resize: "vertical" }}
+                />
 
-            <Typography
-                sx={{
-                    fontSize: "0.7rem",
-                    fontWeight: 900,
-                    color: "#333",
-                }}
-            >
-                {value}
-            </Typography>
-        </Box>
+                <Box
+                    component="button"
+                    type="button"
+                    onClick={confirmReturn}
+                    disabled={!canSubmit}
+                    sx={{
+                        mt: 2, width: "100%", height: 56, border: 0, borderRadius: "14px", cursor: "pointer",
+                        bgcolor: COLORS.plum, color: COLORS.white, fontFamily: FONT, fontSize: 18, fontWeight: 700,
+                        "&:active": { bgcolor: COLORS.plumDark },
+                        "&:disabled": { bgcolor: COLORS.orchid, color: COLORS.muted, cursor: "not-allowed" },
+                        ...focusRing,
+                    }}
+                >
+                    {loading ? "Saving…" : "Confirm return"}
+                </Box>
+            </Card>
+
+            {cashPayment && (
+                <Box sx={{ mt: 1.5, textAlign: "center", fontFamily: FONT, fontSize: 14, color: COLORS.muted }}>
+                    {`Cash payment collected on ${formatDate(cashPayment.payment_date)}`}
+                </Box>
+            )}
+
+        </CollectionPage>
     );
 };
 

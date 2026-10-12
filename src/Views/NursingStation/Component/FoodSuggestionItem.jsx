@@ -1,22 +1,21 @@
 import React, { memo } from "react";
-import { Box, Typography } from "@mui/joy";
+import { Box } from "@mui/joy";
 import { safeParseJSON } from "../../Constant/Common";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-
+// Matching foods under the search box; tapping one selects it
 const FoodSuggestionItem = ({ suggestions, onSelect, activeIndex, personType }) => {
 
+    if (!suggestions?.length) return null;
+
     return (
-        <Box sx={{
-            position: "absolute",
-            top: "110%",
-            left: 0,
-            right: 0,
-            bgcolor: "#fff",
-            borderRadius: 8,
-            boxShadow: "md",
-            zIndex: 20,
-            
-        }}>
+        <Box
+            component="ul"
+            sx={{
+                listStyle: "none", m: 0, mt: 1, p: 0, fontFamily: FONT,
+                border: `1px solid ${COLORS.line}`, borderRadius: "14px", overflow: "hidden", bgcolor: COLORS.white,
+            }}
+        >
             {
                 suggestions?.map((food, index) => {
 
@@ -39,25 +38,29 @@ const FoodSuggestionItem = ({ suggestions, onSelect, activeIndex, personType }) 
 
                     return (
                         <Box
-                            key={food?.item_slno}
-                            onClick={() => onSelect(finalFoodDetail)}
-                            sx={{
-                                px: 2,
-                                py: 1,
-                                cursor: "pointer",
-                                bgcolor: index === activeIndex ? "#e3f2fd" : "transparent",
-                                "&:hover": {
-                                    bgcolor: "#f1f1f1",
-                                },
-                            }}
+                            component="li"
+                            key={food?.item_slno ?? food?.item_id ?? index}
+                            sx={{ borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}` }}
                         >
-                            <Typography fontSize={14} fontWeight={600}>
-                                {food.item_code} • {(food.item_name || "").toUpperCase()}
-                            </Typography>
-
-                            <Typography fontSize={10} color="neutral.500">
-                                {food.group_name} • {food.category_name} • ₹{match?.price ?? food.price ?? 0}
-                            </Typography>
+                            <Box
+                                component="button"
+                                type="button"
+                                onClick={() => onSelect(finalFoodDetail)}
+                                sx={{
+                                    width: "100%", minHeight: 56, px: 1.5, py: 1, border: 0, cursor: "pointer", textAlign: "left",
+                                    fontFamily: FONT,
+                                    bgcolor: index === activeIndex ? COLORS.wash : "transparent",
+                                    "&:active": { bgcolor: COLORS.wash },
+                                    ...focusRing,
+                                }}
+                            >
+                                <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>
+                                    {food.item_name}
+                                </Box>
+                                <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                    {[food.item_code, food.category_name, `₹${match?.price ?? food.price ?? 0}`].filter(Boolean).join("  ·  ")}
+                                </Box>
+                            </Box>
                         </Box>
                     )
                 })}

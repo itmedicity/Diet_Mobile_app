@@ -1,13 +1,12 @@
 //@The Back End Has Change Means the Verify Token Has been Removed Please Change once Design Completed
 import React, { memo } from "react";
-import { Box, Button } from "@mui/joy";
+import { Box } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
-import TextComponent from "../../components/TextComponent";
 import BedIcon from '@mui/icons-material/Bed';
-import PersonIcon from '@mui/icons-material/Person';
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import { PatientstatusConfig } from "../../CommonData/Common";
-import { Chip, Tooltip } from "@mui/material";
 import { infoNofity } from "../Constant/Constant";
+import { COLORS, FONT, focusRing } from "../../Style/designTokens";
 
 const NursingBedList = ({ beds = [], stationname, Refech }) => {
 
@@ -35,45 +34,36 @@ const NursingBedList = ({ beds = [], stationname, Refech }) => {
         return (
             <Box
                 sx={{
-                    width: "100%",
-                    height: "60vh",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 1.5,
-                    color: "#6b6b6b",
+                    width: "100%", px: 3, py: 8, boxSizing: "border-box", fontFamily: FONT,
+                    display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1,
                 }}
             >
-                <BedIcon sx={{ fontSize: 50, color: "#c165d1" }} />
-
-                <TextComponent
-                    value={"No Data Found"}
-                    size={16}
-                    weight={700}
-                    color={"#4a148c"}
-                />
-
-                <TextComponent
-                    value={"No patients or diet plans available"}
-                    size={12}
-                    weight={400}
-                    color={"#7b7b7b"}
-                />
-
-                <Button
-                    size="sm"
-                    variant="soft"
-                    onClick={() => Refech()}
+                <BedIcon aria-hidden="true" sx={{ fontSize: 40, color: COLORS.orchid }} />
+                <Box component="h2" sx={{ m: 0, fontSize: 20, fontWeight: 700, color: COLORS.ink }}>
+                    No patients to show
+                </Box>
+                <Box sx={{ fontSize: 15, lineHeight: 1.5, color: COLORS.muted }}>
+                    This station has no admitted patients with a diet plan right now, or none match your search.
+                </Box>
+                <Box
+                    component="button"
+                    type="button"
+                    onClick={() => Refech?.()}
+                    sx={{
+                        mt: 1, height: 44, px: 2.5, borderRadius: "12px", cursor: "pointer",
+                        border: `1.5px solid ${COLORS.plum}`, bgcolor: COLORS.white, color: COLORS.plum,
+                        fontFamily: FONT, fontSize: 16, fontWeight: 700,
+                        ...focusRing,
+                    }}
                 >
                     Refresh
-                </Button>
+                </Box>
             </Box>
         );
     }
 
     return (
-        <Box sx={{ width: '90%' }}>
+        <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, width: "100%", fontFamily: FONT }}>
             {
                 beds?.map((item, index) => {
 
@@ -83,150 +73,70 @@ const NursingBedList = ({ beds = [], stationname, Refech }) => {
 
                     return (
                         <Box
-                            key={index}
-                            onClick={() =>
-                                handlebedDetail(
-                                    item?.bd_code,
-                                    item?.fb_bdc_no,
-                                    item?.template_id,
-                                    item,
-                                    isBlocked,
-                                    AdmissiongStatus
-                                )
-                            }
-                            sx={{
-                                width: "100%",
-                                boxSizing: "border-box",
-                                borderRadius: 5,
-                                boxShadow: "md",
-                                mb: 1,
-                                height: 50,
-                                bgcolor: "rgb(252, 248, 254)",
-                                cursor: "pointer",
-
-                                border: isBlocked
-                                    ? "1px solid rgb(237, 141, 8)"
-                                    : "1px solid rgb(177, 38, 236)",
-
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                p: 1,
-
-                                ...(isBlocked && {
-                                    animation: "blockedPulse 1.5s ease-in-out infinite",
-
-                                    "@keyframes blockedPulse": {
-                                        "0%": {
-                                            boxShadow: "0 0 0 0 rgba(249, 6, 6, 0.45)",
-                                        },
-                                        "70%": {
-                                            boxShadow: "0 0 0 6px rgba(249, 6, 6, 0)",
-                                        },
-                                        "100%": {
-                                            boxShadow: "0 0 0 0 rgba(249, 6, 6, 0)",
-                                        },
-                                    },
-                                }),
-                            }}
+                            component="li"
+                            key={`${item?.bd_code}-${item?.ip_no}-${index}`}
+                            sx={{ borderBottom: `1px solid ${COLORS.line}` }}
                         >
-
-                            <Box sx={{ width: '50%', display: 'flex', alignItems: 'start', gap: 1 }}>
-                                <PersonIcon sx={{ color: '#9b9999', fontSize: 17 }} />
-                                <Box sx={{ width: '100%' }}>
-                                    <TextComponent
-                                        noWrap
-                                        color={'#000000'}
-                                        value={item?.ptc_ptname}
-                                        size={10}
-                                        weight={800}
-                                    />
-                                    <TextComponent
-                                        color={'#727070'}
-                                        value={item?.ip_no}
-                                        size={10}
-                                        weight={400}
-                                    />
-                                </Box>
-                            </Box>
-
-
-                            <Box sx={{ width: '20%', display: 'flex', alignItems: 'start' }}>
-                                <Box
-                                    display="flex"
-                                    alignItems="center"
-                                    gap={0.5}
-                                    sx={{
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <Tooltip title={AdmissiongStatus?.label}
-                                        placement='left-start'>
-                                        <Chip
-                                            icon={AdmissiongStatus?.icon && (
-                                                React.cloneElement(AdmissiongStatus.icon, {
-                                                    size: 14,
-                                                    color: AdmissiongStatus?.color,
-                                                })
-                                            )}
-                                            label={AdmissiongStatus?.shortLabel || "-"}
-                                            size="small"
-                                            sx={{
-                                                height: 24,
-                                                borderRadius: "6px",
-                                                fontSize: 10,
-                                                fontWeight: 800,
-                                                backgroundColor:
-                                                    AdmissiongStatus?.bgColor ||
-                                                    "rgba(37, 99, 235, 0.08)",
-                                                color: AdmissiongStatus?.color || "inherit",
-                                                border: `1px solid ${AdmissiongStatus?.borderColor || "transparent"
-                                                    }`,
-                                            }}
-                                        />
-                                    </Tooltip>
-
-                                </Box>
-                            </Box>
-
                             <Box
+                                component="button"
+                                type="button"
+                                aria-disabled={isBlocked}
+                                onClick={() =>
+                                    handlebedDetail(
+                                        item?.bd_code,
+                                        item?.fb_bdc_no,
+                                        item?.template_id,
+                                        item,
+                                        isBlocked,
+                                        AdmissiongStatus
+                                    )
+                                }
                                 sx={{
-                                    width: "30%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    justifyContent: "flex-end",
-                                    alignItems: "flex-end",
+                                    width: "100%", minHeight: 68, px: 2.5, py: 1.25, border: 0, bgcolor: "transparent",
+                                    display: "flex", alignItems: "center", gap: 1.5, textAlign: "left", cursor: "pointer",
+                                    fontFamily: FONT, color: COLORS.ink,
+                                    opacity: isBlocked ? 0.62 : 1,
+                                    "&:active": { bgcolor: COLORS.wash },
+                                    ...focusRing,
                                 }}
                             >
+                                {/* bed number */}
                                 <Box
                                     sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "flex-end",
-                                        width: "100%",
+                                        flexShrink: 0, minWidth: 56, height: 44, px: 1, borderRadius: "10px", boxSizing: "border-box",
+                                        display: "grid", placeItems: "center",
+                                        bgcolor: COLORS.wash, color: COLORS.plum, fontSize: 16, fontWeight: 700,
                                     }}
                                 >
-                                    <BedIcon
-                                        sx={{
-                                            fontSize: 16,
-                                            color: "#726d74",
-                                        }}
-                                    />
-
-                                    <TextComponent
-                                        color="#000000"
-                                        value={item?.fb_bdc_no}
-                                        size={13}
-                                        weight={800}
-                                    />
+                                    {item?.fb_bdc_no}
                                 </Box>
 
-                                <TextComponent
-                                    color="#000000"
-                                    value={item?.diet_name}
-                                    size={9}
-                                    weight={800}
-                                />
+                                {/* patient */}
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Box sx={{ fontSize: 16, fontWeight: 700, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {item?.ptc_ptname}
+                                    </Box>
+                                    <Box sx={{ mt: 0.25, fontSize: 13, color: COLORS.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {item?.ip_no}{item?.diet_name ? `  ·  ${item.diet_name}` : ""}
+                                    </Box>
+                                </Box>
+
+                                {/* only a patient who is no longer admitted needs a tag: it says why the row is dimmed */}
+                                {isBlocked ? (
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            flexShrink: 0, px: 1, py: 0.25, borderRadius: "8px", fontSize: 12, fontWeight: 700,
+                                            bgcolor: AdmissiongStatus?.bgColor || COLORS.surface,
+                                            color: AdmissiongStatus?.color || COLORS.muted,
+                                            border: `1px solid ${AdmissiongStatus?.borderColor || COLORS.line}`,
+                                        }}
+                                    >
+                                        {AdmissiongStatus?.shortLabel || "-"}
+                                    </Box>
+                                ) : (
+                                    <ChevronRightRoundedIcon aria-hidden="true" sx={{ flexShrink: 0, color: COLORS.muted }} />
+                                )}
                             </Box>
                         </Box>
                     )

@@ -1,9 +1,8 @@
 import { Box } from '@mui/joy'
 import React, { memo, useMemo } from 'react'
-import TextComponent from './TextComponent'
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
-import FormatListBulletedRoundedIcon from "@mui/icons-material/FormatListBulletedRounded";
 import SwipeUpOrderBar from './SwipeUpOrderBar';
+import { COLORS, FONT, focusRing } from '../Style/designTokens';
 
 const BottomListTab = ({
     assignedFoods,
@@ -48,49 +47,51 @@ const BottomListTab = ({
         <Box
             sx={{
                 position: "fixed",
-                bottom: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "90%",
-                // maxWidth: 380,
-                height: 45,
-                borderRadius: 10,
-                bgcolor: "#fff",
-                border: "1.5px solid #9d25b8",
-                boxShadow:
-                    "0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(157,37,184,0.08)",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                boxSizing: "border-box",
+                px: 2,
+                pt: 1.25,
+                pb: "calc(12px + env(safe-area-inset-bottom))",
+                bgcolor: COLORS.white,
+                borderTop: `1px solid ${COLORS.line}`,
                 display: "flex",
-                overflow: "hidden",
+                gap: 1,
                 zIndex: 1000,
             }}
         >
 
-            {/* VIEW BUTTON (Only if localStorage exists) */}
+            {/* previous orders of this patient / bystander, shown only when there are some */}
             {hasOrders && (
                 <Box
+                    component="button"
+                    type="button"
                     onClick={() => {
                         setShowConfirmation(false)
                         onOpen("view")
                     }}
                     sx={{
-                        // flex: 1,
-                        width: hasOrders ? '40%' : '0%',
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
+                        flexShrink: 0,
+                        height: 56,
+                        px: 2,
+                        borderRadius: "16px",
                         cursor: "pointer",
-                        color: "#9d25b8",
-                        borderRight: "1px solid #eee",
-                        "&:active": { transform: "scale(0.95)" }
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.75,
+                        border: `1.5px solid ${COLORS.plum}`,
+                        bgcolor: COLORS.white,
+                        color: COLORS.plum,
+                        fontFamily: FONT,
+                        fontSize: 15,
+                        fontWeight: 700,
+                        "&:active": { bgcolor: COLORS.wash },
+                        ...focusRing,
                     }}
                 >
-                    <VisibilityRoundedIcon sx={{ fontSize: 20, mr: 0.5 }} />
-                    <TextComponent
-                        value="Previous Order"
-                        size={13}
-                        weight={600}
-                        color="#9d25b8"
-                    />
+                    <VisibilityRoundedIcon aria-hidden="true" sx={{ fontSize: 20 }} />
+                    Previous
                 </Box>
             )}
 

@@ -1,50 +1,18 @@
 import React, { memo } from "react";
 import { Box } from "@mui/joy";
 import NoMealsIcon from "@mui/icons-material/NoMeals";
-import TextComponent from "../../../components/TextComponent";
+import { COLORS, FONT } from "../../../Style/designTokens";
 
 
 const EmptyDietState = ({
-    title = "Diet food not processed yet",
-    subtitle = "No meals available for this patient currently"
+    title = "No diet meals yet",
+    subtitle = "The kitchen has not processed this patient's diet. Meals show here once it is processed."
 }) => {
     return (
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                py: 5,
-                px: 2,
-                textAlign: "center",
-                borderRadius: 12,
-                bgcolor: "#fafafa",
-                border: "1px dashed #d1d1d1",
-                mt: 2
-            }}
-        >
-            <NoMealsIcon
-                sx={{
-                    fontSize: 48,
-                    color: "#9e9e9e",
-                    mb: 1
-                }}
-            />
-
-            <TextComponent
-                value={title}
-                size={15}
-                weight={700}
-                color="#555"
-            />
-
-            <TextComponent
-                value={subtitle}
-                size={12}
-                weight={500}
-                color="#999"
-            />
+        <Box sx={{ mt: 3, py: 3, fontFamily: FONT, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+            <NoMealsIcon aria-hidden="true" sx={{ fontSize: 40, color: COLORS.orchid }} />
+            <Box sx={{ fontSize: 18, fontWeight: 700, color: COLORS.ink }}>{title}</Box>
+            <Box sx={{ fontSize: 15, lineHeight: 1.5, color: COLORS.muted }}>{subtitle}</Box>
         </Box>
     );
 };

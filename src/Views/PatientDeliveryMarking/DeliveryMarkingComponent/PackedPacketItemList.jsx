@@ -1,8 +1,9 @@
 import React, { memo } from "react";
-import { Box, IconButton } from "@mui/joy";
+import { Box } from "@mui/joy";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import TextComponent from "../../../components/TextComponent";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
+// Items already placed in one packet; each can be taken back out
 const PackedPacketItemList = ({
     items = [],
     onRemoveItem
@@ -10,34 +11,14 @@ const PackedPacketItemList = ({
 
     if (!items?.length) {
         return (
-            <Box
-                sx={{
-                    py: 1,
-                    px: 0.8,
-                    textAlign: "center",
-                    borderRadius: "8px",
-                    background: "#fafafa",
-                    border: "1px dashed #ddd"
-                }}
-            >
-                <TextComponent
-                    value="No items added"
-                    size={7}
-                    weight={600}
-                    color="#999"
-                />
+            <Box sx={{ py: 1.5, textAlign: "center", fontFamily: FONT, fontSize: 15, color: COLORS.muted }}>
+                No items in this packet
             </Box>
         );
     }
 
     return (
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 0.3
-            }}
-        >
+        <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, fontFamily: FONT }}>
 
             {items.map((foodItem, index) => {
 
@@ -49,67 +30,35 @@ const PackedPacketItemList = ({
 
                 return (
                     <Box
+                        component="li"
                         key={itemId}
                         sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            py: 0.35,
-                            px: 0.7,
-                            borderRadius: "7px",
-                            background: "#fff",
-                            border: "1px solid #eeeeee"
+                            display: "flex", alignItems: "center", gap: 1, minHeight: 48,
+                            borderTop: index === 0 ? "none" : `1px solid ${COLORS.line}`,
                         }}
                     >
-
-                        {/* ITEM NAME */}
-                        <Box
-                            sx={{
-                                flex: 1,
-                                minWidth: 0
-                            }}
-                        >
-                            <TextComponent
-                                value={foodItem?.item_name}
-                                size={8}
-                                weight={700}
-                            />
+                        <Box sx={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600, color: COLORS.ink }}>
+                            {foodItem?.item_name}
                         </Box>
 
-                        {/* QUANTITY */}
-                        <TextComponent
-                            value={`× ${foodItem?.quantity ?? 0}`}
-                            size={8}
-                            weight={800}
-                            color="#777"
-                        />
+                        <Box sx={{ fontSize: 15, fontWeight: 700, color: COLORS.muted }}>
+                            {`× ${foodItem?.quantity ?? 0}`}
+                        </Box>
 
-                        {/* REMOVE */}
-                        <IconButton
-                            size="sm"
-                            variant="plain"
-                            color="danger"
-                            onClick={() =>
-                                onRemoveItem?.(foodItem)
-                            }
-                            sx={{
-                                minWidth: 24,
-                                width: 24,
-                                height: 24,
-                                borderRadius: "6px",
-
-                                "&:hover": {
-                                    background: "#fff0f0"
-                                }
-                            }}
-                        >
-                            <DeleteOutlineRoundedIcon
+                        {onRemoveItem && (
+                            <Box
+                                component="button"
+                                type="button"
+                                aria-label={`Take ${foodItem?.item_name} out of the packet`}
+                                onClick={() => onRemoveItem(foodItem)}
                                 sx={{
-                                    fontSize: 15
+                                    flexShrink: 0, width: 44, height: 44, border: 0, borderRadius: "12px", cursor: "pointer",
+                                    display: "grid", placeItems: "center", bgcolor: "#FBE9E7", color: COLORS.error, ...focusRing,
                                 }}
-                            />
-                        </IconButton>
-
+                            >
+                                <DeleteOutlineRoundedIcon />
+                            </Box>
+                        )}
                     </Box>
                 );
             })}

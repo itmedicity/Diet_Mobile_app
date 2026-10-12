@@ -1,16 +1,25 @@
-
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { Box } from "@mui/joy";
-
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import SaveIcon from "@mui/icons-material/Save";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import LocalPrintshopIcon from "@mui/icons-material/LocalPrintshop";
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
-import TextComponent from "../../../components/TextComponent";
-import LocalPrintshopIcon from '@mui/icons-material/LocalPrintshop';
+const actionButton = (kind, disabled) => ({
+    flex: kind === "save" ? "1 1 100%" : 1, minHeight: 48, px: 1, borderRadius: "12px", cursor: disabled ? "not-allowed" : "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5,
+    fontFamily: FONT, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap",
+    bgcolor: kind === "primary" ? COLORS.plum : kind === "save" ? COLORS.success : COLORS.wash,
+    color: kind === "ghost" ? COLORS.plum : COLORS.white,
+    border: kind === "ghost" ? `1.5px solid ${COLORS.plum}` : 0,
+    opacity: disabled ? 0.6 : 1,
+    ...focusRing,
+});
 
+// Top of the packing panel: pack the order into packets, or (once packed) see and print the packets
 const PackingActionBar = ({
     itemCount = 0,
 
@@ -31,12 +40,10 @@ const PackingActionBar = ({
     onPrint
 }) => {
 
-    /*
-    ============================================================
-        GROUP EXISTING PACKING BY PACKET UID
-    ============================================================
-    */
+    // which saved packet is open (the list below shows only that one)
+    const [openUid, setOpenUid] = useState(null);
 
+    /* GROUP EXISTING PACKING BY PACKET UID */
     const existingPackets = useMemo(() => {
 
         if (!Array.isArray(PackageDetails)) {
@@ -73,403 +80,99 @@ const PackingActionBar = ({
 
     }, [PackageDetails]);
 
-
-
-
-
-    /*
-    ============================================================
-        CHECK WHETHER PACKING ALREADY EXISTS
-    ============================================================
-    */
-
-    const hasExistingPacking =
-        existingPackets.length > 0;
-
-
-    /*
-    ============================================================
-        ACTUAL PACKET COUNT
-    ============================================================
-    */
+    const hasExistingPacking = existingPackets.length > 0;
 
     const displayPacketCount = hasExistingPacking
         ? existingPackets.length
         : packetCount;
 
-
-    /*
-    ============================================================
-        BUTTON STYLE
-    ============================================================
-    */
-
-    const buttonStyle = {
-        display: "flex",
-        alignItems: "center",
-        gap: 0.3,
-        px: 1,
-        py: 0.55,
-        borderRadius: "10px",
-        color: "#fff",
-        cursor: saving
-            ? "default"
-            : "pointer",
-        transition: "all .2s ease",
-        opacity: saving ? 0.6 : 1,
-
-        "&:hover": {
-            transform: "translateY(-1px)"
-        }
+    const togglePacket = (uid) => {
+        setOpenUid(prev => (prev === uid ? null : uid));
+        setPacketIds(prev => (prev === uid ? null : uid));
     };
-
 
     return (
         <Box
             sx={{
-                display: hasExistingPacking ? "block" : "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 1,
-                py: 0.8,
-                borderRadius: "12px",
-
-                background:
-                    hasExistingPacking
-                        ? "linear-gradient(135deg,#f2fff4,#ffffff)"
-                        : "linear-gradient(135deg,#f8f4ff,#ffffff)",
-
-                border:
-                    hasExistingPacking
-                        ? "1px solid #d5efd8"
-                        : "1px solid #e9ddff"
+                p: 1.5, borderRadius: "14px", fontFamily: FONT,
+                bgcolor: hasExistingPacking ? "#E3F3E8" : COLORS.wash,
+                border: `1px solid ${hasExistingPacking ? "#A9D3B8" : COLORS.orchid}`,
             }}
         >
 
-            {/* =================================================
-                LEFT : PACKING INFO
-            ================================================= */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {hasExistingPacking
+                    ? <CheckCircleRoundedIcon aria-hidden="true" sx={{ color: COLORS.success }} />
+                    : <Inventory2RoundedIcon aria-hidden="true" sx={{ color: COLORS.plum }} />}
 
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.8,
-                    position: 'relative'
-                }}
-            >
-
-                <Box
-                    sx={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "9px",
-
-                        background:
-                            hasExistingPacking
-                                ? "#e4f7e7"
-                                : "#eee5ff",
-
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                    }}
-                >
-
-                    {hasExistingPacking ? (
-
-                        <CheckCircleRoundedIcon
-                            sx={{
-                                fontSize: 18,
-                                color: "#46a94d"
-                            }}
-                        />
-
-                    ) : (
-
-                        <Inventory2RoundedIcon
-                            sx={{
-                                fontSize: 17,
-                                color: "#7933ea"
-                            }}
-                        />
-
-                    )}
-
+                <Box sx={{ flex: 1 }}>
+                    <Box sx={{ fontSize: 17, fontWeight: 700, color: hasExistingPacking ? COLORS.success : COLORS.ink }}>
+                        {hasExistingPacking ? "Order packed" : "Pack this order"}
+                    </Box>
+                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                        {`${itemCount} ${itemCount === 1 ? "item" : "items"}  ·  ${displayPacketCount} ${displayPacketCount === 1 ? "packet" : "packets"}`}
+                    </Box>
                 </Box>
 
-
-                <Box>
-
-                    <TextComponent
-                        value={
-                            hasExistingPacking
-                                ? "ORDER PACKED"
-                                : "PACK ORDER"
-                        }
-                        size={9}
-                        weight={900}
-                        color={
-                            hasExistingPacking
-                                ? "#34763b"
-                                : "#4b3b65"
-                        }
-                    />
-
-                    <TextComponent
-                        value={`${itemCount} Items • ${displayPacketCount} Packets`}
-                        size={7}
-                        weight={700}
-                        color="#999"
-                    />
-
-                </Box>
-
-                {
-                    hasExistingPacking &&
+                {hasExistingPacking && (
                     <Box
+                        component="button"
+                        type="button"
+                        aria-label="Print packet labels"
                         onClick={() => onPrint(existingPackets)}
                         sx={{
-                            display: 'flex',
-                            justifyContent: "flex-end",
-                            right: 0,
-                            position: 'absolute'
-                        }}>
-                        <LocalPrintshopIcon sx={{
-                            color: "#5e2dd9"
-                        }} />
+                            width: 48, height: 48, border: 0, borderRadius: "50%", cursor: "pointer",
+                            display: "grid", placeItems: "center", bgcolor: COLORS.white, color: COLORS.plum, ...focusRing,
+                        }}
+                    >
+                        <LocalPrintshopIcon />
                     </Box>
-                }
-
+                )}
             </Box>
-
-
-            {/* =================================================
-                RIGHT
-            ================================================= */}
 
             {hasExistingPacking ? (
 
-                /*
-                =================================================
-                    EXISTING PACKETS
-                =================================================
-                */
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.6,
-                        flexWrap: "wrap",
-                        mt: 1
-                        // justifyContent: "flex-end"
-                    }}
-                >
-
-                    {existingPackets?.map(packet => (
-
-                        <Box
-                            onClick={() =>
-                                setPacketIds(prev =>
-                                    prev === packet?.packet_uid
-                                        ? null
-                                        : packet?.packet_uid
-                                )
-                            }
-                            key={packet?.packet_uid}
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-
-                                px: 1.9,
-                                py: 1.5,
-
-                                borderRadius: "9px",
-
-                                background: "#ffffff",
-
-                                border:
-                                    "1px solid #cfe8d2",
-
-                                boxShadow:
-                                    "0 1px 3px rgba(0,0,0,0.04)"
-                            }}
-                        >
-
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mt: 1.25 }}>
+                    {existingPackets.map(packet => {
+                        const open = openUid === packet.packet_uid;
+                        return (
                             <Box
+                                key={packet.packet_uid}
+                                component="button"
+                                type="button"
+                                aria-pressed={open}
+                                onClick={() => togglePacket(packet.packet_uid)}
                                 sx={{
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: "6px",
-
-                                    background:
-                                        "#eaf8ec",
-
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center"
+                                    minHeight: 48, px: 1.5, borderRadius: "12px", cursor: "pointer", textAlign: "left", fontFamily: FONT,
+                                    bgcolor: open ? COLORS.success : COLORS.white,
+                                    color: open ? COLORS.white : COLORS.success,
+                                    border: `1.5px solid ${COLORS.success}`, ...focusRing,
                                 }}
                             >
-
-                                <Inventory2RoundedIcon
-                                    sx={{
-                                        fontSize: 12,
-                                        color: "#46a94d"
-                                    }}
-                                />
-
+                                <Box sx={{ fontSize: 15, fontWeight: 700 }}>{packet.packet_uid}</Box>
+                                <Box sx={{ fontSize: 13 }}>{`${packet.items.length} ${packet.items.length === 1 ? "item" : "items"}`}</Box>
                             </Box>
-
-
-                            <Box>
-
-                                <TextComponent
-                                    value={packet.packet_uid}
-                                    size={9}
-                                    weight={900}
-                                    color="#34763b"
-                                />
-
-                                <TextComponent
-                                    value={`${packet.items.length} Items`}
-                                    size={6}
-                                    weight={700}
-                                    color="#999"
-                                />
-
-                            </Box>
-
-                        </Box>
-
-                    ))}
-
+                        );
+                    })}
                 </Box>
 
             ) : (
 
-                /*
-                =================================================
-                    NEW PACKING ACTIONS
-                =================================================
-                */
-
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 1
-                    }}
-                >
-
-                    {/* ADD PACKET */}
-
-                    <Box
-                        onClick={
-                            saving
-                                ? undefined
-                                : onAddPacket
-                        }
-                        sx={{
-                            ...buttonStyle,
-                            background: "#7933ea",
-
-                            "&:hover": {
-                                ...buttonStyle["&:hover"],
-                                background: "#6623d0"
-                            }
-                        }}
-                    >
-
-                        <AddRoundedIcon
-                            sx={{
-                                fontSize: 15
-                            }}
-                        />
-
-                        <TextComponent
-                            value="Packet"
-                            size={8}
-                            weight={900}
-                            color="#fff"
-                        />
-
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.25 }}>
+                    <Box component="button" type="button" onClick={saving ? undefined : onAddPacket} disabled={saving} sx={actionButton("primary", saving)}>
+                        <AddRoundedIcon aria-hidden="true" />
+                        New packet
                     </Box>
 
-
-                    {/* AUTO PACK */}
-
-                    <Box
-                        onClick={
-                            saving
-                                ? undefined
-                                : onAutoPack
-                        }
-                        sx={{
-                            ...buttonStyle,
-                            background: "#7933ea",
-
-                            "&:hover": {
-                                ...buttonStyle["&:hover"],
-                                background: "#6623d0"
-                            }
-                        }}
-                    >
-
-                        <LocalShippingIcon
-                            sx={{
-                                fontSize: 15
-                            }}
-                        />
-
-                        <TextComponent
-                            value="Auto Packing"
-                            size={8}
-                            weight={900}
-                            color="#fff"
-                        />
-
+                    <Box component="button" type="button" onClick={saving ? undefined : onAutoPack} disabled={saving} sx={actionButton("ghost", saving)}>
+                        <LocalShippingIcon aria-hidden="true" />
+                        Auto pack
                     </Box>
 
-
-                    {/* SUBMIT */}
-
-                    <Box
-                        onClick={
-                            saving
-                                ? undefined
-                                : onSubmit
-                        }
-                        sx={{
-                            ...buttonStyle,
-                            background: "#46b74d",
-
-                            "&:hover": {
-                                ...buttonStyle["&:hover"],
-                                background: "#389b40"
-                            }
-                        }}
-                    >
-
-                        <SaveIcon
-                            sx={{
-                                fontSize: 15
-                            }}
-                        />
-
-                        <TextComponent
-                            value={
-                                saving
-                                    ? "Saving..."
-                                    : "Submit"
-                            }
-                            size={8}
-                            weight={900}
-                            color="#fff"
-                        />
-
+                    <Box component="button" type="button" onClick={saving ? undefined : onSubmit} disabled={saving} sx={actionButton("save", saving)}>
+                        <SaveIcon aria-hidden="true" />
+                        {saving ? "Saving…" : "Save"}
                     </Box>
-
                 </Box>
 
             )}
@@ -479,4 +182,3 @@ const PackingActionBar = ({
 };
 
 export default memo(PackingActionBar);
-

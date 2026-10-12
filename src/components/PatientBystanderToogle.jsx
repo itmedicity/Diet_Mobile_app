@@ -1,11 +1,13 @@
 import { Box } from "@mui/joy";
 import React, { memo, useEffect } from "react";
-import TextComponent from "./TextComponent";
 import { useAllOrderPartyType } from "../CommonData/UseQuery";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
+// "PATIENT" -> "Patient"
+const titleCase = (text = "") => text.charAt(0) + text.slice(1).toLowerCase();
+
+// Who the order is for: a two-way switch
 const PatientBystanderToggle = ({ selected, setSelected }) => {
-
-
 
     const { data: allPartyType = [] } = useAllOrderPartyType();
 
@@ -25,16 +27,14 @@ const PatientBystanderToggle = ({ selected, setSelected }) => {
                 setSelected(patient);
             }
         }
-    }, [allPartyType, selected]);
+    }, [allPartyType, selected, setSelected]);
+
     return (
         <Box
+            role="radiogroup"
+            aria-label="Order for"
             sx={{
-                width: "100%",
-                height: 36,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
+                display: "flex", p: 0.5, gap: 0.5, borderRadius: "14px", bgcolor: COLORS.wash, fontFamily: FONT,
             }}
         >
             {filteredTypes?.map((item) => {
@@ -44,26 +44,20 @@ const PatientBystanderToggle = ({ selected, setSelected }) => {
                 return (
                     <Box
                         key={item.party_type_id}
+                        component="button"
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
                         onClick={() => setSelected(item)}
                         sx={{
-                            width: "45%",
-                            height: 32,
-                            borderRadius: 10,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            bgcolor: isActive ? "#9d25b8" : "#c2bfbf",
-                            borderLeft: isActive ? "3px solid black" : "3px solid #9d25b8",
-                            borderRight: isActive ? "3px solid black" : "3px solid #9d25b8",
+                            flex: 1, height: 44, border: 0, borderRadius: "10px", cursor: "pointer",
+                            fontFamily: FONT, fontSize: 16, fontWeight: 700,
+                            bgcolor: isActive ? COLORS.plum : "transparent",
+                            color: isActive ? COLORS.white : COLORS.plum,
+                            ...focusRing,
                         }}
                     >
-                        <TextComponent
-                            color={isActive ? "#ffffff" : "#030303"}
-                            value={item.party_name}
-                            size={10}
-                            weight={800}
-                        />
+                        {titleCase(item.party_name)}
                     </Box>
                 );
             })}

@@ -1,41 +1,35 @@
 import React, { memo } from "react";
 import { Box } from "@mui/joy";
-import TextComponent from "./TextComponent";
+import { COLORS, FONT, focusRing } from "../Style/designTokens";
 
-
+// A secondary button next to a form or card. `danger` is for actions that cannot be undone.
 const ActionButton = ({
     onClick,
     label,
     icon,
-    bgColor = "#ffffffd0",
-    textColor = "#161717"
+    danger = false,
+    primary = false
 }) => {
+    const fg = danger ? COLORS.error : primary ? COLORS.white : COLORS.plum;
+    const bg = primary ? COLORS.plum : COLORS.white;
+    const border = danger ? COLORS.error : COLORS.plum;
+
     return (
         <Box
+            component="button"
+            type="button"
             onClick={onClick}
             sx={{
-                cursor: "pointer",
-                fontFamily: 'Bahnschrift',
-                height: 30,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                px: 1,
-                borderRadius: 3,
-                bgcolor: bgColor,
-                boxShadow:
-                    '0 4px 8px rgba(0,0,0,0.07), 0 6px 20px rgba(0,0,0,0.08)',
-                transition: 'box-shadow 0.2s ease, border 0.2s ease',
-                gap: 1
+                flex: 1, minHeight: 48, px: 1.5, borderRadius: "12px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75,
+                fontFamily: FONT, fontSize: 16, fontWeight: 700,
+                border: `1.5px solid ${border}`, bgcolor: bg, color: fg,
+                "&:active": { opacity: 0.85 },
+                ...focusRing,
             }}
         >
             {icon}
-            <TextComponent
-                value={label}
-                size={10}
-                weight={800}
-                color={textColor}
-            />
+            {label}
         </Box>
     );
 };

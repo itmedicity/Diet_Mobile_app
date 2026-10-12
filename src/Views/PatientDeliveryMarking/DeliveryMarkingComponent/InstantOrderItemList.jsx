@@ -5,16 +5,11 @@ import React, {
     useCallback
 } from "react";
 
-import { Box, Checkbox, IconButton } from "@mui/joy";
-
-import TextComponent from "../../../components/TextComponent";
+import { Box } from "@mui/joy";
 
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import SaveIcon from "@mui/icons-material/Save";
 
 import PackedPacketItemList from "./PackedPacketItemList";
 
@@ -26,7 +21,7 @@ import {
 import { axioslogin } from "../../../Axios/axios";
 import { existingPackets } from "../../Constant/Common";
 import PackingActionBar from "./PackingActionBar";
-
+import { COLORS, FONT, focusRing } from "../../../Style/designTokens";
 
 const InstantOrderItemList = ({
     items = [],
@@ -751,32 +746,6 @@ const InstantOrderItemList = ({
         );
 
 
-    /* 
-       GET PACKET ITEM COUNT
-     */
-
-    const getPacketItemCount =
-        useCallback(
-            (packet) => {
-
-                return (
-                    packet?.items?.reduce(
-                        (
-                            total,
-                            item
-                        ) =>
-                            total +
-                            Number(
-                                item?.quantity ?? 0
-                            ),
-                        0
-                    ) || 0
-                );
-
-            },
-            []
-        );
-
 
     /* 
        SUBMIT PACKING
@@ -992,27 +961,29 @@ const InstantOrderItemList = ({
                 orderId,
                 id,
                 getItemId,
-                onPacketsChange
+                onPacketsChange,
+                AssignmentId,
+                TypeSlno,
+                packetCount,
+                setExpandedOrderId
             ]
         );
 
-    /* 
+    /*
        RENDER
      */
 
+    const unpackedItems = items?.filter(foodItem => !assignedItemIds.has(getItemId(foodItem))) ?? [];
+
+    const iconButton = (bg, color, disabled) => ({
+        flexShrink: 0, width: 48, height: 48, border: 0, borderRadius: "50%", cursor: disabled ? "not-allowed" : "pointer",
+        display: "grid", placeItems: "center", bgcolor: bg, color, opacity: disabled ? 0.5 : 1, ...focusRing,
+    });
+
     return (
 
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 1.2
-            }}
-        >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, fontFamily: FONT }}>
 
-            {/* =====================================================
-                PACKING HEADER
-            ===================================================== */}
             <PackingActionBar
                 itemCount={items.length}
                 packetCount={packetCount}
@@ -1027,21 +998,10 @@ const InstantOrderItemList = ({
                 onPrint={handlePrintDetails}
             />
 
-
-
-            {/* =====================================================
-                PACKETS
-            ===================================================== */}
-
+            {/* PACKETS */}
             {displayPackets.length > 0 && (
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 0.7
-                    }}
-                >
+                <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0, display: "flex", flexDirection: "column", gap: 1 }}>
 
                     {displayPackets.map(packet => {
 
@@ -1049,341 +1009,89 @@ const InstantOrderItemList = ({
                             activePacketId ===
                             (packet.temp_id || packet.packet_uid);
 
-                        const itemCount =
-                            getPacketItemCount(
-                                packet
-                            );
-
+                        const itemCount = packet.items?.length ?? 0;
 
                         return (
-
                             <Box
+                                component="li"
                                 key={packet.packet_uid || packet.temp_id}
                                 sx={{
-                                    borderRadius:
-                                        "13px",
-
-                                    border:
-                                        isActive
-                                            ? "1.5px solid #7933ea"
-                                            : packet.confirmed
-                                                ? "1px solid #cdebd8"
-                                                : "1px solid #e6e6e6",
-
-                                    background:
-                                        isActive
-                                            ? "#faf7ff"
-                                            : packet.confirmed
-                                                ? "#f7fcf9"
-                                                : "#fff",
-
-                                    overflow:
-                                        "hidden",
-
-                                    transition:
-                                        "all .2s ease"
+                                    borderRadius: "14px", overflow: "hidden",
+                                    border: `${isActive ? 2 : 1}px solid ${isActive ? COLORS.plum : packet.confirmed ? "#A9D3B8" : COLORS.line}`,
+                                    bgcolor: packet.confirmed ? "#F4FBF6" : COLORS.white,
                                 }}
                             >
 
-                                {/* PACKET HEADER */}
-
-                                <Box
-                                    onClick={() =>
-                                        handleSelectPacket(
-                                            packet
-                                        )
-                                    }
-                                    sx={{
-                                        display:
-                                            "flex",
-                                        alignItems:
-                                            "center",
-                                        justifyContent:
-                                            "space-between",
-                                        px: 1,
-                                        py: 0.8,
-                                        cursor:
-                                            packet.confirmed
-                                                ? "default"
-                                                : "pointer"
-                                    }}
-                                >
-
+                                {/* PACKET HEADER: tap to choose items for it */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 1 }}>
                                     <Box
+                                        component="button"
+                                        type="button"
+                                        disabled={!!packet.confirmed}
+                                        onClick={() => handleSelectPacket(packet)}
                                         sx={{
-                                            display:
-                                                "flex",
-                                            alignItems:
-                                                "center",
-                                            gap: 0.8
+                                            flex: 1, minHeight: 60, px: 1.5, border: 0, bgcolor: "transparent", textAlign: "left",
+                                            display: "flex", alignItems: "center", gap: 1, fontFamily: FONT,
+                                            cursor: packet.confirmed ? "default" : "pointer", ...focusRing,
                                         }}
                                     >
-
-                                        <Box
-                                            sx={{
-                                                width: 30,
-                                                height: 30,
-                                                borderRadius:
-                                                    "9px",
-
-                                                background:
-                                                    packet.confirmed
-                                                        ? "#e3f5e9"
-                                                        : "#eee5ff",
-
-                                                display:
-                                                    "flex",
-                                                alignItems:
-                                                    "center",
-                                                justifyContent:
-                                                    "center"
-                                            }}
-                                        >
-
-                                            <Inventory2RoundedIcon
-                                                sx={{
-                                                    fontSize:
-                                                        17,
-
-                                                    color:
-                                                        packet.confirmed
-                                                            ? "#1c8a4a"
-                                                            : "#7933ea"
-                                                }}
-                                            />
-
-                                        </Box>
-
-
+                                        <Inventory2RoundedIcon aria-hidden="true" sx={{ color: packet.confirmed ? COLORS.success : COLORS.plum }} />
                                         <Box>
-
-                                            <TextComponent
-                                                value={
-                                                    `Packet ${packet.packet_no}`
-                                                }
-                                                size={9}
-                                                weight={900}
-                                            />
-
-                                            <TextComponent
-                                                value={
-                                                    packet.confirmed
-                                                        ? `${itemCount} items packed`
-                                                        : isActive
-                                                            ? "Select items below"
-                                                            : "Click to select"
-                                                }
-                                                size={7}
-                                                weight={700}
-                                                color={
-                                                    packet.confirmed
-                                                        ? "#419361"
-                                                        : "#999"
-                                                }
-                                            />
-
+                                            <Box sx={{ fontSize: 17, fontWeight: 700, color: COLORS.ink }}>{`Packet ${packet.packet_no}`}</Box>
+                                            <Box sx={{ fontSize: 14, color: packet.confirmed ? COLORS.success : COLORS.muted }}>
+                                                {packet.confirmed
+                                                    ? `${itemCount} ${itemCount === 1 ? "item" : "items"} packed`
+                                                    : isActive
+                                                        ? "Tick the items below, then press the tick"
+                                                        : "Tap to choose items"}
+                                            </Box>
                                         </Box>
-
                                     </Box>
 
-
-                                    {/* RIGHT ACTION */}
-
-                                    <Box
-                                        sx={{
-                                            display:
-                                                "flex",
-                                            alignItems:
-                                                "center",
-                                            gap: 0.5
-                                        }}
-                                    >
-
-                                        {/* CANCEL */}
-
-                                        {!packet.confirmed && (
-
-                                            <IconButton
-                                                size="sm"
-                                                onClick={(
-                                                    e
-                                                ) => {
-
-                                                    e.stopPropagation();
-
-                                                    handleCancelPacket(
-                                                        packet.temp_id
-                                                    );
-
-                                                }}
-                                                sx={{
-                                                    minWidth:
-                                                        26,
-                                                    width:
-                                                        26,
-                                                    height:
-                                                        26,
-                                                    borderRadius:
-                                                        "50%",
-                                                    color:
-                                                        "#d9534f",
-
-                                                    "&:hover":
-                                                    {
-                                                        background:
-                                                            "#fff0ef"
-                                                    }
-                                                }}
-                                            >
-
-                                                <CloseRoundedIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            15
-                                                    }}
-                                                />
-
-                                            </IconButton>
-
-                                        )}
-
-
-                                        {/* CONFIRM */}
-
-                                        {!packet.confirmed && (
-
-                                            <IconButton
-                                                size="sm"
-                                                disabled={
-                                                    !isActive ||
-                                                    selectedItems.length === 0
-                                                }
-                                                onClick={(
-                                                    e
-                                                ) => {
-
-                                                    e.stopPropagation();
-
-                                                    handleConfirmPacket(
-                                                        packet.temp_id
-                                                    );
-
-                                                }}
-                                                sx={{
-                                                    minWidth:
-                                                        28,
-                                                    width:
-                                                        28,
-                                                    height:
-                                                        28,
-                                                    borderRadius:
-                                                        "50%",
-
-                                                    background:
-                                                        selectedItems.length
-                                                            ? "#e4f6eb"
-                                                            : "#f1f1f1",
-
-                                                    color:
-                                                        selectedItems.length
-                                                            ? "#188b48"
-                                                            : "#aaa",
-
-                                                    "&:hover":
-                                                    {
-                                                        background:
-                                                            "#d5f0df"
-                                                    }
-                                                }}
-                                            >
-
-                                                <CheckRoundedIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            16
-                                                    }}
-                                                />
-
-                                            </IconButton>
-
-                                        )}
-
-
-                                        {/* COMPLETED TICK */}
-
-                                        {packet.confirmed && (
-
+                                    {!packet.confirmed && (
+                                        <>
                                             <Box
-                                                sx={{
-                                                    width:
-                                                        27,
-                                                    height:
-                                                        27,
-                                                    borderRadius:
-                                                        "50%",
-                                                    background:
-                                                        "#e3f5e9",
-                                                    display:
-                                                        "flex",
-                                                    alignItems:
-                                                        "center",
-                                                    justifyContent:
-                                                        "center"
-                                                }}
+                                                component="button"
+                                                type="button"
+                                                aria-label={`Remove packet ${packet.packet_no}`}
+                                                onClick={() => handleCancelPacket(packet.temp_id)}
+                                                sx={iconButton("#FBE9E7", COLORS.error, false)}
                                             >
-
-                                                <CheckRoundedIcon
-                                                    sx={{
-                                                        fontSize:
-                                                            16,
-                                                        color:
-                                                            "#188b48"
-                                                    }}
-                                                />
-
+                                                <CloseRoundedIcon />
                                             </Box>
 
-                                        )}
-
-                                    </Box>
-
-                                </Box>
-
-
-                                {/* PACKED ITEMS */}
-
-                                {packet.confirmed &&
-                                    packet.items?.length > 0 && (
-
-                                        <Box
-                                            sx={{
-                                                px: 1,
-                                                pb: 0.8
-                                            }}
-                                        >
-
-                                            <PackedPacketItemList
-                                                items={
-                                                    packet.items
-                                                }
-                                                onRemoveItem={(
-                                                    foodItem
-                                                ) =>
-                                                    handleRemoveItemFromPacket(
-                                                        packet.temp_id,
-                                                        foodItem
-                                                    )
-                                                }
-                                            />
-
-                                        </Box>
-
+                                            <Box
+                                                component="button"
+                                                type="button"
+                                                aria-label={`Confirm packet ${packet.packet_no}`}
+                                                disabled={!isActive || selectedItems.length === 0}
+                                                onClick={() => handleConfirmPacket(packet.temp_id)}
+                                                sx={iconButton(COLORS.success, COLORS.white, !isActive || selectedItems.length === 0)}
+                                            >
+                                                <CheckRoundedIcon />
+                                            </Box>
+                                        </>
                                     )}
 
+                                    {packet.confirmed && (
+                                        <CheckRoundedIcon aria-label="Packed" sx={{ color: COLORS.success }} />
+                                    )}
+                                </Box>
+
+                                {/* PACKED ITEMS */}
+                                {packet.confirmed && packet.items?.length > 0 && (
+                                    <Box sx={{ px: 1.5, pb: 0.5, borderTop: `1px solid ${COLORS.line}` }}>
+                                        <PackedPacketItemList
+                                            items={packet.items}
+                                            onRemoveItem={packet.temp_id
+                                                ? (foodItem) => handleRemoveItemFromPacket(packet.temp_id, foodItem)
+                                                : undefined}
+                                        />
+                                    </Box>
+                                )}
+
                             </Box>
-
                         );
-
                     })}
 
                 </Box>
@@ -1391,418 +1099,89 @@ const InstantOrderItemList = ({
             )}
 
 
-            {/* =====================================================
-                ORDER ITEMS
-            ===================================================== */}
+            {/* ORDER ITEMS (not packed yet) */}
+            {unpackedItems.length > 0 && (
+                <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 1, mb: 0.75 }}>
+                        <Box sx={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>
+                            {`To pack (${unpackedItems.length})`}
+                        </Box>
+                        <Box sx={{ fontSize: 14, color: activePacketId ? COLORS.plum : COLORS.muted, textAlign: "right" }}>
+                            {activePacketId ? "Choose items for the open packet" : "Make a packet to choose items"}
+                        </Box>
+                    </Box>
 
-            <Box
-                sx={{
-                    mt: 0.2
-                }}
-            >
+                    {unpackedItems.map((foodItem, foodIndex) => {
 
-                <Box
-                    sx={{
-                        display:
-                            "flex",
-                        justifyContent:
-                            "space-between",
-                        alignItems:
-                            "center",
-                        px: 0.5,
-                        mb: 0.7
-                    }}
-                >
+                        const quantity = Number(foodItem?.quantity ?? 0);
+                        const price = Number(foodItem?.price ?? 0);
+                        const gstAmount = Number(foodItem?.gst_amount ?? 0);
+                        const total = (price + gstAmount) * quantity;
+                        const isSelected = isItemSelected(foodItem);
 
-                    <TextComponent
-                        value="ORDER ITEMS"
-                        size={8}
-                        weight={900}
-                        color="#777"
-                    />
-
-                    <TextComponent
-                        value={
-                            activePacketId
-                                ? "Select items for active packet"
-                                : "Create a packet first"
-                        }
-                        size={7}
-                        weight={700}
-                        color={
-                            activePacketId
-                                ? "#7933ea"
-                                : "#aaa"
-                        }
-                    />
-
-                </Box>
-
-
-                {items
-                    ?.filter(foodItem => {
-
-                        const itemId =
-                            getItemId(
-                                foodItem
-                            );
-
-                        return !assignedItemIds.has(
-                            itemId
-                        );
-
-                    })
-                    ?.map(
-                        (
-                            foodItem,
-                            foodIndex
-                        ) => {
-
-                            const quantity =
-                                Number(
-                                    foodItem?.quantity ?? 0
-                                );
-
-
-                            const price =
-                                Number(
-                                    foodItem?.price ?? 0
-                                );
-
-
-                            const gstAmount =
-                                Number(
-                                    foodItem?.gst_amount ?? 0
-                                );
-
-
-                            const total =
-                                (price +
-                                    gstAmount) *
-                                quantity;
-
-
-                            const isSelected =
-                                isItemSelected(
-                                    foodItem
-                                );
-
-
-                            return (
-
+                        return (
+                            <Box
+                                key={getItemId(foodItem) ?? foodIndex}
+                                component="button"
+                                type="button"
+                                role="checkbox"
+                                aria-checked={isSelected}
+                                disabled={!activePacketId}
+                                onClick={() => handleItemToggle(foodItem)}
+                                sx={{
+                                    width: "100%", minHeight: 60, mb: 0.75, px: 1.25, borderRadius: "12px", textAlign: "left",
+                                    display: "flex", alignItems: "center", gap: 1.25, fontFamily: FONT,
+                                    bgcolor: isSelected ? COLORS.wash : COLORS.white,
+                                    border: `${isSelected ? 2 : 1}px solid ${isSelected ? COLORS.plum : COLORS.line}`,
+                                    cursor: activePacketId ? "pointer" : "default",
+                                    "&:disabled": { opacity: 1 },
+                                    ...focusRing,
+                                }}
+                            >
                                 <Box
-                                    key={
-                                        getItemId(
-                                            foodItem
-                                        ) ??
-                                        foodIndex
-                                    }
-                                    onClick={() => {
-
-                                        if (
-                                            activePacketId
-                                        ) {
-
-                                            handleItemToggle(
-                                                foodItem
-                                            );
-
-                                        }
-
-                                    }}
                                     sx={{
-                                        display:
-                                            "flex",
-                                        alignItems:
-                                            "center",
-                                        gap: 0.5,
-                                        p: 0.9,
-                                        mb: 0.6,
-                                        borderRadius:
-                                            "11px",
-
-                                        bgcolor:
-                                            isSelected
-                                                ? "#f7f1ff"
-                                                : "#fff",
-
-                                        border:
-                                            isSelected
-                                                ? "1px solid #7933ea"
-                                                : "1px solid #eeeeee",
-
-                                        cursor:
-                                            activePacketId
-                                                ? "pointer"
-                                                : "default",
-
-                                        transition:
-                                            "all .18s ease",
-
-                                        "&:hover":
-                                            activePacketId
-                                                ? {
-                                                    borderColor:
-                                                        "#cbb2f5",
-                                                    background:
-                                                        "#faf7ff"
-                                                }
-                                                : {}
-
+                                        flexShrink: 0, width: 26, height: 26, borderRadius: "8px", display: "grid", placeItems: "center",
+                                        bgcolor: isSelected ? COLORS.plum : COLORS.white,
+                                        border: `2px solid ${activePacketId ? COLORS.plum : COLORS.orchid}`, color: COLORS.white,
                                     }}
                                 >
-
-                                    {/* CHECKBOX */}
-
-                                    <Checkbox
-                                        checked={
-                                            isSelected
-                                        }
-                                        disabled={
-                                            !activePacketId
-                                        }
-                                        onChange={() =>
-                                            handleItemToggle(
-                                                foodItem
-                                            )
-                                        }
-                                        onClick={(
-                                            e
-                                        ) =>
-                                            e.stopPropagation()
-                                        }
-                                        size="sm"
-                                        sx={{
-                                            "--Checkbox-size":
-                                                "20px"
-                                        }}
-                                    />
-
-
-                                    {/* ITEM */}
-
-                                    <Box
-                                        sx={{
-                                            flex:
-                                                1,
-                                            minWidth:
-                                                0
-                                        }}
-                                    >
-
-                                        <TextComponent
-                                            value={
-                                                foodItem?.item_name
-                                            }
-                                            size={9}
-                                            weight={800}
-                                        />
-
-
-                                        <Box
-                                            sx={{
-                                                display:
-                                                    "flex",
-                                                alignItems:
-                                                    "center",
-                                                gap:
-                                                    0.8,
-                                                mt:
-                                                    0.2
-                                            }}
-                                        >
-
-                                            <TextComponent
-                                                value={
-                                                    `₹${price.toFixed(2)}`
-                                                }
-                                                size={7}
-                                                weight={600}
-                                                color="#777"
-                                            />
-
-
-                                            {gstAmount > 0 && (
-
-                                                <TextComponent
-                                                    value={
-                                                        `GST ₹${gstAmount.toFixed(2)}`
-                                                    }
-                                                    size={7}
-                                                    weight={600}
-                                                    color="#999"
-                                                />
-
-                                            )}
-
-
-                                            <TextComponent
-                                                value={
-                                                    `₹${total.toFixed(2)}`
-                                                }
-                                                size={7}
-                                                weight={700}
-                                                color="#777"
-                                            />
-
-                                        </Box>
-
-                                    </Box>
-
-
-                                    {/* QUANTITY */}
-
-                                    <Box
-                                        sx={{
-                                            px:
-                                                0.8,
-                                            py:
-                                                0.4,
-                                            borderRadius:
-                                                "7px",
-                                            background:
-                                                "#f6f6f6"
-                                        }}
-                                    >
-
-                                        <TextComponent
-                                            value={
-                                                `Qty ${quantity}`
-                                            }
-                                            size={8}
-                                            weight={900}
-                                        />
-
-                                    </Box>
-
+                                    {isSelected && <CheckRoundedIcon sx={{ fontSize: 18 }} />}
                                 </Box>
 
-                            );
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Box sx={{ fontSize: 16, fontWeight: 600, color: COLORS.ink }}>{foodItem?.item_name}</Box>
+                                    <Box sx={{ fontSize: 14, color: COLORS.muted }}>
+                                        {`₹${price.toFixed(2)}${gstAmount > 0 ? `  ·  GST ₹${gstAmount.toFixed(2)}` : ""}  ·  ₹${total.toFixed(2)}`}
+                                    </Box>
+                                </Box>
 
-                        }
-                    )}
-
-            </Box>
-
-
-            {/* =====================================================
-                PACKING SUMMARY
-            ===================================================== */}
-
-            {displayPackets.length > 0 && (
-
-                <Box
-                    sx={{
-                        mt: 0.3,
-                        p: 1,
-                        borderRadius:
-                            "11px",
-                        background:
-                            "#fff",
-                        border:
-                            "1px dashed #d9d9d9"
-                    }}
-                >
-
-                    <Box
-                        sx={{
-                            display:
-                                "flex",
-                            justifyContent:
-                                "space-between",
-                            alignItems:
-                                "center"
-                        }}
-                    >
-
-                        <TextComponent
-                            value="PACKING SUMMARY"
-                            size={7}
-                            weight={900}
-                            color="#888"
-                        />
-
-                        <TextComponent
-                            value={
-                                `${displayPackets.filter(
-                                    p =>
-                                        p.confirmed
-                                ).length} / ${displayPackets.length} packets confirmed`
-                            }
-                            size={7}
-                            weight={800}
-                            color="#7933ea"
-                        />
-
-                    </Box>
-
-
-                    <Box
-                        sx={{
-                            display:
-                                "flex",
-                            justifyContent:
-                                "space-between",
-                            mt:
-                                0.5
-                        }}
-                    >
-
-                        <TextComponent
-                            value="Items packed"
-                            size={7}
-                            weight={700}
-                            color="#888"
-                        />
-
-                        <TextComponent
-                            value={
-                                `${assignedItemIds.size} / ${items.length}`
-                            }
-                            size={8}
-                            weight={900}
-                        />
-
-                    </Box>
-
+                                <Box sx={{ flexShrink: 0, fontSize: 15, fontWeight: 700, color: COLORS.ink }}>{`Qty ${quantity}`}</Box>
+                            </Box>
+                        );
+                    })}
                 </Box>
-
             )}
 
 
-            {/* =====================================================
-                TOTAL
-            ===================================================== */}
-
-            {items?.length > 0 && (
-
-                <Box
-                    sx={{
-                        display:
-                            "flex",
-                        justifyContent:
-                            "flex-end",
-                        alignItems:
-                            "center",
-                        mt:
-                            0.2,
-                        pt:
-                            0.8,
-                        borderTop:
-                            "1px dashed #ddd"
-                    }}
-                >
-
-                    <TextComponent
-                        value={
-                            `Total: ₹${totalAmount.toFixed(2)}`
-                        }
-                        size={10}
-                        weight={900}
-                    />
-
+            {/* PACKING SUMMARY */}
+            {displayPackets.length > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1, p: 1.5, borderRadius: "12px", bgcolor: COLORS.white, border: `1px dashed ${COLORS.fieldBorder}` }}>
+                    <Box sx={{ fontSize: 15, color: COLORS.muted }}>
+                        {`${displayPackets.filter(p => p.confirmed).length} of ${displayPackets.length} packets confirmed`}
+                    </Box>
+                    <Box sx={{ fontSize: 15, fontWeight: 700, color: COLORS.ink }}>
+                        {`${assignedItemIds.size} of ${items.length} items packed`}
+                    </Box>
                 </Box>
+            )}
 
+
+            {/* TOTAL */}
+            {items?.length > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", pt: 1, borderTop: `1px solid ${COLORS.line}` }}>
+                    <Box sx={{ fontSize: 15, color: COLORS.muted }}>Order total</Box>
+                    <Box sx={{ fontSize: 20, fontWeight: 700, color: COLORS.ink }}>{`₹${totalAmount.toFixed(2)}`}</Box>
+                </Box>
             )}
 
         </Box>
