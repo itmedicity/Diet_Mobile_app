@@ -22,6 +22,8 @@ import PaymentMode from "./Views/CashCollection/PaymentMode";
 import CashCollectionBillDetails from "./Views/CashCollection/CashCollectionBillDetails";
 import CashReturnDetail from "./Views/CashCollection/CashReturnDetail";
 import CashReturnClosePage from "./Views/CashCollection/CashReturnClosePage";
+import AssignedCashDetails from "./Views/CashCollection/AssignedCashDetails";
+import CashCollectionPage from "./Views/CashCollection/CashCollectionPage";
 
 const Home = lazy(() => import("./Views/Home/Home"))
 
@@ -92,8 +94,17 @@ const routes = createBrowserRouter([
         element: < CashReturnDetail />
       },
       {
+        path: "/cash-collection/collection",
+        element: < AssignedCashDetails />
+      },
+
+      {
         path: "/cash-collection/return/:billingId/:paymentId",
         element: < CashReturnClosePage />
+      },
+      {
+        path: "/cash-collection/collection/:billingId",
+        element: < CashCollectionPage />
       },
 
     ],

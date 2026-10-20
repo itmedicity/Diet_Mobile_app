@@ -105,53 +105,7 @@ const ActionCardButton = ({
 
     }, [selectedItems, billMap]);
 
-    /*
-    ============================================================
-    FORMAT BILL ITEMS
-    ============================================================
-    */
-
-    // const items = useMemo(() => {
-    //     return (billdetail || []).map(item => {
-    //         const isBilled =
-    //             item?.ledger_status === "BILLED";
-    //         return {
-    //             id: Number(item?.ledger_id),
-    //             ledger_id: Number(item?.ledger_id),
-    //             billing_id:
-    //                 Number(item?.billing_id || 0),
-    //             billing_detail_id: Number(item?.billing_detail_id || 0),
-    //             name: item?.item_name || "Unknown Item",
-    //             quantity:
-    //                 Number(item?.quantity || 0),
-    //             rate:
-    //                 Number(item?.unit_rate || 0),
-    //             gross:
-    //                 Number(item?.gross_amount || 0),
-    //             discount:
-    //                 Number(item?.discount || 0),
-    //             gstRate:
-    //                 Number(item?.gst_rate || 0),
-    //             gst:
-    //                 Number(item?.gst_amount || 0),
-    //             total:
-    //                 Number(item?.net_amount || 0),
-    //             ledger_status:
-    //                 item?.ledger_status || "PENDING",
-    //             bill_item_status:
-    //                 item?.billing_status || null,
-
-    //             billing_status:
-    //                 item?.billing_status || "NOT_BILLED",
-
-    //             bill_status:
-    //                 item?.bill_status || null,
-    //             isBilled
-    //         };
-    //     });
-
-    // }, [billdetail]);
-
+    
 
     const items = useMemo(() => {
 

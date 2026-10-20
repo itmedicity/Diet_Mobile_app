@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Box, Button, Card } from "@mui/joy";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
@@ -6,22 +6,24 @@ import Pride from "react-canvas-confetti/dist/presets/pride";
 import randomInRange from "react-canvas-confetti/dist/helpers/randomInRange";
 import { useLocation, useNavigate } from "react-router-dom";
 import TextComponent from "../../../components/TextComponent";
-import ShareRoundedIcon from "@mui/icons-material/ShareRounded";
+import { useQueryClient } from "@tanstack/react-query";
+import { EmpauthId } from "../../Constant/Constant";
+
 
 
 const PaymentSuccessPage = () => {
 
     const navigate = useNavigate();
     const { state } = useLocation();
+    const queryClient = useQueryClient();
+    const id = EmpauthId()
 
     const {
         amount = 0,
-        transactionId = "",
         paymentMethod = "UPI",
         paymentDate = "",
         payerName = "",
         referenceNo = "",
-        payermobile,
         message = "Your payment has been completed successfully.",
         title = "Payment Successful!",
         buttonText = "Back to Billing",
@@ -40,43 +42,43 @@ const PaymentSuccessPage = () => {
         particleCount: randomInRange(3, 8),
     });
 
-//     const handleShare = () => {
-//         const shareText = `🏥 *TRAVANCORE MEDICITY*
+    //     const handleShare = () => {
+    //         const shareText = `🏥 *TRAVANCORE MEDICITY*
 
-// ══════════════════════
-//         PAYMENT RECEIPT
-// ══════════════════════
+    // ══════════════════════
+    //         PAYMENT RECEIPT
+    // ══════════════════════
 
-// Patient / Payer : ${payerName}
-// Amount Paid     : ₹${Number(amount).toLocaleString("en-IN")}
-// Payment Method  : ${paymentMethod}
-// Transaction ID  : ${transactionId}
-// Reference No    : ${referenceNo}
-// Payment Date    : ${paymentDate}
+    // Patient / Payer : ${payerName}
+    // Amount Paid     : ₹${Number(amount).toLocaleString("en-IN")}
+    // Payment Method  : ${paymentMethod}
+    // Transaction ID  : ${transactionId}
+    // Reference No    : ${referenceNo}
+    // Payment Date    : ${paymentDate}
 
-// Status          : ✅ SUCCESSFUL
+    // Status          : ✅ SUCCESSFUL
 
-// ══════════════════════
+    // ══════════════════════
 
-// Thank you for your payment.
+    // Thank you for your payment.
 
-// This is a computer-generated payment receipt and does not require a signature.
+    // This is a computer-generated payment receipt and does not require a signature.
 
-// - Travancore Medicity
-// `;
-//         // Remove spaces, +, -, etc.
-//         const mobile = String(9846009616 || "").replace(/\D/g, "");
+    // - Travancore Medicity
+    // `;
+    //         // Remove spaces, +, -, etc.
+    //         const mobile = String(9846009616 || "").replace(/\D/g, "");
 
-//         if (!mobile) {
-//             alert("Mobile number not available");
-//             return;
-//         }
+    //         if (!mobile) {
+    //             alert("Mobile number not available");
+    //             return;
+    //         }
 
-//         window.open(
-//             `https://wa.me/91${mobile}?text=${encodeURIComponent(shareText)}`,
-//             "_blank"
-//         );
-//     };
+    //         window.open(
+    //             `https://wa.me/91${mobile}?text=${encodeURIComponent(shareText)}`,
+    //             "_blank"
+    //         );
+    //     };
 
     const Row = ({ label, value, icon }) =>
         value ? (
@@ -112,6 +114,32 @@ const PaymentSuccessPage = () => {
                 </Box>
             </Box>
         ) : null;
+
+
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            await queryClient.invalidateQueries({
+                queryKey: ["bill-detail-assigned", id],
+            });
+
+            navigate("/cash-collection/collection", {
+                replace: true,
+            });
+        }, 4000);
+
+        return () => clearTimeout(timer);
+    }, [navigate, queryClient, id]);
+
+
+    const handleBack = async () => {
+        await queryClient.invalidateQueries({
+            queryKey: ["bill-detail-assigned", id],
+        });
+
+        navigate("/cash-collection/collection", {
+            replace: true,
+        });
+    };
 
     return (
         <Box
@@ -272,7 +300,7 @@ const PaymentSuccessPage = () => {
 
                     <Button
                         fullWidth
-                        onClick={() => navigate("/delivery")}
+                        onClick={handleBack}
                         sx={{
                             mt: 4,
                             py: 1.6,

@@ -527,27 +527,7 @@ const DeliveryMarkingContainer = () => {
                     )
                 }
             </Box>
-            {
-                (ProformaDetails?.length > 0 || hasDeliveredItems) && (
-                    <ActionCardButton
-                        porformainvoice={ProformaDetails}
-                        loading={loading}
-                        expand={openbillingdialog}
-                        billdetail={FinalBillItemDetails}
-                        patientData={patientData}
-                        floating
-                        title="Bill Details"
-                        subtitle="View bill"
-                        buttonText="View"
-                        icon={ReceiptLongRoundedIcon}
-                        isBystander={isBystander}
-                        setOpenBillDialog={setOpenBillDialog}
-                        OnGenerateBill={handleOpenPaymentType}
-                    />
-                )
-            }
-
-
+          
             <GenerateBillModal
                 open={openPaymentTypeModal}
                 onClose={() => setOpenPaymentTypeModal(false)}

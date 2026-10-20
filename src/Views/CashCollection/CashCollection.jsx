@@ -9,6 +9,7 @@ import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import SavingsIcon from '@mui/icons-material/Savings';
+import MoneyIcon from '@mui/icons-material/Money';
 
 import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
 
@@ -16,6 +17,11 @@ const CashCollection = () => {
     const navigate = useNavigate();
 
     const actions = [
+        {
+            label: "Collections",
+            path: "/cash-collection/collection",
+            icon: MoneyIcon,
+        },
         {
             label: "Summary",
             path: "/cash-collection/summary",
