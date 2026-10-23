@@ -1,11 +1,11 @@
 import { Box } from "@mui/joy";
-import React from "react";
-// import logo from "../../assets/images/logo.png";
+import React from "react"; 
 import LabelComponent from "../../components/LabelComponent";
 import CustomInput from "../../components/CustomInput";
 import LoginButton from "../../components/LoginButton";
 import CopyRight from "../../components/CopyRight";
 import TextComponent from "../../components/TextComponent";
+// import logo from '../../assets/images/mylogo.png'
 
 const Login = ({
     handlelogin,
@@ -43,8 +43,14 @@ const Login = ({
                         justifyContent: "center",
                         borderRadius: '50%',
                         flexDirection: 'column',
-                        p: 1
+                        p: 1,
+                        border:"3px solid #be55ff"
                     }}>
+                    {/* <img src={logo} alt="logo" style={{
+                        width: 140,
+                        height: 140,
+                        //  transform: "rotate(50deg)",
+                    }} /> */}
                     <TextComponent color={'#ffffff'} value={"TMC"} size={36} weight={900} />
                     <TextComponent color={'#000000'} value={"Where nutrition meets medical care"} size={8} weight={800} />
                     <TextComponent color={'#fafafa'} value={"ensuring every meal supports  "} size={8} weight={800} />

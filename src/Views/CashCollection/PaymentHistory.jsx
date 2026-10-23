@@ -3,9 +3,9 @@ import React, { memo, useMemo } from "react";
 import { Box, Typography } from "@mui/joy";
 import { usePaymentHistory } from "../../CommonData/UseQuery";
 import { EmpauthId } from "../Constant/Constant";
-import { format, isValid } from "date-fns";
 import PaymentHistoryBillCard from "./CollectionComponent/PaymentHistoryBillCard";
 import PaymentHistorySkeleton from "./CollectionComponent/PaymentHistorySkeleton";
+import { formatAmount, formatDate, formatDateTime } from "../../CommonData/Common";
 
 const PaymentHistory = () => {
 
@@ -13,27 +13,7 @@ const PaymentHistory = () => {
 
     const { data: payments = [], isLoading } = usePaymentHistory(id);
 
-    const formatAmount = (amount) => `₹${Number(amount || 0).toFixed(2)}`;
 
-    const formatDate = (date) => {
-        const parsedDate = new Date(date);
-
-        if (!isValid(parsedDate)) {
-            return "-";
-        }
-
-        return format(parsedDate, "dd MMM yyyy");
-    };
-
-    const formatTime = (date) => {
-        const parsedDate = new Date(date);
-
-        if (!isValid(parsedDate)) {
-            return "-";
-        }
-
-        return format(parsedDate, "hh:mm a");
-    };
     const groupedBills = useMemo(() => {
         const groups = {};
 
@@ -285,7 +265,7 @@ const PaymentHistory = () => {
                                 bill={bill}
                                 formatAmount={formatAmount}
                                 formatDate={formatDate}
-                                formatTime={formatTime}
+                                formatTime={formatDateTime}
                             />
                         ))
                     )

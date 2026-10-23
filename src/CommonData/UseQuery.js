@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssingItemStatusDetail, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssignedBillDetails, getAssingItemStatusDetail, getBillingItemDetails, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -379,3 +379,23 @@ export const useReturnLogDetails = (paymentId) => {
         enabled: !!paymentId,
     });
 };
+
+
+export const useAssignedBillDetails = (empid) => {
+    return useQuery({
+        queryKey: ["bill-detail-assigned", empid],
+        queryFn: () => getAssignedBillDetails(empid),
+        staleTime: Infinity,
+        enabled: !!empid,
+    });
+};
+
+export const useGetBillingDetails = (id) => {
+    return useQuery({
+        queryKey: ['bill-item-details', id],
+        queryFn: () => getBillingItemDetails(id),
+        defaultValue: [],
+        enabled: !!id
+    });
+}
+

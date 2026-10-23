@@ -1062,3 +1062,88 @@ export const PatientstatusConfig = {
     },
 
 };
+
+
+
+export const DELIVERY_STATUS_COLORS = {
+    DELIVERED: {
+        bg: "#E8F7EC",
+        color: "#16803C",
+    },
+    PICKEDUP: {
+        bg: "#FFF3D6",
+        color: "#996500",
+    },
+    PENDING: {
+        bg: "#F1F1ED",
+        color: "#666666",
+    },
+    PREPARED: {
+        bg: "#E8F1FF",
+        color: "#245DB5",
+    },
+    PARTIAL: {
+        bg: "#FFF0DF",
+        color: "#B35B00",
+    },
+    RETURNED: {
+        bg: "#FCE8E8",
+        color: "#B42318",
+    },
+    UNDELIVERED: {
+        bg: "#FCE8E8",
+        color: "#B42318",
+    },
+    CANCELLED: {
+        bg: "#F1F1ED",
+        color: "#777777",
+    },
+    SKIPPED: {
+        bg: "#F1F1ED",
+        color: "#777777",
+    },
+    UNKNOWN: {
+        bg: "#F1F1ED",
+        color: "#777777",
+    },
+};
+
+
+export const formatDate = (value) => {
+    if (!value) return "-";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
+};
+
+export const formatDateTime = (value) => {
+    if (!value) return null;
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return null;
+
+    return date.toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+    });
+};
+
+
+export const formatAmount = (value) =>
+    new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        minimumFractionDigits: 2,
+    }).format(Number(value || 0));
