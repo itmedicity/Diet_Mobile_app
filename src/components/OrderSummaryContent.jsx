@@ -5,16 +5,30 @@ import FastfoodIcon from "@mui/icons-material/Fastfood";
 import RenderFoodList from "./RenderFoodList"; // your memoized component
 
 
-const OrderSummaryContent = ({ assignedFoods, selected }) => {
+const OrderSummaryContent = ({ assignedFoods, selected, handleToggleUrgent, typename }) => {
     const hasItems = Object.keys(assignedFoods || {}).length > 0;
 
 
+
+
     // Flatten foods for bystanders
+    // const bystanderFoods =
+    //     selected === "BYSTANDER"
+    //         ? Object.values(assignedFoods)
+    //             .flatMap((time) => time.foods)
+    //             .map((food) => ({ ...food, qty: food.qty || 1 }))
+    //         : [];
+
+
     const bystanderFoods =
         selected === "BYSTANDER"
-            ? Object.values(assignedFoods)
-                .flatMap((time) => time.foods)
-                .map((food) => ({ ...food, qty: food.qty || 1 }))
+            ? Object.entries(assignedFoods || {}).flatMap(([timeId, time]) =>
+                (time?.foods || []).map((food) => ({
+                    ...food,
+                    qty: food.qty || 1,
+                    _timeId: timeId,
+                }))
+            )
             : [];
 
     return (
@@ -95,7 +109,12 @@ const OrderSummaryContent = ({ assignedFoods, selected }) => {
                                     <TextComponent value={time.time_name} size={13} weight={700} />
                                 </Box>
                             </Box>
-                            <RenderFoodList foods={time?.foods} selected={selected} />
+                            <RenderFoodList
+                                disable={typename?.trim().toUpperCase() === "AD HOC"}
+                                foods={time?.foods}
+                                selected={selected}
+                                onToggleUrgent={(itemId) => handleToggleUrgent(timeId, itemId)}
+                            />
                         </Box>
                     ))
                 ) : (
@@ -111,7 +130,14 @@ const OrderSummaryContent = ({ assignedFoods, selected }) => {
                             }}
                         >
                             <TextComponent value="Food Item" size={14} weight={700} sx={{ mb: 1 }} />
-                            <RenderFoodList foods={bystanderFoods} selected={selected} />
+                            <RenderFoodList
+                                disable={typename?.trim().toUpperCase() === "AD HOC"}
+                                foods={bystanderFoods}
+                                selected={selected}
+                                onToggleUrgent={(itemId, timeId) =>
+                                    handleToggleUrgent("BYSTANDER", itemId)
+                                }
+                            />
                         </Box>
                     )
                 )}

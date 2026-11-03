@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useState } from "react";
-import { Box, Button } from "@mui/joy";
+import { Box, Button, Checkbox } from "@mui/joy";
 import TextComponent from "./TextComponent";
 import OrderSummaryContent from "./OrderSummaryContent";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
@@ -16,7 +16,7 @@ import {
 } from "../CommonData/UseQuery";
 import PizzaLoader from "./PizzaLoader";
 import ChooseDietType from "../SelectComponents/ChooseDietType";
-
+import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
 
 const HEADER_HEIGHT = 60;
 const BOTTOM_NAV_HEIGHT = 60;
@@ -32,8 +32,14 @@ const BottomFloatingPanel = ({
     setActiveTab,
     setShowConfirmation,
     showConfirmation,
-    PreviousOrders
+    PreviousOrders,
+    handleToggleUrgent
 }) => {
+
+
+    console.log({
+        selected
+    });
 
 
 
@@ -41,9 +47,10 @@ const BottomFloatingPanel = ({
     const [loading, setLoading] = useState(false);
     const [type_slno, setDietType] = useState(0);
     const [typename, setTypeName] = useState("")
+    const [remarks, setRemarks] = useState("");
     const queryClient = useQueryClient()
     const id = EmpauthId()
-
+    const [isUrgent, setIsUrgent] = useState(false);
 
 
     const { data: DietOrders = [], refetch: RefetchDietOrders } =
@@ -66,7 +73,58 @@ const BottomFloatingPanel = ({
     };
 
 
-    // TotalAmount for the List of Detail
+    // checking if all item in the order is Urgent ? 
+    const allItemsUrgent = useMemo(() => {
+        const foods = Object.values(assignedFoods || {})
+            .flatMap((time) => time?.foods || [])
+            .filter((food) => Number(food?.qty) > 0);
+
+        return foods.length > 0 && foods.every((food) => Boolean(food.is_urgent));
+    }, [assignedFoods]);
+
+
+
+    const updateAllFoodsUrgent = (urgent) => {
+        setIsUrgent(urgent);
+
+        setAssignedFoods((prev) => {
+            const updated = {};
+
+            Object.entries(prev || {}).forEach(([timeId, time]) => {
+                updated[timeId] = {
+                    ...time,
+                    foods: (time?.foods || []).map((food) => ({
+                        ...food,
+                        is_urgent: urgent,
+                    })),
+                };
+            });
+
+            return updated;
+        });
+    };
+
+    const handleToggleAllUrgent = (event) => {
+        updateAllFoodsUrgent(event.target.checked);
+    };
+
+    const handleDietTypeChange = (value) => {
+        setDietType(value);
+
+        console.log(
+            typename
+        );
+
+        if (typename?.trim().toUpperCase() === "AD HOC") {
+            updateAllFoodsUrgent(true);
+        } else {
+            updateAllFoodsUrgent(false);
+        }
+    };
+
+
+
+
 
     const totalAmount = useMemo(() => {
         return Object.values(assignedFoods || {}).reduce((timeTotal, time) => {
@@ -111,23 +169,29 @@ const BottomFloatingPanel = ({
         return null;
     };
 
+
     const buildOrderData = () => {
         const orderDetails = [];
         const canteenDetails = [];
+        const urgentItems = [];
         let hasInvalidItem = false;
 
-        Object.values(assignedFoods).forEach(time => {
-            (time?.foods || []).forEach(food => {
-                if (!food || !food.qty || food.qty <= 0) return;
+        Object.values(assignedFoods || {}).forEach((time) => {
+            (time?.foods || []).forEach((food) => {
+                if (!food || !food.qty || Number(food.qty) <= 0) return;
+
+                console.log({
+                    food
+                });
+
 
                 const isBystander =
                     selected?.party_name === "BYSTANDER";
 
-                // use stored state key for bystander
+                // Use stored state key for bystander
                 const finalTimeId = isBystander
                     ? type_slno
                     : food.time_id;
-
 
                 if (!food.item_id || !finalTimeId) {
                     hasInvalidItem = true;
@@ -135,38 +199,74 @@ const BottomFloatingPanel = ({
                 }
 
                 const priceObj = food.prices?.find(
-                    p => p.party_name?.toUpperCase() === selected?.party_name?.toUpperCase()
+                    (p) =>
+                        p.party_name?.toUpperCase() ===
+                        selected?.party_name?.toUpperCase()
                 );
+
+                const itemIsUrgent = food?.is_urgent === true ||
+                    Number(food?.is_urgent) === 1 ||
+                    food?.is_urgent === "true";
+
+
+
+                const quantity = Number(food.qty);
+                const patientDietId =
+                    food?.patient_schedule?.patient_diet_id || null;
 
                 orderDetails.push({
                     diet_type_id: finalTimeId,
                     item_id: food.item_id,
-                    quantity: Number(food.qty),
+                    quantity,
                     unit_id: food.unit_id,
-                    patient_diet_id: food?.patient_schedule?.patient_diet_id || null,
-                    is_substitute: false
+                    patient_diet_id: patientDietId,
+                    is_substitute: false,
+                    is_urgent: itemIsUrgent,
                 });
 
                 canteenDetails.push({
                     item_id: food.item_id,
-                    qty: Number(food.qty),
+                    qty: quantity,
                     price: priceObj?.price,
                     gst: priceObj?.gst_rate,
                     type_slno: finalTimeId,
-                    // diet reference
-                    patient_diet_id:
-                        food?.patient_schedule?.patient_diet_id || null,
+                    patient_diet_id: patientDietId,
                     gst_amount:
-                        (Number(priceObj?.price) *
-                            Number(food.qty) *
-                            priceObj?.gst_rate) / 100,
+                        (Number(priceObj?.price || 0) *
+                            quantity *
+                            Number(priceObj?.gst_rate || 0)) /
+                        100,
+                    is_urgent: itemIsUrgent,
                 });
+
+                // Keep only urgent items for separate urgency-table insertion
+                if (itemIsUrgent) {
+                    urgentItems.push({
+                        item_id: food.item_id,
+                        quantity,
+                        diet_type_id: finalTimeId,
+                        patient_diet_id: patientDietId,
+                        type_slno: finalTimeId,
+                        is_item_urgent: true,
+                    });
+                }
             });
         });
 
-        return { orderDetails, canteenDetails, hasInvalidItem };
-    };
+        const hasItems = orderDetails.length > 0;
 
+        // Order is urgent only when every selected item is urgent
+        const allItemsUrgent =
+            hasItems && orderDetails.every((item) => item.is_urgent);
+
+        return {
+            orderDetails,
+            canteenDetails,
+            urgentItems,
+            allItemsUrgent,
+            hasInvalidItem,
+        };
+    };
 
     const addCanteenItems = (payload) =>
         axioslogin.post("/canteenorder/add/items", payload);
@@ -206,8 +306,6 @@ const BottomFloatingPanel = ({
         if (error) return warningNofity(error);
 
 
-
-
         const {
             dietpt_slno,
             plan_id,
@@ -220,7 +318,9 @@ const BottomFloatingPanel = ({
 
         const existingCanteenOrderId = PatientDietOrderDetails?.find(i => i.order_status === "PENDING")?.canteen_order_id;
 
-        const { orderDetails, canteenDetails, hasInvalidItem } = buildOrderData();
+        const { orderDetails, canteenDetails, hasInvalidItem, allItemsUrgent, urgentItems } = buildOrderData();
+
+
 
         // Check duplicate food in the same meal/type
         const duplicateFood = canteenDetails.find((food) =>
@@ -268,7 +368,10 @@ const BottomFloatingPanel = ({
             room_id: fb_bed_slno,
             order_status: "PENDING",
             created_by: id,
-            patient_diet_id: getPatientDietId()
+            patient_diet_id: getPatientDietId(),
+            remarks: remarks.trim() || null,
+            is_urgent: allItemsUrgent,
+            urgentItems
         };
 
         const dietPayload = {
@@ -278,7 +381,10 @@ const BottomFloatingPanel = ({
             nursing_station_id: fb_nurse_stn_slno,
             room_id: fb_bed_slno,
             order_status: "PENDING",
-            collected_by: id
+            collected_by: id,
+            remarks: remarks.trim() || null,
+            is_urgent: allItemsUrgent,
+            urgentItems
         };
 
         try {
@@ -295,13 +401,17 @@ const BottomFloatingPanel = ({
                         patient_id: dietpt_slno,
                         patient_diet_id: getPatientDietId(),
                         created_by: id,
-                        order_status: 'PENDING'
+                        order_status: 'PENDING',
+                        remarks: remarks.trim() || null,
+                        is_urgent: allItemsUrgent,
+                        urgentItems
+
                     });
 
                 } else {
                     await safeApiCall(createCanteenOrder, {
                         order: canteenPayload,
-                        items: canteenDetails
+                        items: canteenDetails,
                     });
 
                 }
@@ -310,6 +420,7 @@ const BottomFloatingPanel = ({
                 setShowConfetti(true);
                 setAssignedFoods({});
                 queryClient.invalidateQueries(['patientOrder', dietpt_slno]);
+                setRemarks("")
                 setTimeout(() => setShowConfetti(false), 3000);
                 return;
             }
@@ -319,7 +430,10 @@ const BottomFloatingPanel = ({
 
                 await safeApiCall(addDietItems, {
                     order_id: existingDietOrderId,
-                    details: orderDetails
+                    details: orderDetails,
+                    remarks: remarks.trim() || null,
+                    is_urgent: allItemsUrgent,
+                    urgentItems
                 });
 
 
@@ -331,7 +445,9 @@ const BottomFloatingPanel = ({
                         patient_id: dietpt_slno,
                         patient_diet_id: getPatientDietId(),
                         created_by: id,
-                        order_status: 'PENDING'
+                        order_status: 'PENDING',
+                        is_urgent: allItemsUrgent,
+                        urgentItems,
                     });
 
                 }
@@ -342,7 +458,8 @@ const BottomFloatingPanel = ({
                     details: orderDetails,
                     canteenorder: canteenPayload,
                     canteenorderdetail: canteenDetails,
-                    isPending: existingCanteenOrderId ? true : false
+                    isPending: existingCanteenOrderId ? true : false,
+                    urgentItems
                 });
 
             }
@@ -352,7 +469,7 @@ const BottomFloatingPanel = ({
             setShowConfetti(true);
             setAssignedFoods({});
             queryClient.invalidateQueries(['patientOrder', dietpt_slno]);
-
+            setRemarks("")
             setTimeout(() => setShowConfetti(false), 3000);
 
 
@@ -361,6 +478,7 @@ const BottomFloatingPanel = ({
             errorNofity(err?.response?.data?.message || "Error placing order");
         } finally {
             setLoading(false)
+            setRemarks("")
         }
     };
 
@@ -382,7 +500,7 @@ const BottomFloatingPanel = ({
                 flexDirection: "column",
                 boxShadow: "0 20px 45px rgba(0,0,0,0.18)",
                 border: "1px solid #9d25b8",
-                zIndex: 1800,
+                zIndex: 99999,
                 boxSizing: 'border-box'
             }}
         >
@@ -442,11 +560,20 @@ const BottomFloatingPanel = ({
                     <>
                         {
                             selected?.party_name !== 'PATIENT' &&
-                            <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+                            <ChooseDietType
+                                value={type_slno}
+                                setValue={handleDietTypeChange}
+                                setName={(name) => {
+                                    setTypeName(name);
+                                    updateAllFoodsUrgent(name?.trim().toUpperCase() === "AD HOC");
+                                }}
+                            />
                         }
                         <OrderSummaryContent
                             assignedFoods={assignedFoods}
                             selected={selected?.party_name}
+                            handleToggleUrgent={handleToggleUrgent}
+                            typename={typename}
                         />
                     </>
                 ) : (
@@ -455,52 +582,122 @@ const BottomFloatingPanel = ({
                         DietOrders={DietOrders}
                         selected={selected}
                         PatientDetail={PatientDetail}
+
                     />
                 )
             }
 
             {
                 (activeTab === "list" && !showConfirmation) &&
+
                 <Box
                     sx={{
                         px: 2,
                         py: 1.5,
                         borderTop: "1px solid #f0f0f0",
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        flexDirection: "column",
+                        gap: 1.2,
                     }}
                 >
-                    <Box>
-                        <TextComponent value="Total" size={12} weight={500} color="#777" />
-                        <TextComponent
-                            value={`₹${totalAmount}`}
-                            size={18}
-                            weight={800}
-                            color="#070707"
+                    <Checkbox
+                        checked={allItemsUrgent}
+                        onChange={handleToggleAllUrgent}
+                        disabled={typename?.trim().toUpperCase() === "AD HOC" || loading}
+                        label="Mark entire order as urgent"
+                        color="danger"
+                        size="sm"
+                        sx={{
+                            fontFamily: "Bahnschrift",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            "--Checkbox-size": "17px",
+                        }}
+                    />
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            border: "1px solid #e2d5e8",
+                            borderRadius: "8px",
+                            px: 1.2,
+                            py: 0.7,
+                            bgcolor: "#fdfbfe",
+                            transition: "border-color 0.2s",
+                            "&:focus-within": {
+                                borderColor: "#9d25b8",
+                                boxShadow: "0 0 0 2px rgba(157,37,184,0.08)",
+                            },
+                        }}
+                    >
+                        <Box
+                            component="input"
+                            value={remarks}
+                            onChange={(e) => setRemarks(e.target.value)}
+                            placeholder="Add order remarks..."
+                            disabled={loading}
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                height: 50,
+                                border: "none",
+                                outline: "none",
+                                bgcolor: "transparent",
+                                fontSize: 12,
+                                fontFamily: "Bahnschrift",
+                                color: "#222",
+                                "&::placeholder": {
+                                    color: "#aaa",
+                                },
+                            }}
                         />
                     </Box>
 
-                    <Button
-                        onClick={handleConfirmOrder}
-                        size="sm"
-                        startDecorator={
-                            <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
-                        }
-                        disabled={totalAmount === 0 || loading}
+                    <Box
                         sx={{
-                            px: 2,
-                            height: 34,
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            bgcolor: "#9d25b8",
-                            "&:hover": { bgcolor: "#7b1fa2" },
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
                         }}
                     >
-                        Confirm Order
-                    </Button>
+                        <Box>
+                            <TextComponent
+                                value="Total"
+                                size={12}
+                                weight={500}
+                                color="#777"
+                            />
+                            <TextComponent
+                                value={`₹${totalAmount}`}
+                                size={18}
+                                weight={800}
+                                color="#070707"
+                            />
+                        </Box>
+
+                        <Button
+                            onClick={handleConfirmOrder}
+                            size="sm"
+                            startDecorator={
+                                <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
+                            }
+                            disabled={totalAmount === 0 || loading}
+                            sx={{
+                                px: 2,
+                                height: 34,
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                bgcolor: "#9d25b8",
+                                "&:hover": { bgcolor: "#7b1fa2" },
+                            }}
+                        >
+                            Confirm Order
+                        </Button>
+                    </Box>
                 </Box>
+
             }
         </Box>
 

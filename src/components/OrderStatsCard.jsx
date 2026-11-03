@@ -1,26 +1,20 @@
 
-import React, { memo, useMemo, useState } from "react";
-import { Box, Typography, IconButton } from "@mui/joy";
+import React, { memo, useCallback, useMemo, useState } from "react";
+import { Box, Typography } from "@mui/joy";
 import TextComponent from "./TextComponent";
-import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
-import { getBgColor, getItemType, groupPreviousOrder } from "../CommonData/Common";
+import { groupPreviousOrder } from "../CommonData/Common";
 import EmptyOrders from "../Views/NursingStation/Component/EmptyOrders";
-import EditIcon from '@mui/icons-material/Edit';
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../Views/Constant/Constant";
 import { axioslogin } from "../Axios/axios";
-import CancelIcon from "@mui/icons-material/Cancel";
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
-import EditOffIcon from '@mui/icons-material/EditOff';
 import NoMealsIcon from '@mui/icons-material/NoMeals';
-import DietButton from "./DietButton";
 import ActionButton from "./ActionButton";
 import RamenDiningIcon from '@mui/icons-material/RamenDining';
 import { useQueryClient } from "@tanstack/react-query";
 import { usePatientExtraOrders } from "../CommonData/UseQuery";
 import OrderItemRow from "../Views/PatientOrderDetail/PatientOrderDetailComponents/OrderItemRow";
 import EditToggleButton from "../Views/PatientOrderDetail/PatientOrderDetailComponents/EditToggleButton";
-
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 const PatientOrdersDashboard = ({
     selected,
@@ -29,6 +23,8 @@ const PatientOrdersDashboard = ({
     PatientDetail,
 
 }) => {
+
+
 
 
     const queryClient = useQueryClient()
@@ -133,6 +129,8 @@ const PatientOrdersDashboard = ({
     }, [PreviousOrders, DietOrders, PatientExtraOrders]);
 
 
+
+
     //  Status count updated
     const statusCounts = useMemo(() => {
         return orders.reduce(
@@ -163,6 +161,8 @@ const PatientOrdersDashboard = ({
     }, [orders, statusCounts, selectedStatus]);
 
     const displayOrders = editingOrder ? [editingOrder] : filteredOrders;
+
+
 
 
     const invalidateQueries = async () => {
@@ -268,6 +268,40 @@ const PatientOrdersDashboard = ({
             );
         }
     };
+
+    // cancel urgent order
+    const handlceCancelUrgent = useCallback(async (emergencyid) => {
+        try {
+            // BASIC VALIDATION
+            if (!emergencyid) return warningNofity("Emergency Detail Missing!");
+
+            const payload = {
+                cancellation_reason: "cancelled",
+                cancelled_by: id,
+
+            };
+            const { data } = await axioslogin.patch(
+                `/canteenorder/emergency/cancel/${emergencyid}`,
+                payload
+            );
+
+            if (data?.success !== 1) {
+                return warningNofity(data?.message || "Failed to cancel extra item");
+            }
+            
+
+            succesNofity(data?.message || "Extra item cancelled successfully");
+            await invalidateQueries();
+            setEditingOrder(null);
+
+        } catch (err) {
+            console.error("Cancel Error:", err);
+
+            warningNofity(
+                err?.response?.data?.message || "Something went wrong. Try again."
+            );
+        }
+    }, [])
 
 
     // Funciton to cancel the Total Order 
@@ -402,111 +436,143 @@ const PatientOrdersDashboard = ({
                         subMessage="There are no orders for this status"
                     />
                 ) : (
-                    displayOrders?.map((order) => (
-                        <Box
-                            key={order.canteen_order_id}
-                            sx={{
-                                bgcolor: "#ffffff",
-                                borderRadius: 14,
-                                p: 1.5,
-                                mb: 2,
-                                boxShadow: "0 4px 15px rgba(0,0,0,0.04)",
-                            }}
-                        >
-
-                            {/*  Order Header */}
+                    displayOrders?.map((order) => {
+                        return (
                             <Box
+                                key={order.canteen_order_id}
                                 sx={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    mb: 1
+                                    bgcolor: "#ffffff",
+                                    borderRadius: 14,
+                                    p: 1.5,
+                                    mb: 2,
+                                    boxShadow: "0 4px 15px rgba(0,0,0,0.04)",
                                 }}
                             >
-                                <Box>
-                                    <TextComponent
-                                        value={`Order ID: ${order?.canteen_order_id}`}
-                                        size={12}
-                                        weight={800}
-                                    />
-                                    <TextComponent
-                                        value={`${order?.order_time}`}
-                                        size={11}
-                                        weight={500}
-                                        color="#666"
-                                    />
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5, cursor: "pointer" }}>
-                                    <Typography
-                                        level="body-sm"
-                                        sx={{
-                                            px: 1.5,
-                                            py: 0.5,
-                                            borderRadius: 20,
-                                            fontWeight: 600,
-                                            fontSize: 10,
-                                            color:
-                                                order.order_status === "PENDING"
-                                                    ? "#ff9800"
-                                                    : order.order_status === "CONFIRMED"
-                                                        ? "#2196f3"
-                                                        : "#100e0f",
-                                            backgroundColor:
-                                                order.order_status === "PENDING"
-                                                    ? "#fff3e0"
-                                                    : order.order_status === "CONFIRMED"
-                                                        ? "#e3f2fd"
-                                                        : "#ff9292",
-                                        }}>
-                                        {order?.order_status}
-                                    </Typography>
 
-                                    <EditToggleButton
-                                        visible={order?.order_status === "PENDING"}
-                                        isEditing={editingOrder === order}
-                                        onEdit={() => setEditingOrder(order)}
-                                        onCancel={() => setEditingOrder(null)}
-                                    />
+                                {/*  Order Header */}
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        mb: 1
+                                    }}
+                                >
+                                    <Box>
+                                        <TextComponent
+                                            value={`Order ID: ${order?.canteen_order_id}`}
+                                            size={12}
+                                            weight={800}
+                                        />
+                                        {(order?.diet_order_remark || order?.order_remarks) && (
+                                            <Box sx={{ maxWidth: 200, display: "flex", gap: 0.5 }}>
+                                                <TextSnippetIcon sx={{
+                                                    fontSize: 12,
+                                                    color: "#a230ff"
+                                                }} />
+                                                <TextComponent
+                                                    value={[
+                                                        order?.diet_order_remark,
+                                                        order?.order_remarks
+                                                    ].filter(Boolean).join(" | ")}
+                                                    size={9}
+                                                    weight={400}
+                                                    wrap
+                                                />
+                                            </Box>
+                                        )}
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            <CalendarMonthIcon sx={{ fontSize: 12, color: "#a230ff" }} />
+                                            <TextComponent
+                                                value={order?.order_time || ""}
+                                                size={9}
+                                                weight={500}
+                                                color="#666"
+                                            />
+                                        </Box>
+
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 0.5, cursor: "pointer" }}>
+                                        <Typography
+                                            level="body-sm"
+                                            sx={{
+                                                px: 1.5,
+                                                py: 0.5,
+                                                borderRadius: 20,
+                                                fontWeight: 600,
+                                                fontSize: 10,
+                                                color:
+                                                    order.order_status === "PENDING"
+                                                        ? "#ff9800"
+                                                        : order.order_status === "CONFIRMED"
+                                                            ? "#2196f3"
+                                                            : "#100e0f",
+                                                backgroundColor:
+                                                    order.order_status === "PENDING"
+                                                        ? "#fff3e0"
+                                                        : order.order_status === "CONFIRMED"
+                                                            ? "#e3f2fd"
+                                                            : "#ff9292",
+                                            }}>
+                                            {order?.order_status}
+                                        </Typography>
+
+                                        <EditToggleButton
+                                            visible={order?.order_status === "PENDING"}
+                                            isEditing={editingOrder === order}
+                                            onEdit={() => setEditingOrder(order)}
+                                            onCancel={() => setEditingOrder(null)}
+                                        />
+                                    </Box>
                                 </Box>
+
+                                {/*  Foods */}
+
+                                {(order?.items ?? [])?.map((item, index) => {
+                                    const EmergenceyItems = order?.emergency_details || [];
+                                    console.log({ EmergenceyItems });
+
+                                    const IsUrgent = EmergenceyItems?.some(val => Number(val?.item_id) === Number(item?.item_id) && Number(val?.type_slno) === Number(item?.type_slno));
+                                    const AdhocItems = EmergenceyItems?.find(val => Number(val?.item_id) === Number(item?.item_id) && Number(val?.type_slno) === Number(item?.type_slno));
+                                    return (
+                                        <OrderItemRow
+                                            key={item?.item_id}
+                                            item={item}
+                                            index={index}
+                                            selected={selected?.party_name}
+                                            editingOrder={editingOrder}
+                                            updateQuantity={updateQuantity}
+                                            handleCancelItem={handleCancelItem}
+                                            order={order}
+                                            selectedStatus={selectedStatus}
+                                            isUrgent={IsUrgent}
+                                            handlceCancelUrgent={handlceCancelUrgent}
+                                            urgentDetail={AdhocItems}
+                                        />
+                                    )
+                                })}
+
+                                {/*  ACTION BUTTONS */}
+                                {editingOrder && (
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                                        <ActionButton
+                                            icon={<NoMealsIcon sx={{ fontSize: 14 }} />}
+                                            label="Cancel full Order"
+                                            onClick={() => handleCancelFullOrder(order)}
+                                        />
+
+                                        <ActionButton
+                                            icon={<RamenDiningIcon sx={{ fontSize: 14 }} />}
+                                            label="Save Changes"
+                                            onClick={handleSaveExtraQuantityChanges}
+                                        />
+
+                                    </Box>
+                                )}
 
                             </Box>
-
-                            {/*  Foods */}
-
-                            {(order?.items ?? [])?.map((item, index) => (
-                                <OrderItemRow
-                                    key={item?.item_id}
-                                    item={item}
-                                    index={index}
-                                    selected={selected?.party_name}
-                                    editingOrder={editingOrder}
-                                    updateQuantity={updateQuantity}
-                                    handleCancelItem={handleCancelItem}
-                                    order={order}
-                                    selectedStatus={selectedStatus}
-                                />
-                            ))}
-
-                            {/*  ACTION BUTTONS */}
-                            {editingOrder && (
-                                <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                                    <ActionButton
-                                        icon={<NoMealsIcon sx={{ fontSize: 14 }} />}
-                                        label="Cancel full Order"
-                                        onClick={() => handleCancelFullOrder(order)}
-                                    />
-
-                                    <ActionButton
-                                        icon={<RamenDiningIcon sx={{ fontSize: 14 }} />}
-                                        label="Save Changes"
-                                        onClick={handleSaveExtraQuantityChanges}
-                                    />
-
-                                </Box>
-                            )}
-
-                        </Box>
-                    ))
+                        )
+                    })
                 )}
             </Box>
         </Box >

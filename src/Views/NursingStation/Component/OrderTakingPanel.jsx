@@ -8,7 +8,6 @@ import {
     useCustomerPreviousCanteenOrder
 } from "../../../CommonData/UseQuery";
 import { IoFastFoodOutline } from "react-icons/io5";
-import { BsPersonAdd } from "react-icons/bs";
 import { PiPersonBold } from "react-icons/pi";
 
 

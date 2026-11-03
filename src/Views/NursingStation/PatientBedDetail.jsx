@@ -45,6 +45,7 @@ const PatientBedDetail = () => {
 
   //  FIXED: dynamic state selection
   const assignedFoods = selected?.party_name === "PATIENT" ? patientFoods : bystanderFoods;
+
   const setAssignedFoods = selected?.party_name === "PATIENT" ? setPatientFoods : setBystanderFoods;
 
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -197,6 +198,21 @@ const PatientBedDetail = () => {
     return filterFoodsByType(ExistFoodDetail, selectedFilter);
   }, [ExistFoodDetail, selectedFilter]);
 
+
+
+  const handleToggleUrgent = (timeId, itemId) => {
+    setAssignedFoods((prev) => ({
+        ...prev,
+        [timeId]: {
+            ...prev[timeId],
+            foods: (prev[timeId]?.foods || []).map((food) =>
+                Number(food.item_id) === Number(itemId)
+                    ? { ...food, is_urgent: !food.is_urgent }
+                    : food
+            ),
+        },
+    }));
+};
 
   // const categorizedFoods = useMemo(() => {
   //   if (selected?.party_name !== "BYSTANDER") return null;
@@ -496,6 +512,7 @@ const PatientBedDetail = () => {
         setAssignedFoods={setAssignedFoods}
         showConfirmation={showConfirmation}
         setShowConfirmation={setShowConfirmation}
+        handleToggleUrgent={handleToggleUrgent}
       />
 
       {

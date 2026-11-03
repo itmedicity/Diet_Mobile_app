@@ -698,6 +698,133 @@ export const handleAuthError = (err) => {
 // };
 
 
+// export const groupPreviousOrder = (
+//     canteenData = [],
+//     dietData = [],
+//     extraData = []
+// ) => {
+//     const ordersMap = new Map();
+
+//     // 1 CREATE BASE FROM CANTEEN
+//     canteenData.forEach(row => {
+//         const {
+//             canteen_order_id,
+//             order_time,
+//             order_status,
+//             item_id,
+//             item_name,
+//             quantity,
+//             price,
+//             gst,
+//             gst_amount,
+//             canteen_order_item_id,
+//             type_slno
+//         } = row;
+
+//         if (!canteen_order_id) return;
+
+//         if (!ordersMap.has(canteen_order_id)) {
+//             ordersMap.set(canteen_order_id, {
+//                 canteen_order_id,
+//                 order_time,
+//                 order_status,
+//                 order_remarks: order_remarks ?? null,
+//                 diet_order_remark: null,
+
+//                 is_urgent: false,
+//                 items: []
+//             });
+//         }
+
+//         const order = ordersMap.get(canteen_order_id);
+
+//         order.is_urgent = order.is_urgent || Number(is_urgent) === 1;
+
+//         order.items.push({
+//             item_id,
+//             item_name,
+//             quantity: Number(quantity ?? 0),
+//             price: Number(price ?? 0),
+//             gst,
+//             gst_amount,
+//             canteen_order_item_id: canteen_order_item_id || null,
+//             type_slno,
+
+//             // unified structure
+//             order_id: null,
+//             order_detail_id: null,
+
+//             type: "CANTEEN",
+//             isExtra: false,
+//             extra_order_id: null,
+//             is_urgent: Number(is_urgent) === 1
+//         });
+//     });
+
+//     // 2 MERGE EXTRA (BY item_id)
+//     extraData.forEach(extra => {
+//         const { item_id, quantity, extra_order_id } = extra;
+
+//         const matchOrder = Array.from(ordersMap.values()).find(order =>
+//             (order.items ?? [])?.some(item => item.item_id === item_id)
+//         );
+
+//         if (!matchOrder) return;
+
+//         const existingItem = matchOrder.items.find(
+//             item => item.item_id === item_id
+//         );
+
+//         if (existingItem) {
+//             existingItem.isExtra = true;
+//             existingItem.extra_order_id = extra_order_id;
+
+//             existingItem.quantity = Number(quantity ?? existingItem.quantity);
+//         }
+//     });
+
+//     // 3 MERGE DIET (IMPORTANT FIX: NO PUSH)
+//     dietData.forEach(diet => {
+//         const {
+//             item_id,
+//             order_id,
+//             order_detail_id,
+//             quantity,
+//             diet_order_remark,
+//             is_urgent
+//         } = diet;
+
+//         const matchOrder = Array.from(ordersMap.values()).find(order =>
+//             (order.items ?? [])?.some(item => item.item_id === item_id)
+//         );
+
+//         if (!matchOrder) return;
+
+//         const existingItem = matchOrder.items.find(
+//             item => item.item_id === item_id
+//         );
+
+//         if (existingItem) {
+//             existingItem.order_id = order_id;
+//             existingItem.order_detail_id = order_detail_id;
+
+//             // optional: sync quantity if diet is source of truth
+//             existingItem.quantity = Number(quantity ?? existingItem.quantity);
+
+//             existingItem.is_urgent =
+//                 existingItem.is_urgent || Number(is_urgent) === 1;
+
+//             matchOrder.diet_order_remark = diet_order_remark ?? null;
+
+//             matchOrder.is_urgent =
+//                 matchOrder.is_urgent || Number(is_urgent) === 1;
+//         }
+//     });
+
+//     return Array.from(ordersMap.values());
+// };
+
+
 export const groupPreviousOrder = (
     canteenData = [],
     dietData = [],
@@ -705,12 +832,45 @@ export const groupPreviousOrder = (
 ) => {
     const ordersMap = new Map();
 
-    // 1 CREATE BASE FROM CANTEEN
+    // Parse emergency details safely
+    const parseEmergency = (details) => {
+        if (!details) return [];
+
+        try {
+            const parsed =
+                typeof details === "string"
+                    ? JSON.parse(details)
+                    : details;
+
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    };
+
+    // Remove duplicate emergency records
+    const mergeEmergency = (...lists) => {
+        const emergencyMap = new Map();
+
+        lists.flat().forEach(emergency => {
+            if (emergency?.emergency_id != null) {
+                emergencyMap.set(
+                    emergency.emergency_id,
+                    emergency
+                );
+            }
+        });
+
+        return Array.from(emergencyMap.values());
+    };
+
+    // 1. CREATE BASE FROM CANTEEN
     canteenData.forEach(row => {
         const {
             canteen_order_id,
             order_time,
             order_status,
+            order_remarks,
             item_id,
             item_name,
             quantity,
@@ -718,7 +878,9 @@ export const groupPreviousOrder = (
             gst,
             gst_amount,
             canteen_order_item_id,
-            type_slno
+            type_slno,
+            is_urgent,
+            emergency_details
         } = row;
 
         if (!canteen_order_id) return;
@@ -728,11 +890,26 @@ export const groupPreviousOrder = (
                 canteen_order_id,
                 order_time,
                 order_status,
+                order_remarks: order_remarks ?? null,
+                diet_order_remark: null,
+                is_urgent: false,
+                emergency_details: [],
                 items: []
             });
         }
 
         const order = ordersMap.get(canteen_order_id);
+
+        const emergencies = parseEmergency(emergency_details);
+
+        order.is_urgent =
+            order.is_urgent || Number(is_urgent) === 1;
+
+        // Collect ALL emergency records at order level
+        order.emergency_details = mergeEmergency(
+            order.emergency_details,
+            emergencies
+        );
 
         order.items.push({
             item_id,
@@ -744,68 +921,102 @@ export const groupPreviousOrder = (
             canteen_order_item_id: canteen_order_item_id || null,
             type_slno,
 
-            // unified structure
             order_id: null,
             order_detail_id: null,
 
             type: "CANTEEN",
             isExtra: false,
-            extra_order_id: null
+            extra_order_id: null,
+
+            is_urgent: Number(is_urgent) === 1,
+            emergency_details: emergencies
         });
     });
 
-    // 2 MERGE EXTRA (BY item_id)
+    // 2. MERGE EXTRA
     extraData.forEach(extra => {
         const { item_id, quantity, extra_order_id } = extra;
 
         const matchOrder = Array.from(ordersMap.values()).find(order =>
-            (order.items ?? [])?.some(item => item.item_id === item_id)
+            order.items?.some(item =>
+                Number(item.item_id) === Number(item_id)
+            )
         );
 
         if (!matchOrder) return;
 
         const existingItem = matchOrder.items.find(
-            item => item.item_id === item_id
+            item => Number(item.item_id) === Number(item_id)
         );
 
         if (existingItem) {
             existingItem.isExtra = true;
             existingItem.extra_order_id = extra_order_id;
-
-            existingItem.quantity = Number(quantity ?? existingItem.quantity);
+            existingItem.quantity = Number(
+                quantity ?? existingItem.quantity
+            );
         }
     });
 
-    // 3 MERGE DIET (IMPORTANT FIX: NO PUSH)
+    // 3. MERGE DIET
     dietData.forEach(diet => {
         const {
             item_id,
             order_id,
             order_detail_id,
-            quantity
+            quantity,
+            diet_order_remark,
+            is_urgent,
+            emergency_details
         } = diet;
 
         const matchOrder = Array.from(ordersMap.values()).find(order =>
-            (order.items ?? [])?.some(item => item.item_id === item_id)
+            order.items?.some(item =>
+                Number(item.item_id) === Number(item_id)
+            )
         );
 
         if (!matchOrder) return;
 
         const existingItem = matchOrder.items.find(
-            item => item.item_id === item_id
+            item => Number(item.item_id) === Number(item_id)
         );
 
-        if (existingItem) {
-            existingItem.order_id = order_id;
-            existingItem.order_detail_id = order_detail_id;
+        if (!existingItem) return;
 
-            // optional: sync quantity if diet is source of truth
-            existingItem.quantity = Number(quantity ?? existingItem.quantity);
-        }
+        existingItem.order_id = order_id;
+        existingItem.order_detail_id = order_detail_id;
+
+        existingItem.quantity = Number(
+            quantity ?? existingItem.quantity
+        );
+
+        const dietEmergencies = parseEmergency(emergency_details);
+
+        existingItem.is_urgent =
+            existingItem.is_urgent || Number(is_urgent) === 1;
+
+        existingItem.emergency_details = mergeEmergency(
+            existingItem.emergency_details,
+            dietEmergencies
+        );
+
+        matchOrder.diet_order_remark =
+            diet_order_remark ?? matchOrder.diet_order_remark;
+
+        matchOrder.is_urgent =
+            matchOrder.is_urgent || Number(is_urgent) === 1;
+
+        matchOrder.emergency_details = mergeEmergency(
+            matchOrder.emergency_details,
+            dietEmergencies
+        );
     });
 
     return Array.from(ordersMap.values());
 };
+
+
 
 // group the arrray of data based on their rendering structure
 export const groupByPatient = (data) => {
