@@ -75,7 +75,7 @@ const DietPlanRemark = ({ remark = "" }) => {
                         <Typography
                             sx={{
                                 fontWeight: 800,
-                                fontSize:12
+                                fontSize: 12
                             }}
                         >
                             Diet Plan Remark
@@ -90,7 +90,7 @@ const DietPlanRemark = ({ remark = "" }) => {
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
-                            fontSize:10
+                            fontSize: 10
                         }}
                     >
                         {open
@@ -158,7 +158,7 @@ const DietPlanRemark = ({ remark = "" }) => {
                                 color: "text.primary",
                                 whiteSpace: "pre-wrap",
                                 wordBreak: "break-word",
-                                fontSize:12
+                                fontSize: 12
                             }}
                         >
                             {remark}

@@ -24,6 +24,7 @@ import CashReturnDetail from "./Views/CashCollection/CashReturnDetail";
 import CashReturnClosePage from "./Views/CashCollection/CashReturnClosePage";
 import AssignedCashDetails from "./Views/CashCollection/AssignedCashDetails";
 import CashCollectionPage from "./Views/CashCollection/CashCollectionPage";
+import BatchCreationPage from "./Views/BatchDetails/BatchCreationPage";
 
 const Home = lazy(() => import("./Views/Home/Home"))
 
@@ -45,6 +46,11 @@ const routes = createBrowserRouter([
         path: "/delivery",
         element: <Delivery />,
       },
+      {
+        path: "/batch",
+        element: <BatchCreationPage />,
+      },
+
       {
         path: "/dashboard",
         element: <ParentComponent />,

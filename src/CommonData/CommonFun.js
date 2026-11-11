@@ -939,3 +939,21 @@ export const getBillingItemDetails = async (billId) => {
         return [];
     }
 };
+
+
+
+export const ProductionBatchDetailst = async (empid) => {
+    if (!empid) return;
+    try {
+        const res = await axioslogin.get(`/productionbatch/batches/${empid}`);
+        const {
+            success,
+            data
+        } = res?.data || {};
+        if (success === 1) return data ?? [];
+        return [];
+    } catch (error) {
+        console.error("Error In FetcProduction Batchlling Details !", error?.message || error);
+        return [];
+    }
+};

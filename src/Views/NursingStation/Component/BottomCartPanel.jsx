@@ -1,13 +1,337 @@
-import React, { memo, useMemo } from "react";
+// import React, { memo, useMemo, useState } from "react";
+// import { Box, Button } from "@mui/joy";
+// import TextComponent from "../../../components/TextComponent";
+// import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+// import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../../Constant/Constant";
+// import { axioslogin } from "../../../Axios/axios";
+
+// const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, personType, onClose, selectedFood }) => {
+
+//     const id = EmpauthId()
+//     const [remarks, setRemarks] = useState("");
+
+//     /* TOTAL CALCULATION */
+//     const totalAmount = useMemo(() => {
+//         return items.reduce((sum, item) => {
+//             const price = Number(item.price || 0);
+//             const qty = Number(item.qty || 0);
+//             const gst = Number(item.gst || 0);
+
+//             const gstAmount = (price * qty * gst) / 100;
+
+//             return sum + (price * qty) + gstAmount;
+//         }, 0);
+//     }, [items]);
+
+
+//     console.log({
+//         items
+//     });
+
+
+//     /* HANDLERS */
+//     const handleIncrement = (id) => {
+//         setItems(prev =>
+//             prev.map(i =>
+//                 i.item_id === id ? { ...i, qty: i.qty + 1 } : i
+//             )
+//         );
+//     };
+
+//     const handleDecrement = (id) => {
+//         setItems(prev =>
+//             prev.map(i =>
+//                 i.item_id === id
+//                     ? { ...i, qty: Math.max(1, i.qty - 1) }
+//                     : i
+//             )
+//         );
+//     };
+
+//     const handleRemove = (id) => {
+//         setItems(prev => prev.filter(i => i.item_id !== id));
+//     };
+
+//     const handleConfirmOrder = async () => {
+
+//         if (!items || items.length === 0) {
+//             return warningNofity("No items added");
+//         }
+
+
+//         const existingOrderId = Orders?.find(
+//             i => i.order_status === "PENDING"
+//         )?.canteen_order_id;
+
+
+//         try {
+//             if (existingOrderId) {
+//                 const payload = {
+//                     itemDetail: items,
+//                     canteen_order_id: existingOrderId,
+//                     isExtra: true,
+//                     patient_id: fullDetail?.dietpt_slno,
+//                     created_by: id,
+//                     order_status: 'PENDING',
+//                     remarks: remarks.trim() || null,
+//                 };
+//                 const res = await axioslogin.post(
+//                     "/canteenorder/add/items",
+//                     payload
+//                 );
+//                 const { success, message } = res.data || {};
+//                 if (success === 0) return warningNofity(message);
+//                 succesNofity("Order created successfully");
+//                 refetch()
+//                 setItems()
+//                 onClose()
+//                 return;
+//             }
+
+//             // CANTEEN ORDER
+//             const order = {
+//                 admission_id: fullDetail?.ip_no,
+//                 party_type_id: personType,
+//                 nursing_station_id: fullDetail?.fb_nurse_stn_slno,
+//                 room_id: fullDetail?.fb_bed_slno,
+//                 created_by: id,
+//                 status: "PENDING",
+//                 isExtra: true,
+//                 patient_id: fullDetail?.dietpt_slno,
+//                 order_status: 'PENDING',
+//                 remarks: remarks.trim() || null,
+//             };
+
+//             const payload = {
+//                 order,
+//                 items
+//             };
+
+//             const res = await axioslogin.post(
+//                 "/canteenorder/create",
+//                 payload
+//             );
+
+//             const { success, message } = res.data || {};
+
+//             if (success !== 1) return errorNofity(message);
+
+//             succesNofity("Order created successfully");
+//             refetch();
+//             setItems();
+//             onClose();
+
+//         } catch (err) {
+//             console.error(err);
+//             errorNofity("Something went wrong");
+//         }
+//     }
+
+//     if (!items.length) return null;
+
+//     return (
+//         <Box
+//             sx={{
+//                 mt: "auto",   // pushes it to bottom
+//                 bgcolor: "#fff",
+//                 borderTop: "1px solid #eee",
+//                 p: 1.5,
+//                 boxShadow: "0 -5px 20px rgba(0,0,0,0.08)",
+//                 borderRadius: 12,
+
+//                 /* KEY PART */
+//                 maxHeight: !selectedFood || Object.keys(selectedFood).length === 0
+//                     ? '75%' : "50%",
+//                 display: "flex",
+//                 flexDirection: "column"
+//             }}
+//         >
+
+//             {/* ITEMS */}
+//             <Box
+//                 sx={{
+//                     flex: 1,
+//                     overflowY: "auto",
+//                     mb: 1,
+//                     scrollbarWidth: "none",
+//                     "&::-webkit-scrollbar": { display: "none" }
+//                 }}
+//             >
+//                 {items?.map(item => (
+//                     <Box
+//                         key={item.item_id}
+//                         sx={{
+//                             width: '100%',
+//                             boxShadow: 'sm',
+//                             borderRadius: 5,
+//                             bgcolor: '#fff',
+//                             p: 1,
+//                             display: 'flex',
+//                             alignItems: 'center',
+//                             justifyContent: 'space-between',
+//                             mb: 1,
+//                             border: '1px solid #e282e5',
+//                             boxSizing: "border-box",
+//                         }}
+//                     >
+//                         <Box sx={{ maxWidth: "50%" }}>
+//                             <TextComponent
+//                                 value={item.item_name}
+//                                 size={13}
+//                                 weight={600}
+//                             />
+//                             <TextComponent
+//                                 value={`₹${item.price} × ${item.qty}`}
+//                                 size={11}
+//                                 color="#777"
+//                             />
+//                         </Box>
+
+//                         {/* CONTROLS */}
+//                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+//                             <Button size="sm" variant="soft" onClick={() => handleDecrement(item.item_id)}>
+//                                 -
+//                             </Button>
+
+//                             <TextComponent
+//                                 value={item.qty}
+//                                 size={13}
+//                                 sx={{ minWidth: 20, textAlign: "center" }}
+//                             />
+
+//                             <Button size="sm" variant="soft" onClick={() => handleIncrement(item.item_id)}>
+//                                 +
+//                             </Button>
+
+//                             {/* REMOVE */}
+//                             <Button
+//                                 size="sm"
+//                                 variant="plain"
+//                                 color="danger"
+//                                 onClick={() => handleRemove(item.item_id)}
+//                             >
+//                                 ✕
+//                             </Button>
+//                         </Box>
+//                     </Box>
+//                 ))}
+//             </Box>
+
+//             {/* TOTAL + ACTION */}
+//             {/* REMARKS */}
+//             <Box
+//                 sx={{
+//                     display: "flex",
+//                     alignItems: "center",
+//                     gap: 1,
+//                     border: "1px solid #e2d5e8",
+//                     borderRadius: "8px",
+//                     px: 1.2,
+//                     py: 0.7,
+//                     mb: 1,
+//                     bgcolor: "#fdfbfe",
+//                     transition: "border-color 0.2s",
+//                     "&:focus-within": {
+//                         borderColor: "#9d25b8",
+//                         boxShadow: "0 0 0 2px rgba(157,37,184,0.08)",
+//                     },
+//                 }}
+//             >
+
+
+//                 <Box
+//                     component="input"
+//                     value={remarks}
+//                     onChange={(e) => setRemarks(e.target.value)}
+//                     placeholder="Add order remarks..."
+//                     sx={{
+//                         flex: 1,
+//                         minWidth: 0,
+//                         height: 40,
+//                         border: "none",
+//                         outline: "none",
+//                         bgcolor: "transparent",
+//                         fontSize: 12,
+//                         fontFamily: "Bahnschrift",
+//                         color: "#222",
+//                         "&::placeholder": {
+//                             color: "#aaa",
+//                         },
+//                     }}
+//                 />
+//             </Box>
+
+//             {/* TOTAL + ACTION */}
+//             <Box
+//                 sx={{
+//                     display: "flex",
+//                     justifyContent: "space-between",
+//                     alignItems: "center",
+//                     borderTop: "1px dashed #ddd",
+//                     pt: 1,
+//                 }}
+//             >
+//                 <TextComponent
+//                     value={`₹ ${totalAmount.toFixed(2)}`}
+//                     size={14}
+//                     weight={700}
+//                 />
+
+//                 <Button
+//                     onClick={handleConfirmOrder}
+//                     size="sm"
+//                     startDecorator={
+//                         <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
+//                     }
+//                     disabled={totalAmount === 0}
+//                     sx={{
+//                         px: 2,
+//                         height: 34,
+//                         borderRadius: 20,
+//                         fontSize: 12,
+//                         fontWeight: 600,
+//                         bgcolor: "#9d25b8",
+//                         "&:hover": { bgcolor: "#7b1fa2" },
+//                     }}
+//                 >
+//                     Confirm Order
+//                 </Button>
+//             </Box>
+
+//         </Box>
+//     );
+// };
+
+// export default memo(BottomCartPanel);
+
+
+import React, { memo, useMemo, useState } from "react";
 import { Box, Button } from "@mui/joy";
 import TextComponent from "../../../components/TextComponent";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../../Constant/Constant";
 import { axioslogin } from "../../../Axios/axios";
 
-const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, personType, onClose, selectedFood }) => {
+const BottomCartPanel = ({
+    items = [],
+    setItems,
+    refetch,
+    Orders,
+    fullDetail,
+    personType,
+    onClose,
+    selectedFood,
+}) => {
 
-    const id = EmpauthId()
+
+    console.log({
+        items
+    });
+
+
+
+    const id = EmpauthId();
+    const [remarks, setRemarks] = useState("");
 
     /* TOTAL CALCULATION */
     const totalAmount = useMemo(() => {
@@ -18,44 +342,67 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
 
             const gstAmount = (price * qty * gst) / 100;
 
-            return sum + (price * qty) + gstAmount;
+            return sum + price * qty + gstAmount;
         }, 0);
     }, [items]);
 
     /* HANDLERS */
-    const handleIncrement = (id) => {
-        setItems(prev =>
-            prev.map(i =>
-                i.item_id === id ? { ...i, qty: i.qty + 1 } : i
+    const handleIncrement = (itemId) => {
+        setItems((prev) =>
+            prev.map((item) =>
+                item.item_id === itemId
+                    ? { ...item, qty: item.qty + 1 }
+                    : item
             )
         );
     };
 
-    const handleDecrement = (id) => {
-        setItems(prev =>
-            prev.map(i =>
-                i.item_id === id
-                    ? { ...i, qty: Math.max(1, i.qty - 1) }
-                    : i
+    const handleDecrement = (itemId) => {
+        setItems((prev) =>
+            prev.map((item) =>
+                item.item_id === itemId
+                    ? { ...item, qty: Math.max(1, item.qty - 1) }
+                    : item
             )
         );
     };
 
-    const handleRemove = (id) => {
-        setItems(prev => prev.filter(i => i.item_id !== id));
+    const handleRemove = (itemId) => {
+        setItems((prev) => prev.filter((item) => item.item_id !== itemId));
     };
 
+    const handleToggleUrgent = (itemId) => {
+        setItems((prev) =>
+            prev.map((item) =>
+                item.item_id === itemId
+                    ? {
+                        ...item,
+                        is_item_urgent: !Boolean(item.is_item_urgent),
+                    }
+                    : item
+            )
+        );
+    };
+
+    /* CONFIRM ORDER */
     const handleConfirmOrder = async () => {
-
-        if (!items || items.length === 0) {
+        if (!items?.length) {
             return warningNofity("No items added");
         }
 
-
         const existingOrderId = Orders?.find(
-            i => i.order_status === "PENDING"
+            (item) => item.order_status === "PENDING"
         )?.canteen_order_id;
 
+        const urgentItems = items
+            .filter((item) => item.is_item_urgent)
+            .map((item) => ({
+                item_id: item.item_id,
+                quantity: item.qty,
+                is_item_urgent: true,
+                type_slno: item?.type_slno,
+                emergency_reason: "Urgent canteen item",
+            }));
 
         try {
             if (existingOrderId) {
@@ -65,22 +412,30 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     isExtra: true,
                     patient_id: fullDetail?.dietpt_slno,
                     created_by: id,
-                    order_status: 'PENDING'
+                    order_status: "PENDING",
+                    remarks: remarks.trim() || null,
+                    is_urgent: urgentItems.length > 0,
+                    urgentItems,
                 };
+
                 const res = await axioslogin.post(
                     "/canteenorder/add/items",
                     payload
                 );
+
                 const { success, message } = res.data || {};
-                if (success === 0) return warningNofity(message);
+
+                if (success !== 1) {
+                    return warningNofity(message || "Unable to add items");
+                }
+
                 succesNofity("Order created successfully");
-                refetch()
-                setItems()
-                onClose()
+                refetch();
+                setItems([]);
+                onClose();
                 return;
             }
 
-            // CANTEEN ORDER
             const order = {
                 admission_id: fullDetail?.ip_no,
                 party_type_id: personType,
@@ -90,12 +445,16 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                 status: "PENDING",
                 isExtra: true,
                 patient_id: fullDetail?.dietpt_slno,
-                order_status: 'PENDING'
+                order_status: "PENDING",
+                remarks: remarks.trim() || null,
+                is_urgent: urgentItems.length > 0,
+                urgentItems,
             };
 
             const payload = {
                 order,
-                items
+                items,
+                urgentItems,
             };
 
             const res = await axioslogin.post(
@@ -105,39 +464,39 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
 
             const { success, message } = res.data || {};
 
-            if (success !== 1) return errorNofity(message);
+            if (success !== 1) {
+                return errorNofity(message || "Unable to create order");
+            }
 
             succesNofity("Order created successfully");
             refetch();
-            setItems();
+            setItems([]);
             onClose();
-
         } catch (err) {
             console.error(err);
             errorNofity("Something went wrong");
         }
-    }
+    };
 
     if (!items.length) return null;
 
     return (
         <Box
             sx={{
-                mt: "auto",   // pushes it to bottom
+                mt: "auto",
                 bgcolor: "#fff",
                 borderTop: "1px solid #eee",
                 p: 1.5,
                 boxShadow: "0 -5px 20px rgba(0,0,0,0.08)",
                 borderRadius: 12,
-
-                /* KEY PART */
-                maxHeight: !selectedFood || Object.keys(selectedFood).length === 0
-                    ? '75%' : "50%",
+                maxHeight:
+                    !selectedFood || Object.keys(selectedFood).length === 0
+                        ? "75%"
+                        : "50%",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
             }}
         >
-
             {/* ITEMS */}
             <Box
                 sx={{
@@ -145,42 +504,67 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     overflowY: "auto",
                     mb: 1,
                     scrollbarWidth: "none",
-                    "&::-webkit-scrollbar": { display: "none" }
+                    "&::-webkit-scrollbar": { display: "none" },
                 }}
             >
-                {items?.map(item => (
+                {items?.map((item) => (
                     <Box
                         key={item.item_id}
                         sx={{
-                            width: '100%',
-                            boxShadow: 'sm',
+                            width: "100%",
+                            boxShadow: "sm",
                             borderRadius: 5,
-                            bgcolor: '#fff',
+                            bgcolor: item.is_item_urgent ? "#fff7f7" : "#fff",
                             p: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
                             mb: 1,
-                            border: '1px solid #e282e5',
+                            border: item.is_item_urgent
+                                ? "1px solid #d32f2f"
+                                : "1px solid #e282e5",
                             boxSizing: "border-box",
+                            gap: 1,
                         }}
                     >
-                        <Box sx={{ maxWidth: "50%" }}>
+                        {/* ITEM DETAILS */}
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
                             <TextComponent
                                 value={item.item_name}
                                 size={13}
                                 weight={600}
                             />
+
                             <TextComponent
                                 value={`₹${item.price} × ${item.qty}`}
                                 size={11}
                                 color="#777"
                             />
+
+                            {item.is_item_urgent && (
+                                <TextComponent
+                                    value="URGENT ITEM"
+                                    size={10}
+                                    weight={700}
+                                    color="#d32f2f"
+                                />
+                            )}
                         </Box>
 
                         {/* CONTROLS */}
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                            <Button size="sm" variant="soft" onClick={() => handleDecrement(item.item_id)}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Button
+                                size="sm"
+                                variant="soft"
+                                onClick={() => handleDecrement(item.item_id)}
+                            >
                                 -
                             </Button>
 
@@ -190,8 +574,29 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                                 sx={{ minWidth: 20, textAlign: "center" }}
                             />
 
-                            <Button size="sm" variant="soft" onClick={() => handleIncrement(item.item_id)}>
+                            <Button
+                                size="sm"
+                                variant="soft"
+                                onClick={() => handleIncrement(item.item_id)}
+                            >
                                 +
+                            </Button>
+
+                            {/* URGENCY TOGGLE */}
+                            <Button
+                                size="sm"
+                                variant={Boolean(item.is_item_urgent) ? "solid" : "soft"}
+                                color={Boolean(item.is_item_urgent) ? "danger" : "neutral"}
+                                disabled={item?.typename?.trim().toUpperCase() === "AD HOC"}
+                                onClick={() => handleToggleUrgent(item.item_id)}
+                                sx={{
+                                    minWidth: 32,
+                                    px: 1,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {item.is_item_urgent ? "Ad Hoc" : "Ad Hoc?"}
                             </Button>
 
                             {/* REMOVE */}
@@ -208,6 +613,47 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                 ))}
             </Box>
 
+            {/* REMARKS */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    border: "1px solid #e2d5e8",
+                    borderRadius: "8px",
+                    px: 1.2,
+                    py: 0.7,
+                    mb: 1,
+                    bgcolor: "#fdfbfe",
+                    transition: "border-color 0.2s",
+                    "&:focus-within": {
+                        borderColor: "#9d25b8",
+                        boxShadow: "0 0 0 2px rgba(157,37,184,0.08)",
+                    },
+                }}
+            >
+                <Box
+                    component="input"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add order remarks..."
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: 40,
+                        border: "none",
+                        outline: "none",
+                        bgcolor: "transparent",
+                        fontSize: 12,
+                        fontFamily: "Bahnschrift",
+                        color: "#222",
+                        "&::placeholder": {
+                            color: "#aaa",
+                        },
+                    }}
+                />
+            </Box>
+
             {/* TOTAL + ACTION */}
             <Box
                 sx={{
@@ -215,7 +661,7 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     justifyContent: "space-between",
                     alignItems: "center",
                     borderTop: "1px dashed #ddd",
-                    pt: 1
+                    pt: 1,
                 }}
             >
                 <TextComponent
@@ -223,6 +669,7 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                     size={14}
                     weight={700}
                 />
+
                 <Button
                     onClick={handleConfirmOrder}
                     size="sm"
@@ -242,9 +689,7 @@ const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, pe
                 >
                     Confirm Order
                 </Button>
-
             </Box>
-
         </Box>
     );
 };

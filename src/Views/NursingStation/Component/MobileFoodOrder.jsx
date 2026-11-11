@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { Box, Input, Button } from "@mui/joy";
+import { Box, Button } from "@mui/joy";
 import TextComponent from "../../../components/TextComponent";
 import {
     useAllFoodAndBeverage,
@@ -18,7 +18,7 @@ const MobileFoodOrder = ({
     fullDetail,
     setSelectedFood,
     selectedFood,
-    PreviousOrders
+    PreviousOrders,
 }) => {
 
 
@@ -53,6 +53,7 @@ const MobileFoodOrder = ({
             PatientExtraOrders  // extra
         );
     }, [PreviousOrders, DietOrders, PatientExtraOrders]);
+
 
 
     const PendingOrderItems = orders?.find((item) => item?.order_status === "PENDING")?.items;
@@ -129,7 +130,9 @@ const MobileFoodOrder = ({
                     price,
                     gst,
                     type_slno,
-                    gst_amount: (price * qty * gst) / 100
+                    is_item_urgent: typename?.trim().toUpperCase() === "AD HOC",
+                    gst_amount: (price * qty * gst) / 100,
+                    typename: typename
                 }
             ];
         });
@@ -137,7 +140,7 @@ const MobileFoodOrder = ({
         setQty(1);
         setSelectedFood({})
 
-    }, [selectedFood, qty, personType, setItems]);
+    }, [selectedFood, qty, personType, setItems, typename]);
 
 
     return (

@@ -1,10 +1,12 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { Box, IconButton } from "@mui/joy";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { getBgColor, getItemType } from "../../../CommonData/Common";
 import TextComponent from "../../../components/TextComponent";
+import CampaignIcon from "@mui/icons-material/Campaign";
+import TimerOffIcon from '@mui/icons-material/TimerOff';
 
 const OrderItemRow = ({
     item,
@@ -14,11 +16,14 @@ const OrderItemRow = ({
     updateQuantity,
     handleCancelItem,
     order,
-    selectedStatus
+    selectedStatus,
+    isUrgent,
+    handlceCancelUrgent,
+    urgentDetail
 }) => {
 
     const itemType = getItemType(item);
-
+    
     return (
         <Box sx={{ mb: 1 }}>
             <Box
@@ -37,11 +42,31 @@ const OrderItemRow = ({
                         color="#555"
                     />
 
-                    <TextComponent
-                        value={item?.item_name}
-                        size={10}
-                        color="#555"
-                    />
+                    <Box sx={{ display: "flex", alignItems: "center", }}>
+                        {isUrgent && (
+                            <CampaignIcon
+                                sx={{
+                                    fontSize: 15,
+                                    color: "#E53935",
+                                    transformOrigin: "top center",
+                                    animation: "buzzer 0.5s infinite",
+                                    "@keyframes buzzer": {
+                                        "0%, 100%": { transform: "rotate(0deg)" },
+                                        "20%, 60%": { transform: "rotate(-15deg)" },
+                                        "40%, 80%": { transform: "rotate(15deg)" }
+                                    }
+                                }}
+                            />
+                        )}
+
+                        <TextComponent
+                            value={item?.item_name}
+                            size={10}
+                            color={"#555"}
+                            weight={isUrgent ? 600 : 400}
+                        />
+                    </Box>
+
                     {
                         selectedStatus === "PENDING" &&
                         <Box
@@ -102,6 +127,16 @@ const OrderItemRow = ({
                                 onClick={() => handleCancelItem(order, item)}
                             >
                                 <CancelIcon sx={{ fontSize: 15 }} />
+                            </IconButton>
+                        )}
+                        {isUrgent && (
+                            <IconButton
+                                size="sm"
+                                color="danger"
+                                variant="soft"
+                                onClick={() => handlceCancelUrgent(urgentDetail?.emergency_id)}
+                            >
+                                <TimerOffIcon sx={{ fontSize: 15 }} />
                             </IconButton>
                         )}
                         {/* <IconButton

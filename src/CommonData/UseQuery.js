@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssignedBillDetails, getAssingItemStatusDetail, getBillingItemDetails, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssignedBillDetails, getAssingItemStatusDetail, getBillingItemDetails, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails, ProductionBatchDetailst } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -398,4 +398,14 @@ export const useGetBillingDetails = (id) => {
         enabled: !!id
     });
 }
+export const useProductionBatchDetails = (empid) => {
+    return useQuery({
+        queryKey: ["production-batch-details", empid],
+        queryFn: () => ProductionBatchDetailst(empid),
+        staleTime: Infinity,
+        enabled: !!empid,
+    });
+};
+
+
 

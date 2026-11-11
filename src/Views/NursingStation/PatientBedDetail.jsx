@@ -1,4 +1,4 @@
-import { Box, Divider } from "@mui/joy";
+import { Box, Divider, Typography } from "@mui/joy";
 import React, { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import NursingStaionHeader from "./NursingStaionHeader";
@@ -7,7 +7,7 @@ import PatientInfoCard from "../../components/PatientInfoCard";
 import TextComponent from "../../components/TextComponent";
 import FoodItemAddCard from "../../components/FoodItemAddCard";
 import SpecialMealSelectScollBox from "../../components/SpecialMealSelectScollBox";
-import { buildBystanderCategories, filterFoodsByType, infoNofity, warningNofity } from "../Constant/Constant";
+import { buildBystanderCategories, EmpauthId, filterFoodsByType, infoNofity, warningNofity } from "../Constant/Constant";
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
@@ -16,7 +16,8 @@ import {
   useAllPateinetFoodDetail,
   useCustomerPreviousCanteenOrder,
   useDietPlanRemarkDetails,
-  usePatientPlanFoodDetails
+  usePatientPlanFoodDetails,
+  useProductionBatchDetails
 } from "../../CommonData/UseQuery";
 import { groupMeals, groupMealsByProcessDate } from "../../CommonData/Common";
 import FloatingOrderTaking from "../../components/FloatingOrderTaking";
@@ -30,12 +31,13 @@ import BystanderItemSearch from "./Component/BystanderItemSearch";
 const PatientBedDetail = () => {
 
   const location = useLocation();
+
   const { BedName, stationname, template_id, fullDetail } = location.state || {};
   const [selected, setSelected] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [activeTab, setActiveTab] = useState(null);
   const [openOrderPanel, setOpenOrderPanel] = useState(false);
-
+  const empId = EmpauthId();
   //  FIXED: separate states
   const [patientFoods, setPatientFoods] = useState({});
   const [bystanderFoods, setBystanderFoods] = useState({});
@@ -45,6 +47,7 @@ const PatientBedDetail = () => {
 
   //  FIXED: dynamic state selection
   const assignedFoods = selected?.party_name === "PATIENT" ? patientFoods : bystanderFoods;
+
   const setAssignedFoods = selected?.party_name === "PATIENT" ? setPatientFoods : setBystanderFoods;
 
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -53,6 +56,18 @@ const PatientBedDetail = () => {
 
   const { data: DietPlanRemarkDetails = [] } = useDietPlanRemarkDetails(fullDetail?.plan_id);
 
+  const {
+    data: productionDetails = [],
+  } = useProductionBatchDetails(empId);
+
+  const ActiveProdcutionBatchDetail = productionDetails?.filter(
+    item => String(item?.batch_status) === "ACTIVE"
+  ) || [];
+
+
+  console.log({
+    ActiveProdcutionBatchDetail
+  });
 
   const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
 
@@ -198,10 +213,20 @@ const PatientBedDetail = () => {
   }, [ExistFoodDetail, selectedFilter]);
 
 
-  // const categorizedFoods = useMemo(() => {
-  //   if (selected?.party_name !== "BYSTANDER") return null;
-  //   return buildBystanderCategories(filteredFoods);
-  // }, [selected, filteredFoods]);
+
+  const handleToggleUrgent = (timeId, itemId) => {
+    setAssignedFoods((prev) => ({
+      ...prev,
+      [timeId]: {
+        ...prev[timeId],
+        foods: (prev[timeId]?.foods || []).map((food) =>
+          Number(food.item_id) === Number(itemId)
+            ? { ...food, is_urgent: !food.is_urgent }
+            : food
+        ),
+      },
+    }));
+  };
 
 
   const categorizedFoods = useMemo(() => {
@@ -270,54 +295,10 @@ const PatientBedDetail = () => {
         }
 
         <Box sx={{ mt: 2 }}>
-
-          {/* {
-            selected?.party_name === "PATIENT" && (
-              FinalMappingTemplateFood?.length > 0 ? (
-                FinalMappingTemplateFood?.map((time) => (
-                  <Box key={time.type} sx={{ mb: 3 }}>
-                    <TextComponent
-                      color="#0b0b0b"
-                      value={time?.type}
-                      size={16}
-                      weight={800}
-                    />
-
-                    <Divider sx={{ my: 1 }} />
-
-                    {time.foods.map((food) => {
-                      const assignedTime = assignedFoods[food?.time_id];
-
-                      const assignedFood = assignedTime?.foods?.find(
-                        (f) => f?.item_id === food?.item_id
-                      );
-
-                      return (
-                        <FoodItemAddCard
-                          key={food?.item_id}
-                          foodDetail={food}
-                          assignedFood={assignedFood}
-                          onClick={() => handleToggleFood(food)}
-                          onIncrement={() =>
-                            handleIncrement(food?.time_id, food?.item_id)
-                          }
-                          onDecrement={() =>
-                            handleDecrement(food?.time_id, food?.item_id)
-                          }
-                        />
-                      );
-                    })}
-                  </Box>
-                ))
-              ) : (
-                <EmptyDietState />
-              )
-            )
-          } */}
           {
             selected?.party_name === "PATIENT" && (
               Object.keys(ProcessDateGroupedMeals)?.length > 0 ? (
-                Object.entries(ProcessDateGroupedMeals).map(
+                Object.entries(ProcessDateGroupedMeals)?.map(
                   ([processDate, meals]) => (
                     <Box key={processDate} sx={{ mb: 4 }}>
 
@@ -332,53 +313,103 @@ const PatientBedDetail = () => {
                       <Divider sx={{ my: 1.5 }} />
 
                       {/* MEALS UNDER THIS PROCESS DATE */}
-                      {meals?.map((time) => (
-                        <Box key={time.type} sx={{ mb: 3 }}>
+                      {
+                        meals?.map((time) => {
+                          const MatchedTime = ActiveProdcutionBatchDetail?.find(
+                            (item) =>
+                              item?.type_desc === time.type &&
+                              item?.production_date?.split(" ")[0] === processDate
+                          );
 
-                          <TextComponent
-                            color="#0b0b0b"
-                            value={time.type}
-                            size={16}
-                            weight={800}
-                          />
+                          return (
+                            <Box key={time.type} sx={{ mb: 3 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <TextComponent
+                                  color="#0b0b0b"
+                                  value={time.type}
+                                  size={16}
+                                  weight={800}
+                                />
 
-                          <Divider sx={{ my: 1 }} />
+                                {MatchedTime && (
+                                  <Box
+                                    sx={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 0.6,
+                                      px: 1.2,
+                                      py: 0.5,
+                                      borderRadius: "20px",
+                                      bgcolor: "#E8F7EE",
+                                      border: "1px solid #C5EAD2",
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        width: 7,
+                                        height: 7,
+                                        borderRadius: "50%",
+                                        bgcolor: "#16A34A",
+                                      }}
+                                    />
 
-                          {time.foods.map((food) => {
-                            const assignedTime =
-                              assignedFoods[food?.time_id];
+                                    <Typography
+                                      sx={{
+                                        fontSize: 10,
+                                        fontWeight: 800,
+                                        color: "#15803D",
+                                        letterSpacing: 0.5,
+                                      }}
+                                    >
+                                      OPEN BATCH
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                              <Divider sx={{ my: 1 }} />
 
-                            const assignedFood =
-                              assignedTime?.foods?.find(
-                                (f) =>
-                                  f?.item_id === food?.item_id
-                              );
+                              {time.foods.map((food) => {
+                                const assignedTime =
+                                  assignedFoods[food?.time_id];
 
-                            return (
-                              <FoodItemAddCard
-                                key={food?.item_id}
-                                foodDetail={food}
-                                assignedFood={assignedFood}
-                                onClick={() =>
-                                  handleToggleFood(food)
-                                }
-                                onIncrement={() =>
-                                  handleIncrement(
-                                    food?.time_id,
-                                    food?.item_id
-                                  )
-                                }
-                                onDecrement={() =>
-                                  handleDecrement(
-                                    food?.time_id,
-                                    food?.item_id
-                                  )
-                                }
-                              />
-                            );
-                          })}
-                        </Box>
-                      ))}
+                                const assignedFood =
+                                  assignedTime?.foods?.find(
+                                    (f) =>
+                                      f?.item_id === food?.item_id
+                                  );
+
+                                return (
+                                  <FoodItemAddCard
+                                    key={food?.item_id}
+                                    foodDetail={food}
+                                    assignedFood={assignedFood}
+                                    onClick={() =>
+                                      handleToggleFood(food)
+                                    }
+                                    onIncrement={() =>
+                                      handleIncrement(
+                                        food?.time_id,
+                                        food?.item_id
+                                      )
+                                    }
+                                    onDecrement={() =>
+                                      handleDecrement(
+                                        food?.time_id,
+                                        food?.item_id
+                                      )
+                                    }
+                                  />
+                                );
+                              })}
+                            </Box>
+                          )
+                        })}
                     </Box>
                   )
                 )
@@ -496,6 +527,7 @@ const PatientBedDetail = () => {
         setAssignedFoods={setAssignedFoods}
         showConfirmation={showConfirmation}
         setShowConfirmation={setShowConfirmation}
+        handleToggleUrgent={handleToggleUrgent}
       />
 
       {

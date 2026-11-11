@@ -8,7 +8,6 @@ import {
     useCustomerPreviousCanteenOrder
 } from "../../../CommonData/UseQuery";
 import { IoFastFoodOutline } from "react-icons/io5";
-import { BsPersonAdd } from "react-icons/bs";
 import { PiPersonBold } from "react-icons/pi";
 
 
@@ -22,7 +21,7 @@ const OrderTakingPanel = ({ open, onClose, persontype, fullDetail }) => {
     const [selectedFood, setSelectedFood] = useState({});
 
     const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
-        useCustomerPreviousCanteenOrder(fullDetail?.ip_no, persontype); 
+        useCustomerPreviousCanteenOrder(fullDetail?.ip_no, persontype);
 
 
     if (!open) return null;
