@@ -21,7 +21,7 @@ const OrderTakingPanel = ({ open, onClose, persontype, fullDetail }) => {
     const [selectedFood, setSelectedFood] = useState({});
 
     const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
-        useCustomerPreviousCanteenOrder(fullDetail?.ip_no, persontype); 
+        useCustomerPreviousCanteenOrder(fullDetail?.ip_no, persontype);
 
 
     if (!open) return null;

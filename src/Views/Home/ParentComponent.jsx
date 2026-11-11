@@ -1,3 +1,4 @@
+
 import React, { memo } from "react";
 import { Box, Typography } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
@@ -5,29 +6,10 @@ import { useNavigate } from "react-router-dom";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import CircleRoundedIcon from "@mui/icons-material/CircleRounded";
+
 import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
-
-
-
-// const TotalNavs = [
-//     {
-//         label: "Order Taking",
-//         shortLabel: "New Order",
-//         path: "/Home",
-//         icon: AddRoundedIcon,
-//     },
-//     {
-//         label: "Delivery",
-//         path: "/delivery",
-//         icon: LocalShippingRoundedIcon,
-//     },
-//     {
-//         label: "Collection",
-//         path: "/cash-collection",
-//         icon: PaymentsRoundedIcon,
-//     },
-// ];
 
 const ParentComponent = () => {
     const navigate = useNavigate();
@@ -48,10 +30,8 @@ const ParentComponent = () => {
                 boxSizing: "border-box",
             }}
         >
-         
             <LoginEmployeeHeader />
 
-       
             <Box
                 sx={{
                     flex: 1,
@@ -72,7 +52,7 @@ const ParentComponent = () => {
                     minHeight: 0,
                 }}
             >
-              
+                {/* Header */}
                 <Box
                     sx={{
                         display: "flex",
@@ -101,7 +81,6 @@ const ParentComponent = () => {
                         </Typography>
                     </Box>
 
-                    {/* Online indicator */}
                     <Box
                         sx={{
                             display: "flex",
@@ -129,7 +108,7 @@ const ParentComponent = () => {
                     </Box>
                 </Box>
 
-          
+                {/* Quick Action */}
                 <Box
                     sx={{
                         flex: 1,
@@ -187,7 +166,6 @@ const ParentComponent = () => {
                             transition: "transform 0.15s ease",
                         }}
                     >
-                      
                         <Box
                             className="outer-ring"
                             sx={{
@@ -200,7 +178,6 @@ const ParentComponent = () => {
                             }}
                         />
 
-                     
                         <Box
                             sx={{
                                 width: {
@@ -218,8 +195,7 @@ const ParentComponent = () => {
                                 justifyContent: "center",
                                 position: "relative",
                                 zIndex: 2,
-                                boxShadow:
-                                    "0 10px 25px rgba(0,0,0,0.14)",
+                                boxShadow: "0 10px 25px rgba(0,0,0,0.14)",
                             }}
                         >
                             <AddRoundedIcon
@@ -255,7 +231,7 @@ const ParentComponent = () => {
                     </Typography>
                 </Box>
 
-              
+                {/* Navigation */}
                 <Box
                     sx={{
                         borderTop: "1px solid #DEDEDC",
@@ -265,29 +241,27 @@ const ParentComponent = () => {
                     <Box
                         sx={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
+                            gridTemplateColumns: "repeat(3, 1fr)",
                         }}
                     >
-                     
+                        {/* Delivery */}
                         <Box
-                            onClick={() =>
-                                handleNavigation("/delivery")
-                            }
+                            onClick={() => handleNavigation("/delivery")}
                             sx={{
                                 minHeight: {
                                     xs: 76,
                                     sm: 84,
                                 },
                                 px: {
-                                    xs: 1,
-                                    sm: 1.5,
+                                    xs: 0.5,
+                                    sm: 1,
                                 },
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 gap: {
-                                    xs: 1,
-                                    sm: 1.2,
+                                    xs: 0.6,
+                                    sm: 1,
                                 },
                                 cursor: "pointer",
                                 borderRight: "1px solid #DEDEDC",
@@ -300,7 +274,7 @@ const ParentComponent = () => {
                             <LocalShippingRoundedIcon
                                 sx={{
                                     fontSize: {
-                                        xs: 22,
+                                        xs: 21,
                                         sm: 25,
                                     },
                                     color: "#9b1ea9",
@@ -311,11 +285,12 @@ const ParentComponent = () => {
                                 <Typography
                                     sx={{
                                         fontSize: {
-                                            xs: "0.7rem",
+                                            xs: "0.65rem",
                                             sm: "0.75rem",
                                         },
                                         fontWeight: 900,
                                         color: "#202020",
+                                        fontFamily: "Bahnschrift",
                                     }}
                                 >
                                     DELIVERY
@@ -323,9 +298,10 @@ const ParentComponent = () => {
 
                                 <Typography
                                     sx={{
-                                        fontSize: "0.58rem",
+                                        fontSize: "0.55rem",
                                         color: "#999",
                                         mt: 0.2,
+                                        fontFamily: "Bahnschrift",
                                     }}
                                 >
                                     Mark orders
@@ -333,38 +309,37 @@ const ParentComponent = () => {
                             </Box>
                         </Box>
 
-                       
+                        {/* Collection */}
                         <Box
-                            onClick={() =>
-                                handleNavigation("/cash-collection")
-                            }
+                            onClick={() => handleNavigation("/cash-collection")}
                             sx={{
                                 minHeight: {
                                     xs: 76,
                                     sm: 84,
                                 },
                                 px: {
-                                    xs: 1,
-                                    sm: 1.5,
+                                    xs: 0.5,
+                                    sm: 1,
                                 },
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 gap: {
-                                    xs: 1,
-                                    sm: 1.2,
+                                    xs: 0.6,
+                                    sm: 1,
                                 },
                                 cursor: "pointer",
+                                borderRight: "1px solid #DEDEDC",
 
                                 "&:active": {
-                                    background: "#9b1ea9",
+                                    background: "#EEEEEC",
                                 },
                             }}
                         >
                             <PaymentsRoundedIcon
                                 sx={{
                                     fontSize: {
-                                        xs: 22,
+                                        xs: 21,
                                         sm: 25,
                                     },
                                     color: "#9b1ea9",
@@ -375,11 +350,12 @@ const ParentComponent = () => {
                                 <Typography
                                     sx={{
                                         fontSize: {
-                                            xs: "0.7rem",
+                                            xs: "0.65rem",
                                             sm: "0.75rem",
                                         },
                                         fontWeight: 900,
                                         color: "#202020",
+                                        fontFamily: "Bahnschrift",
                                     }}
                                 >
                                     COLLECTION
@@ -387,19 +363,85 @@ const ParentComponent = () => {
 
                                 <Typography
                                     sx={{
-                                        fontSize: "0.58rem",
+                                        fontSize: "0.55rem",
                                         color: "#999",
                                         mt: 0.2,
+                                        fontFamily: "Bahnschrift",
                                     }}
                                 >
                                     Cash collection
                                 </Typography>
                             </Box>
                         </Box>
+
+                        {/* Batch */}
+                        <Box
+                            onClick={() => handleNavigation("/batch")}
+                            sx={{
+                                minHeight: {
+                                    xs: 76,
+                                    sm: 84,
+                                },
+                                px: {
+                                    xs: 0.5,
+                                    sm: 1,
+                                },
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: {
+                                    xs: 0.6,
+                                    sm: 1,
+                                },
+                                cursor: "pointer",
+
+                                "&:active": {
+                                    background: "#EEEEEC",
+                                },
+                            }}
+                        >
+                            <Inventory2RoundedIcon
+                                sx={{
+                                    fontSize: {
+                                        xs: 21,
+                                        sm: 25,
+                                    },
+                                    color: "#9b1ea9",
+                                }}
+                            />
+
+                            <Box>
+                                <Typography
+                                    sx={{
+                                        fontSize: {
+                                            xs: "0.65rem",
+                                            sm: "0.75rem",
+                                        },
+                                        fontWeight: 900,
+                                        color: "#202020",
+                                        fontFamily: "Bahnschrift",
+                                        
+                                    }}
+                                >
+                                    BATCH
+                                </Typography>
+
+                                <Typography
+                                    sx={{
+                                        fontSize: "0.55rem",
+                                        color: "#999",
+                                        mt: 0.2,
+                                        fontFamily: "Bahnschrift",
+                                    }}
+                                >
+                                    Production
+                                </Typography>
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
 
-          
+                {/* Footer */}
                 <Box
                     sx={{
                         display: "flex",
