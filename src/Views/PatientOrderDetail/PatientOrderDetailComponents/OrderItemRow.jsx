@@ -23,7 +23,7 @@ const OrderItemRow = ({
 }) => {
 
     const itemType = getItemType(item);
-    
+
     return (
         <Box sx={{ mb: 1 }}>
             <Box
@@ -65,6 +65,22 @@ const OrderItemRow = ({
                             color={"#555"}
                             weight={isUrgent ? 600 : 400}
                         />
+                    </Box>
+                    <Box
+                        sx={{
+                            bgcolor: "#1a1a19ff",
+                            color: "#fff",
+                            fontSize: 8,
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 5,
+                            fontWeight: 600,
+                            textAlign: 'center',
+                            height: 10,
+                            ml: 1
+                        }}
+                    >
+                        {item.type_desc}
                     </Box>
 
                     {

@@ -1,316 +1,10 @@
-// import React, { memo, useMemo, useState } from "react";
-// import { Box, Button } from "@mui/joy";
-// import TextComponent from "../../../components/TextComponent";
-// import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-// import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../../Constant/Constant";
-// import { axioslogin } from "../../../Axios/axios";
-
-// const BottomCartPanel = ({ items = [], setItems, refetch, Orders, fullDetail, personType, onClose, selectedFood }) => {
-
-//     const id = EmpauthId()
-//     const [remarks, setRemarks] = useState("");
-
-//     /* TOTAL CALCULATION */
-//     const totalAmount = useMemo(() => {
-//         return items.reduce((sum, item) => {
-//             const price = Number(item.price || 0);
-//             const qty = Number(item.qty || 0);
-//             const gst = Number(item.gst || 0);
-
-//             const gstAmount = (price * qty * gst) / 100;
-
-//             return sum + (price * qty) + gstAmount;
-//         }, 0);
-//     }, [items]);
-
-
-//     console.log({
-//         items
-//     });
-
-
-//     /* HANDLERS */
-//     const handleIncrement = (id) => {
-//         setItems(prev =>
-//             prev.map(i =>
-//                 i.item_id === id ? { ...i, qty: i.qty + 1 } : i
-//             )
-//         );
-//     };
-
-//     const handleDecrement = (id) => {
-//         setItems(prev =>
-//             prev.map(i =>
-//                 i.item_id === id
-//                     ? { ...i, qty: Math.max(1, i.qty - 1) }
-//                     : i
-//             )
-//         );
-//     };
-
-//     const handleRemove = (id) => {
-//         setItems(prev => prev.filter(i => i.item_id !== id));
-//     };
-
-//     const handleConfirmOrder = async () => {
-
-//         if (!items || items.length === 0) {
-//             return warningNofity("No items added");
-//         }
-
-
-//         const existingOrderId = Orders?.find(
-//             i => i.order_status === "PENDING"
-//         )?.canteen_order_id;
-
-
-//         try {
-//             if (existingOrderId) {
-//                 const payload = {
-//                     itemDetail: items,
-//                     canteen_order_id: existingOrderId,
-//                     isExtra: true,
-//                     patient_id: fullDetail?.dietpt_slno,
-//                     created_by: id,
-//                     order_status: 'PENDING',
-//                     remarks: remarks.trim() || null,
-//                 };
-//                 const res = await axioslogin.post(
-//                     "/canteenorder/add/items",
-//                     payload
-//                 );
-//                 const { success, message } = res.data || {};
-//                 if (success === 0) return warningNofity(message);
-//                 succesNofity("Order created successfully");
-//                 refetch()
-//                 setItems()
-//                 onClose()
-//                 return;
-//             }
-
-//             // CANTEEN ORDER
-//             const order = {
-//                 admission_id: fullDetail?.ip_no,
-//                 party_type_id: personType,
-//                 nursing_station_id: fullDetail?.fb_nurse_stn_slno,
-//                 room_id: fullDetail?.fb_bed_slno,
-//                 created_by: id,
-//                 status: "PENDING",
-//                 isExtra: true,
-//                 patient_id: fullDetail?.dietpt_slno,
-//                 order_status: 'PENDING',
-//                 remarks: remarks.trim() || null,
-//             };
-
-//             const payload = {
-//                 order,
-//                 items
-//             };
-
-//             const res = await axioslogin.post(
-//                 "/canteenorder/create",
-//                 payload
-//             );
-
-//             const { success, message } = res.data || {};
-
-//             if (success !== 1) return errorNofity(message);
-
-//             succesNofity("Order created successfully");
-//             refetch();
-//             setItems();
-//             onClose();
-
-//         } catch (err) {
-//             console.error(err);
-//             errorNofity("Something went wrong");
-//         }
-//     }
-
-//     if (!items.length) return null;
-
-//     return (
-//         <Box
-//             sx={{
-//                 mt: "auto",   // pushes it to bottom
-//                 bgcolor: "#fff",
-//                 borderTop: "1px solid #eee",
-//                 p: 1.5,
-//                 boxShadow: "0 -5px 20px rgba(0,0,0,0.08)",
-//                 borderRadius: 12,
-
-//                 /* KEY PART */
-//                 maxHeight: !selectedFood || Object.keys(selectedFood).length === 0
-//                     ? '75%' : "50%",
-//                 display: "flex",
-//                 flexDirection: "column"
-//             }}
-//         >
-
-//             {/* ITEMS */}
-//             <Box
-//                 sx={{
-//                     flex: 1,
-//                     overflowY: "auto",
-//                     mb: 1,
-//                     scrollbarWidth: "none",
-//                     "&::-webkit-scrollbar": { display: "none" }
-//                 }}
-//             >
-//                 {items?.map(item => (
-//                     <Box
-//                         key={item.item_id}
-//                         sx={{
-//                             width: '100%',
-//                             boxShadow: 'sm',
-//                             borderRadius: 5,
-//                             bgcolor: '#fff',
-//                             p: 1,
-//                             display: 'flex',
-//                             alignItems: 'center',
-//                             justifyContent: 'space-between',
-//                             mb: 1,
-//                             border: '1px solid #e282e5',
-//                             boxSizing: "border-box",
-//                         }}
-//                     >
-//                         <Box sx={{ maxWidth: "50%" }}>
-//                             <TextComponent
-//                                 value={item.item_name}
-//                                 size={13}
-//                                 weight={600}
-//                             />
-//                             <TextComponent
-//                                 value={`₹${item.price} × ${item.qty}`}
-//                                 size={11}
-//                                 color="#777"
-//                             />
-//                         </Box>
-
-//                         {/* CONTROLS */}
-//                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-//                             <Button size="sm" variant="soft" onClick={() => handleDecrement(item.item_id)}>
-//                                 -
-//                             </Button>
-
-//                             <TextComponent
-//                                 value={item.qty}
-//                                 size={13}
-//                                 sx={{ minWidth: 20, textAlign: "center" }}
-//                             />
-
-//                             <Button size="sm" variant="soft" onClick={() => handleIncrement(item.item_id)}>
-//                                 +
-//                             </Button>
-
-//                             {/* REMOVE */}
-//                             <Button
-//                                 size="sm"
-//                                 variant="plain"
-//                                 color="danger"
-//                                 onClick={() => handleRemove(item.item_id)}
-//                             >
-//                                 ✕
-//                             </Button>
-//                         </Box>
-//                     </Box>
-//                 ))}
-//             </Box>
-
-//             {/* TOTAL + ACTION */}
-//             {/* REMARKS */}
-//             <Box
-//                 sx={{
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 1,
-//                     border: "1px solid #e2d5e8",
-//                     borderRadius: "8px",
-//                     px: 1.2,
-//                     py: 0.7,
-//                     mb: 1,
-//                     bgcolor: "#fdfbfe",
-//                     transition: "border-color 0.2s",
-//                     "&:focus-within": {
-//                         borderColor: "#9d25b8",
-//                         boxShadow: "0 0 0 2px rgba(157,37,184,0.08)",
-//                     },
-//                 }}
-//             >
-
-
-//                 <Box
-//                     component="input"
-//                     value={remarks}
-//                     onChange={(e) => setRemarks(e.target.value)}
-//                     placeholder="Add order remarks..."
-//                     sx={{
-//                         flex: 1,
-//                         minWidth: 0,
-//                         height: 40,
-//                         border: "none",
-//                         outline: "none",
-//                         bgcolor: "transparent",
-//                         fontSize: 12,
-//                         fontFamily: "Bahnschrift",
-//                         color: "#222",
-//                         "&::placeholder": {
-//                             color: "#aaa",
-//                         },
-//                     }}
-//                 />
-//             </Box>
-
-//             {/* TOTAL + ACTION */}
-//             <Box
-//                 sx={{
-//                     display: "flex",
-//                     justifyContent: "space-between",
-//                     alignItems: "center",
-//                     borderTop: "1px dashed #ddd",
-//                     pt: 1,
-//                 }}
-//             >
-//                 <TextComponent
-//                     value={`₹ ${totalAmount.toFixed(2)}`}
-//                     size={14}
-//                     weight={700}
-//                 />
-
-//                 <Button
-//                     onClick={handleConfirmOrder}
-//                     size="sm"
-//                     startDecorator={
-//                         <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
-//                     }
-//                     disabled={totalAmount === 0}
-//                     sx={{
-//                         px: 2,
-//                         height: 34,
-//                         borderRadius: 20,
-//                         fontSize: 12,
-//                         fontWeight: 600,
-//                         bgcolor: "#9d25b8",
-//                         "&:hover": { bgcolor: "#7b1fa2" },
-//                     }}
-//                 >
-//                     Confirm Order
-//                 </Button>
-//             </Box>
-
-//         </Box>
-//     );
-// };
-
-// export default memo(BottomCartPanel);
-
-
 import React, { memo, useMemo, useState } from "react";
 import { Box, Button } from "@mui/joy";
 import TextComponent from "../../../components/TextComponent";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-import { EmpauthId, errorNofity, succesNofity, warningNofity } from "../../Constant/Constant";
+import { EmpauthId, errorNofity, infoNofity, normalizeDate, succesNofity, warningNofity } from "../../Constant/Constant";
 import { axioslogin } from "../../../Axios/axios";
+import { isValidEmployeeId } from "../../../CommonData/Common";
 
 const BottomCartPanel = ({
     items = [],
@@ -321,16 +15,16 @@ const BottomCartPanel = ({
     personType,
     onClose,
     selectedFood,
+    expectedDeliveryDate,
+    setLoading,
+    loading
 }) => {
 
-
-    console.log({
-        items
-    });
 
 
 
     const id = EmpauthId();
+
     const [remarks, setRemarks] = useState("");
 
     /* TOTAL CALCULATION */
@@ -386,13 +80,25 @@ const BottomCartPanel = ({
 
     /* CONFIRM ORDER */
     const handleConfirmOrder = async () => {
+
+        if (loading) return;
+
+        if (!isValidEmployeeId(id)) {
+            return infoNofity("Invalid Employee ID. Please login again.");
+        }
+
         if (!items?.length) {
             return warningNofity("No items added");
         }
 
         const existingOrderId = Orders?.find(
-            (item) => item.order_status === "PENDING"
+            order =>
+                order?.order_status === "PENDING" &&
+                Number(id) === Number(order?.collected_by) &&
+                normalizeDate(order?.expected_delivery_date) ===
+                normalizeDate(expectedDeliveryDate)
         )?.canteen_order_id;
+
 
         const urgentItems = items
             .filter((item) => item.is_item_urgent)
@@ -405,6 +111,7 @@ const BottomCartPanel = ({
             }));
 
         try {
+            setLoading(true)
             if (existingOrderId) {
                 const payload = {
                     itemDetail: items,
@@ -448,6 +155,7 @@ const BottomCartPanel = ({
                 order_status: "PENDING",
                 remarks: remarks.trim() || null,
                 is_urgent: urgentItems.length > 0,
+                expected_delivery_date: expectedDeliveryDate,
                 urgentItems,
             };
 
@@ -464,6 +172,8 @@ const BottomCartPanel = ({
 
             const { success, message } = res.data || {};
 
+
+
             if (success !== 1) {
                 return errorNofity(message || "Unable to create order");
             }
@@ -475,6 +185,8 @@ const BottomCartPanel = ({
         } catch (err) {
             console.error(err);
             errorNofity("Something went wrong");
+        } finally {
+            setLoading(false)
         }
     };
 
@@ -676,7 +388,7 @@ const BottomCartPanel = ({
                     startDecorator={
                         <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
                     }
-                    disabled={totalAmount === 0}
+                    disabled={totalAmount === 0 || loading}
                     sx={{
                         px: 2,
                         height: 34,

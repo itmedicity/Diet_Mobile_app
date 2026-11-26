@@ -24,16 +24,11 @@ const PatientOrdersDashboard = ({
 
 }) => {
 
-
-
-
     const queryClient = useQueryClient()
-
 
     const [selectedStatus, setSelectedStatus] = useState(null);
     const [editingOrder, setEditingOrder] = useState(null);
     const id = EmpauthId()
-
 
 
     const {
@@ -128,9 +123,6 @@ const PatientOrdersDashboard = ({
         );
     }, [PreviousOrders, DietOrders, PatientExtraOrders]);
 
-
-
-
     //  Status count updated
     const statusCounts = useMemo(() => {
         return orders.reduce(
@@ -161,8 +153,6 @@ const PatientOrdersDashboard = ({
     }, [orders, statusCounts, selectedStatus]);
 
     const displayOrders = editingOrder ? [editingOrder] : filteredOrders;
-
-
 
 
     const invalidateQueries = async () => {
@@ -288,7 +278,7 @@ const PatientOrdersDashboard = ({
             if (data?.success !== 1) {
                 return warningNofity(data?.message || "Failed to cancel extra item");
             }
-            
+
 
             succesNofity(data?.message || "Extra item cancelled successfully");
             await invalidateQueries();
@@ -437,6 +427,9 @@ const PatientOrdersDashboard = ({
                     />
                 ) : (
                     displayOrders?.map((order) => {
+
+                        const isSamePerson = Number(order?.collected_by) === Number(id);
+
                         return (
                             <Box
                                 key={order.canteen_order_id}
@@ -460,7 +453,7 @@ const PatientOrdersDashboard = ({
                                 >
                                     <Box>
                                         <TextComponent
-                                            value={`Order ID: ${order?.canteen_order_id}`}
+                                            value={`${order?.em_name}: ${order?.canteen_order_id}`}
                                             size={12}
                                             weight={800}
                                         />
@@ -484,7 +477,7 @@ const PatientOrdersDashboard = ({
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                             <CalendarMonthIcon sx={{ fontSize: 12, color: "#a230ff" }} />
                                             <TextComponent
-                                                value={order?.order_time || ""}
+                                                value={order?.expected_delivery_date || ""}
                                                 size={9}
                                                 weight={500}
                                                 color="#666"
@@ -518,7 +511,7 @@ const PatientOrdersDashboard = ({
                                         </Typography>
 
                                         <EditToggleButton
-                                            visible={order?.order_status === "PENDING"}
+                                            visible={order?.order_status === "PENDING" && isSamePerson}
                                             isEditing={editingOrder === order}
                                             onEdit={() => setEditingOrder(order)}
                                             onCancel={() => setEditingOrder(null)}
@@ -530,8 +523,6 @@ const PatientOrdersDashboard = ({
 
                                 {(order?.items ?? [])?.map((item, index) => {
                                     const EmergenceyItems = order?.emergency_details || [];
-                                    console.log({ EmergenceyItems });
-
                                     const IsUrgent = EmergenceyItems?.some(val => Number(val?.item_id) === Number(item?.item_id) && Number(val?.type_slno) === Number(item?.type_slno));
                                     const AdhocItems = EmergenceyItems?.find(val => Number(val?.item_id) === Number(item?.item_id) && Number(val?.type_slno) === Number(item?.type_slno));
                                     return (

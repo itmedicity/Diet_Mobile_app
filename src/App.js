@@ -1,37 +1,41 @@
 import React, { lazy, Suspense, useLayoutEffect } from "react";
 import "./App.css";
+
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastContainer } from "react-toastify";
-import ProtectedRoute from './routes/ProtectedRoute';
-import CustomBackDropWithOutState from "./components/CustomBackDropWithOutState";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
 import ErrorElement from "./Views/Pages/ErrorElement";
 import RoootLayouts from "./routes/RoootLayouts";
 import { AuthProvider } from "./Context/AuthProvider";
-import NursingStation from "./Views/NursingStation/NursingStation";
-import PatientBedDetail from "./Views/NursingStation/PatientBedDetail";
-import DeliveryMarkingContainer from "./Views/PatientDeliveryMarking/DeliveryMarkingContainer";
-import ParentComponent from "./Views/Home/ParentComponent";
-import Delivery from "./Views/PatientDeliveryMarking/Delivery";
-import PaymentMethod from "./Views/PatientOrderDetail/DietPayments/PaymentMethod";
-import PaymentSuccessPage from "./Views/PatientOrderDetail/DietPayments/PaymentSuccessPage";
-import CashCollection from "./Views/CashCollection/CashCollection";
-import PaymentHistory from "./Views/CashCollection/PaymentHistory";
-import CashCollectionSummary from "./Views/CashCollection/CashCollectionSummary";
-import PaymentMode from "./Views/CashCollection/PaymentMode";
-import CashCollectionBillDetails from "./Views/CashCollection/CashCollectionBillDetails";
-import CashReturnDetail from "./Views/CashCollection/CashReturnDetail";
-import CashReturnClosePage from "./Views/CashCollection/CashReturnClosePage";
-import AssignedCashDetails from "./Views/CashCollection/AssignedCashDetails";
-import CashCollectionPage from "./Views/CashCollection/CashCollectionPage";
-import BatchCreationPage from "./Views/BatchDetails/BatchCreationPage";
 
-const Home = lazy(() => import("./Views/Home/Home"))
+import PizzaLoader from "./components/PizzaLoader";
+
+// Lazy-loaded pages
+const Home = lazy(() => import("./Views/Home/Home"));
+const NursingStation = lazy(() => import("./Views/NursingStation/NursingStation"));
+const PatientBedDetail = lazy(() => import("./Views/NursingStation/PatientBedDetail"));
+const DeliveryMarkingContainer = lazy(() => import("./Views/PatientDeliveryMarking/DeliveryMarkingContainer"));
+const ParentComponent = lazy(() => import("./Views/Home/ParentComponent"));
+const Delivery = lazy(() => import("./Views/PatientDeliveryMarking/Delivery"));
+const PaymentMethod = lazy(() => import("./Views/PatientOrderDetail/DietPayments/PaymentMethod"));
+const PaymentSuccessPage = lazy(() => import("./Views/PatientOrderDetail/DietPayments/PaymentSuccessPage"));
+const CashCollection = lazy(() => import("./Views/CashCollection/CashCollection"));
+const PaymentHistory = lazy(() => import("./Views/CashCollection/PaymentHistory"));
+const CashCollectionSummary = lazy(() => import("./Views/CashCollection/CashCollectionSummary"));
+const PaymentMode = lazy(() => import("./Views/CashCollection/PaymentMode"));
+const CashCollectionBillDetails = lazy(() => import("./Views/CashCollection/CashCollectionBillDetails"));
+const CashReturnDetail = lazy(() => import("./Views/CashCollection/CashReturnDetail"));
+const CashReturnClosePage = lazy(() => import("./Views/CashCollection/CashReturnClosePage"));
+const AssignedCashDetails = lazy(() => import("./Views/CashCollection/AssignedCashDetails"));
+const CashCollectionPage = lazy(() => import("./Views/CashCollection/CashCollectionPage"));
+const BatchCreationPage = lazy(() => import("./Views/BatchDetails/BatchCreationPage"));
 
 const routes = createBrowserRouter([
   {
     path: "/",
-    element: <Suspense fallback={<div >Loading</div>}> <RoootLayouts /></Suspense>,
+    element: <Suspense fallback={<PizzaLoader />}> <RoootLayouts /></Suspense>,
     children: [],
     errorElement: <ErrorElement />,
   },
@@ -130,7 +134,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastContainer />
       <AuthProvider>
-        <Suspense fallback={<CustomBackDropWithOutState message={"Loading..."} />}>
+        <Suspense fallback={<PizzaLoader />}>
           <QueryClientProvider client={queryClient}>
             <RouterProvider router={routes} />
           </QueryClientProvider>

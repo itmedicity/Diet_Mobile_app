@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssignedBillDetails, getAssingItemStatusDetail, getBillingItemDetails, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails, ProductionBatchDetailst } from "./CommonFun";
+import { DietFoodFetching, DietItemType, getAllDietDeliveryDetail, GetAllDietRoomCategoryDetail, getAllDietTime, getAllEmployeeDeliveryDetail, getAllEmployyeName, getAllHighlightTypes, getAllItemDeliveryStatus, getallNurseStationBedDetail, getallNurseStationMaster, getAllOrderItemDetails, getAllOrderPartyType, getAllPatientDietPlan, getAllPatientExtraOrdres, getAllPatientOrderDetail, GetAllRoomTypeDetail, getAllTemplateFoodDetail, getAssignedBillDetails, getAssingItemStatusDetail, getAttemptFailureDetails, getBillingItemDetails, getBystanderBillingDetails, getCustomerPreviousOrder, getDeliveryBillDetails, getDietDeliveryTime, getDietName, getFoodandBeverage, getFullDetailofItem, getItemFileDetails, getPatienPlanFoodDetail, getPatientDietRemarkDetails, getPaymentHistoryBillDetail, getPaymentHistoryDetails, getPaymentMode, getPaymentReturnDetails, getPaymentSummary, getProformaDetails, getReturnLogDetails, ProductionBatchDetailst } from "./CommonFun";
 
 
 export const UseFoodDetail = () => {
@@ -409,3 +409,11 @@ export const useProductionBatchDetails = (empid) => {
 
 
 
+export const useAttemptFailureDetails = (patient_id, admission_id) => {
+    return useQuery({
+        queryKey: ["attempt-failure-details", patient_id, admission_id],
+        queryFn: () => getAttemptFailureDetails(patient_id, admission_id),
+        staleTime: Infinity,
+        enabled: !!patient_id && !!admission_id,
+    });
+};

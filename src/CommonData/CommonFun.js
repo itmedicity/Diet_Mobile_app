@@ -957,3 +957,32 @@ export const ProductionBatchDetailst = async (empid) => {
         return [];
     }
 };
+
+
+
+export const getAttemptFailureDetails = async (patient_id, admission_id) => {
+    if (!patient_id || !admission_id) return [];
+
+    try {
+        const res = await axioslogin.get(
+            `/canteenorder/get-collection-attempts`,
+            {
+                params: {
+                    patient_id,
+                    admission_id
+                }
+            }
+        );
+
+        const { success, data } = res?.data || {};
+
+        return success === 1 ? data ?? [] : [];
+
+    } catch (error) {
+        console.error(
+            "Error fetching collection attempt details:",
+            error?.message || error
+        );
+        return [];
+    }
+};

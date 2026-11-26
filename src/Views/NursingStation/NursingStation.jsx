@@ -6,6 +6,7 @@ import { useLocation } from 'react-router-dom';
 import { useAllPatientDietPlan } from '../../CommonData/UseQuery';
 import NursingBedList from './NursingBedList';
 import SearchComponent from '../../components/SearchComponent';
+import NursingBedListSkeleton from './Component/NursingBedListSkeleton';
 
 
 const NursingStation = () => {
@@ -15,9 +16,9 @@ const NursingStation = () => {
 
     const {
         data: allPatientDiet = [],
-        refetch: FetchPatientDietPlan
+        refetch: FetchPatientDietPlan,
+        isLoading
     } = useAllPatientDietPlan(nsCode);
-
 
 
 
@@ -33,6 +34,7 @@ const NursingStation = () => {
         );
     }, [seachVal, allPatientDiet]);
 
+
     return (
         <Box sx={{ width: '100%' }}>
             <NursingStaionHeader stationname={nsName} />
@@ -45,12 +47,19 @@ const NursingStation = () => {
                     display: "flex",
                     alignItems: "center",
                     flexDirection: "column",
+                    // p: 2
                 }}>
-                <NursingBedList
-                    beds={filteredBedDetail}
-                    Refech={FetchPatientDietPlan}
-                    stationname={nsName}
-                />
+                {isLoading ? (
+                    <NursingBedListSkeleton count={6} />
+                ) : (
+                    <NursingBedList
+                        beds={filteredBedDetail}
+                        Refech={FetchPatientDietPlan}
+                        stationname={nsName}
+                        isLoading={isLoading}
+                    />
+                )}
+
             </Box>
         </Box>
     )

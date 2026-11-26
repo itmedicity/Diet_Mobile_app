@@ -21,9 +21,9 @@ const RenderFoodList = ({
     } = useProductionBatchDetails(empId);
 
 
-    const ActiveProdcutionBatchDetail = productionDetails?.filter(
-        item => String(item?.batch_status) === "ACTIVE"
-    ) || [];
+    const ActiveProdcutionBatchDetail = productionDetails.filter(
+        item => item?.batch_status?.toUpperCase() === "ACTIVE"
+    );
 
 
     return foods?.map((food, index) => {
@@ -31,10 +31,13 @@ const RenderFoodList = ({
             (p) => p.party_name?.toUpperCase() === selectedType
         );
 
-        const MatchedTime = ActiveProdcutionBatchDetail &&
-            ActiveProdcutionBatchDetail?.length > 0
-            ? ActiveProdcutionBatchDetail
-                ?.find(item => item.type_desc === food.time_name) : {}
+        const MatchedTime = ActiveProdcutionBatchDetail?.find(
+            item =>
+                item?.type_desc?.trim()?.toUpperCase() ===
+                food?.time_name?.trim()?.toUpperCase()
+        ) || null;
+
+
 
         const price = selectedPriceObj?.price || 0;
 

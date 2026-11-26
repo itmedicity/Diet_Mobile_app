@@ -1,19 +1,23 @@
-import { Avatar, Box } from '@mui/joy'
-import TextComponent from './TextComponent'
-import React, { memo } from 'react'
-import { format } from 'date-fns';
+
+import { Avatar, Box, IconButton, Tooltip } from '@mui/joy';
+import TextComponent from './TextComponent';
+import React, { memo } from 'react';
 import { PatientstatusConfig } from '../CommonData/Common';
 import { Chip } from '@mui/material';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 
-const PatientInfoCard = ({ PatientDetail }) => {
+const PatientInfoCard = ({
+    PatientDetail,
+    onReportFailure
+}) => {
 
-    //  Get first letter safely
     const getInitial = (name) => {
         if (!name) return "";
         return name.trim().charAt(0).toUpperCase();
     };
 
-    const AdmissiongStatus = PatientstatusConfig[PatientDetail?.fb_ipc_curstatus];
+    const AdmissiongStatus =
+        PatientstatusConfig[PatientDetail?.fb_ipc_curstatus];
 
     return (
         <Box
@@ -38,11 +42,18 @@ const PatientInfoCard = ({ PatientDetail }) => {
                     gap: 1,
                     borderLeft: "2px solid #9d25b8",
                     borderRight: '2px solid #9d25b8',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                 }}
             >
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {/* PATIENT DETAILS */}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    minWidth: 0
+                }}>
                     <Avatar
                         sx={{
                             bgcolor: "#9d25b8",
@@ -50,12 +61,13 @@ const PatientInfoCard = ({ PatientDetail }) => {
                             height: 35,
                             fontWeight: 600,
                             color: 'white',
+                            flexShrink: 0
                         }}
                     >
                         {getInitial(PatientDetail?.ptc_ptname)}
                     </Avatar>
 
-                    <Box>
+                    <Box sx={{ minWidth: 0 }}>
                         <TextComponent
                             value={PatientDetail?.ptc_ptname}
                             color='black'
@@ -71,14 +83,35 @@ const PatientInfoCard = ({ PatientDetail }) => {
                     </Box>
                 </Box>
 
+                {/* ACTIONS */}
                 <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={0.5}
                     sx={{
-                        cursor: 'pointer'
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                        flexShrink: 0
                     }}
                 >
+                    {onReportFailure && (
+                        <Tooltip title="Report collection failure">
+                            <IconButton
+                                size="sm"
+                                variant="soft"
+                                color="warning"
+                                onClick={onReportFailure}
+                                sx={{
+                                    borderRadius: "8px",
+                                    width: 29,
+                                    height: 29
+                                }}
+                            >
+                                <ReportProblemOutlinedIcon
+                                    sx={{ fontSize: 17 }}
+                                />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+
                     <Chip
                         icon={AdmissiongStatus?.icon && (
                             React.cloneElement(AdmissiongStatus.icon, {
@@ -101,11 +134,10 @@ const PatientInfoCard = ({ PatientDetail }) => {
                                 }`,
                         }}
                     />
-
                 </Box>
             </Box>
         </Box>
-    )
-}
+    );
+};
 
-export default memo(PatientInfoCard)
+export default memo(PatientInfoCard);

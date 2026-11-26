@@ -4,6 +4,9 @@ import { Navigate, Outlet } from 'react-router-dom'
 import useValidateToken from '../hooks/useValidateToken'
 import { Backdrop } from '@mui/material'
 import FloatingBackButton from '../components/FloatingBackButton';
+import PizzaLoader from '../components/PizzaLoader';
+import InvalidDietScreen from '../components/InvalidDietScreen';
+import { Box } from '@mui/joy';
 
 const ProtectedRoute = () => {
     const { isValid, isLoading } = useValidateToken()
@@ -16,28 +19,30 @@ const ProtectedRoute = () => {
         window.location.href = "/";
     }, [])
 
+
     if (isLoading) {
-        return <Backdrop
-            sx={{
-                zIndex: 1
-            }}
-            open={isLoading}
-            invisible
-        >
-            {
-                isLoading === true && isValid === true && <div>Loding....</div>
-            }
-            {isLoading === true && isValid === false && <button
-                style={{
-                    backgroundColor: "#1788ca",
-                    color: "#fff",
-                    padding: "10px 20px",
-                    borderRadius: "5px",
-                    border: "none",
-                    cursor: "pointer",
+        return (
+            <Box
+                sx={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 9999,
+                    bgcolor: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 2,
                 }}
-                onClick={handleReturnHome} >Return Home</button>}
-        </Backdrop>;
+            >
+                {isValid ? (
+                    <PizzaLoader />
+                ) : (
+                    <InvalidDietScreen
+                        handleReturnHome={handleReturnHome}
+                    />
+                )}
+            </Box>
+        );
     }
 
     if (isLoading === true && isValid === false) {

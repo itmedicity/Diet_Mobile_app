@@ -9,6 +9,7 @@ import {
 } from "../../../CommonData/UseQuery";
 import { IoFastFoodOutline } from "react-icons/io5";
 import { PiPersonBold } from "react-icons/pi";
+import { format } from "date-fns";
 
 
 const HEADER_HEIGHT = 40;
@@ -19,7 +20,10 @@ const OrderTakingPanel = ({ open, onClose, persontype, fullDetail }) => {
 
     const [items, setItems] = useState([]);
     const [selectedFood, setSelectedFood] = useState({});
-
+    const [loading, setLoading] = useState(false)
+    const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
+        format(new Date(), "yyyy-MM-dd")
+    );
     const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
         useCustomerPreviousCanteenOrder(fullDetail?.ip_no, persontype);
 
@@ -109,6 +113,9 @@ const OrderTakingPanel = ({ open, onClose, persontype, fullDetail }) => {
                         selectedFood={selectedFood}
                         PreviousOrders={PreviousOrders}
                         fullDetail={fullDetail}
+                        expectedDeliveryDate={expectedDeliveryDate}
+                        setExpectedDeliveryDate={setExpectedDeliveryDate}
+                        loading={loading}
                     />
 
                     <FoodDetailShowCard selectedFood={selectedFood} />
@@ -125,6 +132,9 @@ const OrderTakingPanel = ({ open, onClose, persontype, fullDetail }) => {
                     personType={persontype}
                     onClose={onClose}
                     selectedFood={selectedFood}
+                    expectedDeliveryDate={expectedDeliveryDate}
+                    setLoading={setLoading}
+                    loading={loading}
                 />
             </Box>
         </Box>
