@@ -8,9 +8,10 @@ import {
 } from "../../../CommonData/UseQuery";
 import FoodSuggestionItem from "./FoodSuggestionItem";
 import { getFoodPrice } from "../../Constant/Common";
-import { infoNofity, warningNofity } from "../../Constant/Constant";
+import { infoNofity, normalizeDate, warningNofity } from "../../Constant/Constant";
 import { groupPreviousOrder } from "../../../CommonData/Common";
 import ChooseDietType from "../../../SelectComponents/ChooseDietType";
+import DeliveryDateSelector from "../../../components/DeliveryDateSelector";
 
 const MobileFoodOrder = ({
     personType,
@@ -19,6 +20,9 @@ const MobileFoodOrder = ({
     setSelectedFood,
     selectedFood,
     PreviousOrders,
+    expectedDeliveryDate,
+    setExpectedDeliveryDate,
+    loading
 }) => {
 
 
@@ -56,7 +60,10 @@ const MobileFoodOrder = ({
 
 
 
+
+
     const PendingOrderItems = orders?.find((item) => item?.order_status === "PENDING")?.items;
+
 
     /* FILTER */
     const filteredSuggestions = useMemo(() => {
@@ -102,7 +109,9 @@ const MobileFoodOrder = ({
 
         const IsAlreadyItemInPending = PendingOrderItems?.some(
             item => item.item_id === selectedFood.item_id &&
-                Number(item?.type_slno) === Number(type_slno)
+                Number(item?.type_slno) === Number(type_slno) &&
+                normalizeDate(item?.expected_delivery_date) ===
+                normalizeDate(expectedDeliveryDate)
         );
 
         if (IsAlreadyItemInPending) {
@@ -153,6 +162,11 @@ const MobileFoodOrder = ({
             // color={ }
             />
             <ChooseDietType value={type_slno} setValue={setDietType} setName={setTypeName} />
+            <DeliveryDateSelector
+                value={expectedDeliveryDate}
+                onChange={setExpectedDeliveryDate}
+                disabled={loading}
+            />
             <Box
                 sx={{
                     position: "relative",

@@ -7,7 +7,12 @@ import PatientInfoCard from "../../components/PatientInfoCard";
 import TextComponent from "../../components/TextComponent";
 import FoodItemAddCard from "../../components/FoodItemAddCard";
 import SpecialMealSelectScollBox from "../../components/SpecialMealSelectScollBox";
-import { buildBystanderCategories, EmpauthId, filterFoodsByType, infoNofity, warningNofity } from "../Constant/Constant";
+import {
+  buildBystanderCategories,
+  EmpauthId,
+  filterFoodsByType,
+  warningNofity
+} from "../Constant/Constant";
 import BottomFloatingPanel from "../../components/BottomFloatingPanel";
 import ActiveTabOverlay from "../../components/ActiveTabOverlay";
 import BottomListTab from "../../components/BottomListTab";
@@ -27,6 +32,8 @@ import { IconMap } from "./Component/TrendingIcons";
 import CategoryIcon from '@mui/icons-material/Category';
 import DietPlanRemark from "./Component/DietPlanRemark";
 import BystanderItemSearch from "./Component/BystanderItemSearch";
+import PizzaLoader from "../../components/PizzaLoader";
+import DietCollectionAttempt from "./Component/DietCollectionAttempt";
 
 const PatientBedDetail = () => {
 
@@ -37,13 +44,14 @@ const PatientBedDetail = () => {
   const [selectedFilter, setSelectedFilter] = useState(0);
   const [activeTab, setActiveTab] = useState(null);
   const [openOrderPanel, setOpenOrderPanel] = useState(false);
+  const [showCollectionAttempt, setShowCollectionAttempt] = useState(false);
   const empId = EmpauthId();
+
   //  FIXED: separate states
   const [patientFoods, setPatientFoods] = useState({});
   const [bystanderFoods, setBystanderFoods] = useState({});
 
   const [bystanderSearch, setBystanderSearch] = useState("");
-
 
   //  FIXED: dynamic state selection
   const assignedFoods = selected?.party_name === "PATIENT" ? patientFoods : bystanderFoods;
@@ -52,7 +60,9 @@ const PatientBedDetail = () => {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const { data: FetchPlanFoodDetail = [] } = usePatientPlanFoodDetails(fullDetail?.plan_id);
+  const { data: FetchPlanFoodDetail = [],
+    isLoading: loadingfoodDetails
+  } = usePatientPlanFoodDetails(fullDetail?.plan_id);
 
   const { data: DietPlanRemarkDetails = [] } = useDietPlanRemarkDetails(fullDetail?.plan_id);
 
@@ -64,14 +74,11 @@ const PatientBedDetail = () => {
     item => String(item?.batch_status) === "ACTIVE"
   ) || [];
 
+  const { data: ExistFoodDetail = [],
+    isLoading: LoadingBystanderFooddetail
+  } = useAllFoodAndBeverage(true);
 
-  console.log({
-    ActiveProdcutionBatchDetail
-  });
-
-  const { data: ExistFoodDetail = [] } = useAllFoodAndBeverage(true);
-
-  const { data: PreviousOrders = [], refetch: RefetchPreviousOrder } =
+  const { data: PreviousOrders = [] } =
     useCustomerPreviousCanteenOrder(fullDetail?.ip_no, selected?.party_type_id);
 
   const typeIds = useMemo(() => {
@@ -81,7 +88,10 @@ const PatientBedDetail = () => {
   }, [FetchPlanFoodDetail]);
 
 
-  const { data: FetchAllTemplateId = [] } = useAllPateinetFoodDetail(template_id, typeIds);
+  const {
+    data: FetchAllTemplateId = [],
+    isLoading: loadingTemplate
+  } = useAllPateinetFoodDetail(template_id, typeIds);
 
   const FinalMappingTemplateFood = useMemo(() => {
     return groupMeals(
@@ -92,6 +102,9 @@ const PatientBedDetail = () => {
     FetchAllTemplateId,
     FetchPlanFoodDetail
   ]);
+
+
+  const TemplateLoading = loadingTemplate || loadingfoodDetails || LoadingBystanderFooddetail;
 
   const ProcessDateGroupedMeals = useMemo(() => {
     return groupMealsByProcessDate(FinalMappingTemplateFood);
@@ -273,12 +286,19 @@ const PatientBedDetail = () => {
 
       <NursingStaionHeader stationname={stationname} bed={BedName} />
 
+      {TemplateLoading && <PizzaLoader />}
+
       <Box sx={{ flex: 1, px: 2, overflowY: "auto", pb: "120px", transition: "0.3s ease", filter: activeTab ? "blur(4px) brightness(0.95)" : "none" }}>
         <Box sx={{ position: "sticky", top: 0, zIndex: 10, bgcolor: "#ffffff", pt: 2, pb: 2 }}>
           <PatientBystanderToggle selected={selected} setSelected={setSelected} />
           {
             selected?.party_name === "PATIENT" ? (
-              <PatientInfoCard PatientDetail={fullDetail} />
+              <PatientInfoCard
+                PatientDetail={fullDetail}
+                onReportFailure={() => {
+                  setShowCollectionAttempt(true);
+                }}
+              />
             ) : (
               <SpecialMealSelectScollBox selectedFilter={selectedFilter} setSelectedFilter={setSelectedFilter} />
             )}
@@ -288,7 +308,8 @@ const PatientBedDetail = () => {
           <Box sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: "center"
+            justifyContent: "center",
+            flexDirection: 'column'
           }}>
             <DietPlanRemark remark={DietPlanRemarkDetails?.remarks} />
           </Box>
@@ -542,6 +563,7 @@ const PatientBedDetail = () => {
         onClose={() => setOpenOrderPanel(false)}
         fullDetail={fullDetail}
 
+
       />
       {
         !openOrderPanel &&
@@ -553,6 +575,13 @@ const PatientBedDetail = () => {
           hasOrders={hasOrders}
         />
       }
+
+
+      <DietCollectionAttempt
+        open={showCollectionAttempt}
+        onClose={() => setShowCollectionAttempt(false)}
+        fullDetail={fullDetail}
+      />
     </Box>
   );
 };

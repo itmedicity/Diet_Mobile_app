@@ -880,7 +880,11 @@ export const groupPreviousOrder = (
             canteen_order_item_id,
             type_slno,
             is_urgent,
-            emergency_details
+            emergency_details,
+            type_desc,
+            expected_delivery_date,
+            em_name,
+            collected_by
         } = row;
 
         if (!canteen_order_id) return;
@@ -890,7 +894,10 @@ export const groupPreviousOrder = (
                 canteen_order_id,
                 order_time,
                 order_status,
+                em_name,
+                collected_by,
                 order_remarks: order_remarks ?? null,
+                expected_delivery_date,
                 diet_order_remark: null,
                 is_urgent: false,
                 emergency_details: [],
@@ -920,6 +927,7 @@ export const groupPreviousOrder = (
             gst_amount,
             canteen_order_item_id: canteen_order_item_id || null,
             type_slno,
+            type_desc,
 
             order_id: null,
             order_detail_id: null,
@@ -927,6 +935,7 @@ export const groupPreviousOrder = (
             type: "CANTEEN",
             isExtra: false,
             extra_order_id: null,
+            expected_delivery_date: expected_delivery_date,
 
             is_urgent: Number(is_urgent) === 1,
             emergency_details: emergencies
@@ -1358,3 +1367,23 @@ export const formatAmount = (value) =>
         currency: "INR",
         minimumFractionDigits: 2,
     }).format(Number(value || 0));
+
+
+export const normalizeDate = (date) =>
+    date ? String(date).split(" ")[0] : null;
+
+
+export const isValidEmployeeId = (id) => {
+    if (
+        id === null ||
+        id === undefined ||
+        String(id).trim() === "" ||
+        ["null", "undefined"].includes(String(id).trim().toLowerCase())
+    ) {
+        return false;
+    }
+
+    const employeeId = Number(id);
+
+    return Number.isInteger(employeeId) && employeeId > 0;
+};

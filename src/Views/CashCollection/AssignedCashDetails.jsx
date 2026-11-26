@@ -4,16 +4,21 @@ import { Box, Typography } from "@mui/joy";
 import { useNavigate } from "react-router-dom";
 
 import { EmpauthId } from "../Constant/Constant";
-import { useAssignedBillDetails } from "../../CommonData/UseQuery";
+import { useAssignedBillDetails, useNursingStationMaster } from "../../CommonData/UseQuery";
 import AssignedCashCardSkeleton from "./CollectionComponent/AssignedCashCardSkeleton";
 import AssignedCashCard from "./CollectionComponent/AssignedCashCard";
+import NursingStationFilter from "./CollectionComponent/NursingStationFilter";
 
 const AssignedCashDetails = () => {
     const id = EmpauthId();
     const navigate = useNavigate();
 
-    const [activeTab, setActiveTab] = useState("PENDING");
 
+    const { data: NURSING_STATIONS = [] } = useNursingStationMaster();
+
+
+    const [activeTab, setActiveTab] = useState("PENDING");
+    const [selectedStation, setSelectedStation] = useState("ALL");
     const {
         data: BillDetails = [],
         isLoading,
@@ -31,22 +36,30 @@ const AssignedCashDetails = () => {
         return [];
     }, [BillDetails]);
 
+    const stationFilteredBills = useMemo(() => {
+        if (selectedStation === "ALL") return bills;
+
+        return bills.filter(
+            (bill) => bill?.nurse_station_code === selectedStation
+        );
+    }, [bills, selectedStation]);
+
     const pendingBills = useMemo(
         () =>
-            bills.filter(
+            stationFilteredBills.filter(
                 (bill) =>
                     bill?.collection_display_status !== "COMPLETED"
             ),
-        [bills]
+        [stationFilteredBills]
     );
 
     const completedBills = useMemo(
         () =>
-            bills.filter(
+            stationFilteredBills.filter(
                 (bill) =>
                     bill?.collection_display_status === "COMPLETED"
             ),
-        [bills]
+        [stationFilteredBills]
     );
 
     // Display only the bills belonging to the selected tab.
@@ -357,7 +370,14 @@ const AssignedCashDetails = () => {
                     )}
                 </Box>
             </Box>
-
+            {!isLoading && bills.length > 0 && (
+                <NursingStationFilter
+                    stations={NURSING_STATIONS}
+                    bills={bills}
+                    selectedStation={selectedStation}
+                    onStationChange={setSelectedStation}
+                />
+            )}
             {/* SCROLLABLE BILL LIST */}
             <Box
                 sx={{

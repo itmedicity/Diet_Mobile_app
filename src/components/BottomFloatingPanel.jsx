@@ -6,9 +6,9 @@ import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import { EmpauthId, errorNofity, infoNofity, warningNofity } from "../Views/Constant/Constant";
 import OrderStatsCard from "./OrderStatsCard";
 import OrderConfirmationPage from "./OrderConfirmationPage";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { axioslogin } from "../Axios/axios";
-import { handleAuthError } from "../CommonData/Common";
+import { handleAuthError, isValidEmployeeId, normalizeDate } from "../CommonData/Common";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     useAllPatientPreviousOrders,
@@ -17,7 +17,8 @@ import {
 } from "../CommonData/UseQuery";
 import PizzaLoader from "./PizzaLoader";
 import ChooseDietType from "../SelectComponents/ChooseDietType";
-import PriorityHighIcon from "@mui/icons-material/PriorityHigh";
+import DeliveryDateSelector from "./DeliveryDateSelector";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 
 const HEADER_HEIGHT = 60;
 const BOTTOM_NAV_HEIGHT = 60;
@@ -49,12 +50,18 @@ const BottomFloatingPanel = ({
     const queryClient = useQueryClient()
     const id = EmpauthId()
     const [isUrgent, setIsUrgent] = useState(false);
+    const [showoption, setShowOptions] = useState(true);
+    const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
+        format(new Date(), "yyyy-MM-dd")
+    );
 
 
-    const { data: DietOrders = [], refetch: RefetchDietOrders } =
+
+
+    const { data: DietOrders = [] } =
         useAllPatientPreviousOrders(PatientDetail?.dietpt_slno);
 
-    const { data: PatientDietOrderDetails = [], refetch: RefetchPreviousOrder } =
+    const { data: PatientDietOrderDetails = [] } =
         useCustomerPreviousCanteenOrder(PatientDetail?.ip_no, selected?.party_type_id);
 
     const {
@@ -168,26 +175,25 @@ const BottomFloatingPanel = ({
         return null;
     };
 
+    const isPatient = selected?.party_name === 'PATIENT';
 
     // const buildOrderData = () => {
     //     const orderDetails = [];
     //     const canteenDetails = [];
     //     const urgentItems = [];
+
+    //     const openBatchItems = [];
+    //     const openBatchDietItems = [];
+    //     const openBatchUrgentItems = [];
+
     //     let hasInvalidItem = false;
 
     //     Object.values(assignedFoods || {}).forEach((time) => {
     //         (time?.foods || []).forEach((food) => {
     //             if (!food || !food.qty || Number(food.qty) <= 0) return;
 
-    //             console.log({
-    //                 food
-    //             });
+    //             const isBystander = selected?.party_name === "BYSTANDER";
 
-
-    //             const isBystander =
-    //                 selected?.party_name === "BYSTANDER";
-
-    //             // Use stored state key for bystander
     //             const finalTimeId = isBystander
     //                 ? type_slno
     //                 : food.time_id;
@@ -203,17 +209,31 @@ const BottomFloatingPanel = ({
     //                     selected?.party_name?.toUpperCase()
     //             );
 
-    //             const itemIsUrgent = food?.is_urgent === true ||
+    //             const itemIsUrgent =
+    //                 food?.is_urgent === true ||
     //                 Number(food?.is_urgent) === 1 ||
     //                 food?.is_urgent === "true";
 
-
-
     //             const quantity = Number(food.qty);
+
     //             const patientDietId =
     //                 food?.patient_schedule?.patient_diet_id || null;
 
-    //             orderDetails.push({
+    //             // Match active batch using meal type and process date
+    //             const processDate =
+    //                 food?.patient_schedule?.process_date?.split(" ")[0];
+
+    //             const activeBatch = !isBystander
+    //                 ? ActiveProdcutionBatchDetail?.find(
+    //                     (batch) =>
+    //                         batch?.batch_status === "ACTIVE" &&
+    //                         Number(batch?.type_id) === Number(finalTimeId) &&
+    //                         batch?.production_date?.split(" ")[0] === processDate
+    //                 )
+    //                 : null;
+
+    //             // Build order details
+    //             const dietItem = {
     //                 diet_type_id: finalTimeId,
     //                 item_id: food.item_id,
     //                 quantity,
@@ -221,9 +241,11 @@ const BottomFloatingPanel = ({
     //                 patient_diet_id: patientDietId,
     //                 is_substitute: false,
     //                 is_urgent: itemIsUrgent,
-    //             });
+    //                 expected_delivery_date: processDate
+    //             };
 
-    //             canteenDetails.push({
+    //             // Build canteen details
+    //             const canteenItem = {
     //                 item_id: food.item_id,
     //                 qty: quantity,
     //                 price: priceObj?.price,
@@ -233,40 +255,71 @@ const BottomFloatingPanel = ({
     //                 gst_amount:
     //                     (Number(priceObj?.price || 0) *
     //                         quantity *
-    //                         Number(priceObj?.gst_rate || 0)) /
-    //                     100,
+    //                         Number(priceObj?.gst_rate || 0)) / 100,
     //                 is_urgent: itemIsUrgent,
-    //             });
+    //                 expected_delivery_date: isPatient ? processDate : expectedDeliveryDate
+    //             };
 
-    //             // Keep only urgent items for separate urgency-table insertion
-    //             if (itemIsUrgent) {
-    //                 urgentItems.push({
-    //                     item_id: food.item_id,
-    //                     quantity,
-    //                     diet_type_id: finalTimeId,
-    //                     patient_diet_id: patientDietId,
-    //                     type_slno: finalTimeId,
-    //                     is_item_urgent: true,
+    //             if (activeBatch) {
+    //                 // OPEN BATCH: Keep completely separate
+    //                 openBatchItems.push({
+    //                     ...canteenItem,
+    //                     batch_id: activeBatch.batch_id,
     //                 });
+
+    //                 openBatchDietItems.push(dietItem);
+
+    //                 if (itemIsUrgent) {
+    //                     openBatchUrgentItems.push({
+    //                         item_id: food.item_id,
+    //                         quantity,
+    //                         diet_type_id: finalTimeId,
+    //                         patient_diet_id: patientDietId,
+    //                         type_slno: finalTimeId,
+    //                         is_item_urgent: true,
+    //                     });
+    //                 }
+    //             } else {
+    //                 // NORMAL ORDER
+    //                 orderDetails.push(dietItem);
+    //                 canteenDetails.push(canteenItem);
+
+    //                 if (itemIsUrgent) {
+    //                     urgentItems.push({
+    //                         item_id: food.item_id,
+    //                         quantity,
+    //                         diet_type_id: finalTimeId,
+    //                         patient_diet_id: patientDietId,
+    //                         type_slno: finalTimeId,
+    //                         is_item_urgent: true,
+    //                     });
+    //                 }
     //             }
     //         });
     //     });
 
-    //     const hasItems = orderDetails.length > 0;
+    //     const hasItems =
+    //         orderDetails.length > 0 || openBatchDietItems.length > 0;
 
-    //     // Order is urgent only when every selected item is urgent
     //     const allItemsUrgent =
-    //         hasItems && orderDetails.every((item) => item.is_urgent);
+    //         hasItems &&
+    //         [...orderDetails, ...openBatchDietItems].every(
+    //             (item) => item.is_urgent
+    //         );
 
     //     return {
     //         orderDetails,
     //         canteenDetails,
     //         urgentItems,
+
+    //         openBatchItems,
+    //         openBatchDietItems,
+    //         openBatchUrgentItems,
+
     //         allItemsUrgent,
     //         hasInvalidItem,
     //     };
     // };
-
 
     const buildOrderData = () => {
         const orderDetails = [];
@@ -276,6 +329,9 @@ const BottomFloatingPanel = ({
         const openBatchItems = [];
         const openBatchDietItems = [];
         const openBatchUrgentItems = [];
+
+        // Separate normal patient items by process date
+        const normalOrderGroups = {};
 
         let hasInvalidItem = false;
 
@@ -310,7 +366,6 @@ const BottomFloatingPanel = ({
                 const patientDietId =
                     food?.patient_schedule?.patient_diet_id || null;
 
-                // Match active batch using meal type and process date
                 const processDate =
                     food?.patient_schedule?.process_date?.split(" ")[0];
 
@@ -323,7 +378,6 @@ const BottomFloatingPanel = ({
                     )
                     : null;
 
-                // Build order details
                 const dietItem = {
                     diet_type_id: finalTimeId,
                     item_id: food.item_id,
@@ -332,9 +386,9 @@ const BottomFloatingPanel = ({
                     patient_diet_id: patientDietId,
                     is_substitute: false,
                     is_urgent: itemIsUrgent,
+                    expected_delivery_date: processDate
                 };
 
-                // Build canteen details
                 const canteenItem = {
                     item_id: food.item_id,
                     qty: quantity,
@@ -347,10 +401,13 @@ const BottomFloatingPanel = ({
                             quantity *
                             Number(priceObj?.gst_rate || 0)) / 100,
                     is_urgent: itemIsUrgent,
+                    expected_delivery_date: isPatient
+                        ? processDate
+                        : expectedDeliveryDate
                 };
 
                 if (activeBatch) {
-                    // OPEN BATCH: Keep completely separate
+                    // OPEN BATCH: unchanged
                     openBatchItems.push({
                         ...canteenItem,
                         batch_id: activeBatch.batch_id,
@@ -370,31 +427,67 @@ const BottomFloatingPanel = ({
                     }
                 } else {
                     // NORMAL ORDER
-                    orderDetails.push(dietItem);
-                    canteenDetails.push(canteenItem);
+                    if (isPatient) {
+                        // Patient: group by process date
+                        if (!normalOrderGroups[processDate]) {
+                            normalOrderGroups[processDate] = {
+                                processDate,
+                                orderDetails: [],
+                                canteenDetails: [],
+                                urgentItems: [],
+                            };
+                        }
 
-                    if (itemIsUrgent) {
-                        urgentItems.push({
-                            item_id: food.item_id,
-                            quantity,
-                            diet_type_id: finalTimeId,
-                            patient_diet_id: patientDietId,
-                            type_slno: finalTimeId,
-                            is_item_urgent: true,
-                        });
+                        normalOrderGroups[processDate].orderDetails.push(dietItem);
+                        normalOrderGroups[processDate].canteenDetails.push(canteenItem);
+
+                        if (itemIsUrgent) {
+                            normalOrderGroups[processDate].urgentItems.push({
+                                item_id: food.item_id,
+                                quantity,
+                                diet_type_id: finalTimeId,
+                                patient_diet_id: patientDietId,
+                                type_slno: finalTimeId,
+                                is_item_urgent: true,
+                            });
+                        }
+                    } else {
+                        // Bystander: unchanged
+                        orderDetails.push(dietItem);
+                        canteenDetails.push(canteenItem);
+
+                        if (itemIsUrgent) {
+                            urgentItems.push({
+                                item_id: food.item_id,
+                                quantity,
+                                diet_type_id: finalTimeId,
+                                patient_diet_id: patientDietId,
+                                type_slno: finalTimeId,
+                                is_item_urgent: true,
+                            });
+                        }
                     }
                 }
             });
         });
 
+        const patientNormalGroups = Object.values(normalOrderGroups);
+
+        const allNormalDietItems = isPatient
+            ? patientNormalGroups.flatMap(group => group.orderDetails)
+            : orderDetails;
+
+        const allItemsForUrgency = [
+            ...allNormalDietItems,
+            ...openBatchDietItems
+        ];
+
         const hasItems =
-            orderDetails.length > 0 || openBatchDietItems.length > 0;
+            allItemsForUrgency.length > 0;
 
         const allItemsUrgent =
             hasItems &&
-            [...orderDetails, ...openBatchDietItems].every(
-                (item) => item.is_urgent
-            );
+            allItemsForUrgency.every(item => item.is_urgent);
 
         return {
             orderDetails,
@@ -404,6 +497,8 @@ const BottomFloatingPanel = ({
             openBatchItems,
             openBatchDietItems,
             openBatchUrgentItems,
+
+            normalOrderGroups: patientNormalGroups,
 
             allItemsUrgent,
             hasInvalidItem,
@@ -445,6 +540,9 @@ const BottomFloatingPanel = ({
     };
 
 
+
+
+
     const handleConfirmOrder = async () => {
 
         const error = validateOrder();
@@ -458,34 +556,46 @@ const BottomFloatingPanel = ({
             ip_no
         } = PatientDetail;
 
-        const existingDietOrderId = DietOrders?.find(i => i.order_status === "PENDING")?.order_id;
+        // const existingDietOrderId = DietOrders?.find(i => i.order_status === "PENDING")?.order_id;
 
-        const existingCanteenOrderId = PatientDietOrderDetails?.find(i => i.order_status === "PENDING")?.canteen_order_id;
+        const existingCanteenOrderId = PatientDietOrderDetails
+            ?.find(i => i.order_status === "PENDING" &&
+                Number(i.collected_by) === Number(id) &&
+                normalizeDate(i?.expected_delivery_date) ===
+                normalizeDate(expectedDeliveryDate))?.canteen_order_id;
 
-        const { orderDetails, canteenDetails, hasInvalidItem, allItemsUrgent, urgentItems,
+        const {
+            orderDetails,
+            canteenDetails,
+            hasInvalidItem,
+            allItemsUrgent,
+            urgentItems,
             openBatchItems,
             openBatchDietItems,
             openBatchUrgentItems,
+            normalOrderGroups
         } = buildOrderData();
 
 
 
-        console.log({
-            openBatchItems,
-            openBatchDietItems,
-            openBatchUrgentItems,
-        });
 
+        const normalCanteenDetails = isPatient
+            ? normalOrderGroups?.flatMap(group => group.canteenDetails)
+            : canteenDetails;
 
-        // Check duplicate food in the same meal/type
-        const duplicateFood = canteenDetails.find((food) =>
+        const duplicateFood = normalCanteenDetails?.find((food) =>
             PreviousOrders?.some(
                 (order) =>
                     Number(order?.type_slno) === Number(food?.type_slno) &&
                     Number(order?.item_id) === Number(food?.item_id) &&
-                    order?.order_status === "PENDING"
+                    order?.order_status === "PENDING" &&
+                    normalizeDate(order?.expected_delivery_date) ===
+                    normalizeDate(food?.expected_delivery_date)
             )
         );
+
+
+
 
         if (duplicateFood) {
 
@@ -503,16 +613,20 @@ const BottomFloatingPanel = ({
             );
         }
 
-        const isPatient = selected?.party_name === 'PATIENT';
+        // const isPatient = selected?.party_name === 'PATIENT';
 
         if (!isPatient && type_slno === 0) return infoNofity("Please select Meal Type!");
 
         if (hasInvalidItem)
             return warningNofity("Some items are invalid");
 
-        if (!orderDetails.length && !openBatchItems.length)
+        if (!orderDetails.length && !openBatchItems.length && normalOrderGroups.length === 0)
             return warningNofity("No valid food items");
 
+
+        if (!isValidEmployeeId(id)) {
+            return infoNofity("Invalid Employee ID. Please login again.");
+        }
 
         const canteenPayload = {
             admission_id: ip_no,
@@ -524,7 +638,8 @@ const BottomFloatingPanel = ({
             patient_diet_id: getPatientDietId(),
             remarks: remarks.trim() || null,
             is_urgent: allItemsUrgent,
-            urgentItems
+            urgentItems,
+            expected_delivery_date: expectedDeliveryDate
         };
 
         const dietPayload = {
@@ -579,9 +694,6 @@ const BottomFloatingPanel = ({
         };
 
 
-        console.log({
-            OpenBatchPayload
-        });
 
         try {
 
@@ -622,42 +734,68 @@ const BottomFloatingPanel = ({
             }
 
             //  PATIENT FLOW
-            if (existingDietOrderId) {
-
-                await safeApiCall(addDietItems, {
-                    order_id: existingDietOrderId,
-                    details: orderDetails,
-                    remarks: remarks.trim() || null,
-                    is_urgent: allItemsUrgent,
-                    urgentItems
-                });
+            // PATIENT FLOW
+            for (const group of normalOrderGroups) {
 
 
-                if (existingCanteenOrderId) {
+                const existingDietOrder = DietOrders?.find(
+                    order =>
+                        order?.order_status === "PENDING" &&
+                        Number(order.collected_by) === Number(id) &&
+                        normalizeDate(order?.expected_delivery_date) ===
+                        normalizeDate(group.processDate)
+                );
+
+
+                const existingCanteenOrder = PatientDietOrderDetails?.find(
+                    order =>
+                        order?.order_status === "PENDING" &&
+                        Number(order.collected_by) === Number(id) &&
+                        normalizeDate(order?.expected_delivery_date) ===
+                        normalizeDate(group.processDate)
+                );
+
+                if (existingDietOrder) {
+                    await safeApiCall(addDietItems, {
+                        order_id: existingDietOrder.order_id,
+                        details: group.orderDetails,
+                        remarks: remarks.trim() || null,
+                        is_urgent: group.orderDetails.length > 0 &&
+                            group.orderDetails.every(item => item.is_urgent),
+                        urgentItems: group.urgentItems
+                    });
+                } else {
+                    await safeApiCall(createDietOrder, {
+                        order: {
+                            ...dietPayload,
+                            expected_delivery_date: group.processDate
+                            // Keep order_date as the actual order creation date
+                        },
+                        details: group.orderDetails,
+                        canteenorder: {
+                            ...canteenPayload,
+                            expected_delivery_date: group.processDate
+                        },
+                        canteenorderdetail: group.canteenDetails,
+                        isPending: !!existingCanteenOrder,
+                        urgentItems: group.urgentItems
+                    });
+                }
+
+                if (existingCanteenOrder) {
                     await safeApiCall(addCanteenItems, {
-                        itemDetail: canteenDetails,
-                        canteen_order_id: existingCanteenOrderId,
+                        itemDetail: group.canteenDetails,
+                        canteen_order_id: existingCanteenOrder.canteen_order_id,
                         isExtra: false,
                         patient_id: dietpt_slno,
                         patient_diet_id: getPatientDietId(),
                         created_by: id,
-                        order_status: 'PENDING',
-                        is_urgent: allItemsUrgent,
-                        urgentItems,
+                        order_status: "PENDING",
+                        is_urgent: group.canteenDetails.length > 0 &&
+                            group.canteenDetails.every(item => item.is_urgent),
+                        urgentItems: group.urgentItems
                     });
-
                 }
-
-            } else {
-                await safeApiCall(createDietOrder, {
-                    order: dietPayload,
-                    details: orderDetails,
-                    canteenorder: canteenPayload,
-                    canteenorderdetail: canteenDetails,
-                    isPending: existingCanteenOrderId ? true : false,
-                    urgentItems
-                });
-
             }
 
             if (openBatchItems.length > 0) {
@@ -681,6 +819,9 @@ const BottomFloatingPanel = ({
             setRemarks("")
         }
     };
+
+
+
 
 
     if (!activeTab) return null;
@@ -729,21 +870,45 @@ const BottomFloatingPanel = ({
                         color="#777"
                     />
                 </Box>
+                <Box sx={{
+                    display: 'flex',
+                    gap: 2
+                }}>
+                    {
+                        selected?.party_name !== 'PATIENT' &&
+                        <Button
+                            size="sm"
+                            variant="soft"
+                            color="primary"
+                            onClick={() => setShowOptions(prev => !prev)}
+                            sx={{
+                                minHeight: 30,
+                                minWidth: 30,
+                                p: 0.7,
+                                borderRadius: "10px",
+                            }}
+                        >
+                            <VisibilityRoundedIcon sx={{ fontSize: 18 }} />
+                        </Button>
+                    }
 
-                <Button
-                    size="sm"
-                    variant="soft"
-                    onClick={onClose}
-                    sx={{
-                        minHeight: 28,
-                        px: 1.5,
-                        fontSize: 11,
-                        borderRadius: 20,
-                        fontWeight: 600,
-                    }}
-                >
-                    Close
-                </Button>
+                    <Button
+                        size="sm"
+                        variant="soft"
+                        onClick={onClose}
+                        sx={{
+                            minHeight: 28,
+                            px: 1.5,
+                            fontSize: 11,
+                            borderRadius: 20,
+                            fontWeight: 600,
+                        }}
+                    >
+                        Close
+                    </Button>
+                </Box>
+
+
             </Box>
 
             {loading && <PizzaLoader />}
@@ -758,17 +923,56 @@ const BottomFloatingPanel = ({
                     />
                 ) : activeTab === "list" ? (
                     <>
-                        {
-                            selected?.party_name !== 'PATIENT' &&
-                            <ChooseDietType
-                                value={type_slno}
-                                setValue={handleDietTypeChange}
-                                setName={(name) => {
-                                    setTypeName(name);
-                                    updateAllFoodsUrgent(name?.trim().toUpperCase() === "AD HOC");
+
+
+                        {selected?.party_name !== "PATIENT" && showoption && (
+                            <Box
+                                sx={{
+                                    mx: "auto",
+                                    mt: 1,
+                                    mb: 0.5,
+                                    width: "95%",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    p: 1,
+                                    borderRadius: "12px",
+                                    border: "1px solid #eadcf0",
+                                    background: "linear-gradient(135deg, #fdfaff 0%, #f8f1fb 100%)",
+                                    boxShadow: "0 2px 7px rgba(95, 35, 110, 0.04)",
+                                    boxSizing: "border-box"
                                 }}
-                            />
-                        }
+                            >
+                                {/* Meal Type */}
+                                <Box
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        "& > *": {
+                                            width: "100%"
+                                        }
+                                    }}
+                                >
+                                    <ChooseDietType
+                                        value={type_slno}
+                                        setValue={handleDietTypeChange}
+                                        setName={(name) => {
+                                            setTypeName(name);
+                                            updateAllFoodsUrgent(
+                                                name?.trim().toUpperCase() === "AD HOC"
+                                            );
+                                        }}
+                                    />
+                                </Box>
+
+                                {/* Expected Delivery Date */}
+                                <DeliveryDateSelector
+                                    value={expectedDeliveryDate}
+                                    onChange={setExpectedDeliveryDate}
+                                    disabled={loading}
+                                />
+                            </Box>
+                        )}
+
                         <OrderSummaryContent
                             assignedFoods={assignedFoods}
                             selected={selected?.party_name}

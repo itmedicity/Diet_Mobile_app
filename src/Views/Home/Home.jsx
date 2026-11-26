@@ -4,6 +4,7 @@ import LoginEmployeeHeader from "../../components/LoginEmployeeHeader";
 import { Box } from "@mui/joy";
 import NursingStationList from "./NursingStationList";
 import SearchComponent from "../../components/SearchComponent";
+import NursingStationListSkeleton from "../../components/NursingStationListSkeleton";
 
 const Home = () => {
 
@@ -11,7 +12,7 @@ const Home = () => {
 
   const [seachVal, setSearchVal] = useState("");
 
-  const { data: NURSING_STATIONS = [] } = useNursingStationMaster();
+  const { data: NURSING_STATIONS = [], isLoading } = useNursingStationMaster();
 
   const filteredStations = useMemo(() => {
     if (!seachVal) return NURSING_STATIONS;
@@ -41,8 +42,12 @@ const Home = () => {
           flexDirection: "column",
           pb: 1,
         }}
-      >
+      >{isLoading ? (
+        <NursingStationListSkeleton count={6} />
+      ) : (
         <NursingStationList station={filteredStations} />
+      )}
+        {/* <NursingStationList station={filteredStations} /> */}
       </Box>
 
     </Box>
